@@ -82,7 +82,7 @@ clangd 通过工具链运行环境启动，用于提供 C/C++ 智能编辑能力
 
 ### 许可证
 
-暂未声明许可证。
+本项目基于 MIT License 开源，详见 [LICENSE](LICENSE)。
 
 ## English
 
@@ -166,4 +166,4 @@ clangd is started through the toolchain runtime and is used for C/C++ intelligen
 
 ### License
 
-No license has been declared yet.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
