@@ -601,7 +601,8 @@ class editor_activity : ComponentActivity() {
                         build_dir = build_dir,
                         cmake_toolchain_file = cmake_toolchain_file,
                         existing_generator = null,
-                        android_config = android_config
+                        android_config = android_config,
+                        fresh = true
                     )
                     val configure_success = proot_manager.execute_command_with_environment(
                         command = configure_command,
@@ -699,7 +700,8 @@ class editor_activity : ComponentActivity() {
                 build_dir = build_dir,
                 cmake_toolchain_file = cmake_toolchain_file,
                 existing_generator = null,
-                android_config = android_config
+                android_config = android_config,
+                fresh = true
             )
             val success = try {
                 proot_manager.execute_command_with_environment(
@@ -733,10 +735,12 @@ class editor_activity : ComponentActivity() {
         build_dir: String,
         cmake_toolchain_file: String,
         existing_generator: String?,
-        android_config: cmake_android_config
+        android_config: cmake_android_config,
+        fresh: Boolean = false
     ): String {
-        val command = mutableListOf(
-            "cmake",
+        val command = mutableListOf("cmake")
+        if (fresh) command += "--fresh"
+        command += listOf(
             "-S", shell_quote(source_dir),
             "-B", shell_quote(build_dir)
         )
