@@ -662,7 +662,7 @@ private fun editor_output_line_list(
         output_editor.invalidate()
     }
 
-    LaunchedEffect(revision, lines.size) {
+    LaunchedEffect(revision, lines.size, lines) {
         if (rendered_revision == revision && rendered_line_count == lines.size) return@LaunchedEffect
         if (lines.size < rendered_line_count || rendered_revision < 0) {
             output_editor.setText("")
