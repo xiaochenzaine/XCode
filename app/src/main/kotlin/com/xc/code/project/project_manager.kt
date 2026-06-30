@@ -30,7 +30,7 @@ object project_manager {
         IndentWidth: 4
         TabWidth: 4
         UseTab: Never
-        ColumnLimit: 165
+        ColumnLimit: 0
         AccessModifierOffset: -4
         ConstructorInitializerIndentWidth: 4
         ContinuationIndentWidth: 4

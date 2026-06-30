@@ -50,8 +50,8 @@ class proot_shell_runner(
             .start()
         val coroutine_context = currentCoroutineContext()
 
-        val stdout = create_log_reader_thread(process.inputStream, "[OUT] ", on_log)
-        val stderr = create_log_reader_thread(process.errorStream, "[ERR] ", on_log)
+        val stdout = create_log_reader_thread(process.inputStream, "> TaskOut ", on_log)
+        val stderr = create_log_reader_thread(process.errorStream, "> TaskErr ", on_log)
         stdout.start()
         stderr.start()
 

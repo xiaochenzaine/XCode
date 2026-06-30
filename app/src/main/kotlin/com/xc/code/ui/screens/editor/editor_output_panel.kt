@@ -125,7 +125,11 @@ internal class editor_output_panel_state {
     val log_lines = mutableStateListOf<editor_output_line>()
 
     fun append_output(text: String, level: editor_output_line_level = editor_output_line_level.NORMAL) {
-        append_lines(output_lines, text, level)
+        append_lines(output_lines, text, level) { line ->
+            if (update_task_subtitle_from_output(line)) {
+                task_subtitle = line
+            }
+        }
     }
 
     fun append_log(text: String, level: editor_output_line_level = editor_output_line_level.INFO) {
@@ -161,16 +165,29 @@ internal class editor_output_panel_state {
         return lines.joinToString("\n") { line -> line.text }
     }
 
+    private fun update_task_subtitle_from_output(line: String): Boolean {
+        if (line.isBlank()) return false
+        val trimmed = line.trimStart()
+        return trimmed.startsWith("[") && trimmed.contains("]") && trimmed.contains("/")  // Ninja [1/42]
+            || trimmed.startsWith("-- ")                                                     // CMake status
+            || trimmed.startsWith("Build files have been written")                          // CMake done
+            || trimmed.startsWith("Configuring done") || trimmed.startsWith("Generating done")
+            || trimmed.startsWith("Consolidate compiler generated dependencies")
+            || trimmed.startsWith("Scanning dependencies")
+    }
+
     private fun append_lines(
         target: MutableList<editor_output_line>,
         text: String,
-        level: editor_output_line_level
+        level: editor_output_line_level,
+        on_line: ((String) -> Unit)? = null
     ) {
         text.lineSequence()
             .map { line -> line.trimEnd() }
             .filter { line -> line.isNotBlank() }
             .forEach { line ->
                 target.add(editor_output_line(line, level))
+                on_line?.invoke(line)
             }
         if (target.size > editor_output_max_lines) {
             target.subList(0, target.size - editor_output_max_lines).clear()
