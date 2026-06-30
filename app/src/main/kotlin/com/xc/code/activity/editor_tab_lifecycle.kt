@@ -7,7 +7,7 @@ import com.xc.code.editor.session.editor_open_tab
 import com.xc.code.editor.settings.apply_editor_behavior_settings
 import com.xc.code.editor.settings.apply_editor_colors
 import com.xc.code.ui.screens.editor.editor_text_action_window
-import com.xc.code.ui.screens.editor.xcode_diagnostic_tooltip_layout
+import com.xc.code.ui.screens.editor.editor_diagnostic_tooltip_layout
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.EventReceiver
 import io.github.rosemoe.sora.event.SelectionChangeEvent
@@ -51,7 +51,7 @@ internal class editor_tab_lifecycle(
                 EditorTextActionWindow::class.java,
                 editor_text_action_window(editor = this)
             )
-            diagnosticTooltip.layout = xcode_diagnostic_tooltip_layout()
+            diagnosticTooltip.layout = editor_diagnostic_tooltip_layout()
             val code_editor = this
             subscribeEvent(ContentChangeEvent::class.java, EventReceiver { _, _ ->
                 on_content_changed()

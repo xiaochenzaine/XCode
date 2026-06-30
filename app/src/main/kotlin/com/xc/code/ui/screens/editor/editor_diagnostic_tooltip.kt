@@ -16,7 +16,7 @@ import io.github.rosemoe.sora.widget.component.DiagnosticTooltipLayout
 import io.github.rosemoe.sora.widget.component.EditorDiagnosticTooltipWindow
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 
-class xcode_diagnostic_tooltip_layout : DiagnosticTooltipLayout {
+class editor_diagnostic_tooltip_layout : DiagnosticTooltipLayout {
 
     private lateinit var window: EditorDiagnosticTooltipWindow
     private lateinit var root: LinearLayout
