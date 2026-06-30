@@ -29,10 +29,6 @@ class keep_alive_service : Service() {
         startForeground(NOTIFICATION_ID, create_notification().build())
         acquire_wake_lock()
         xc_application.instance.keep_alive_service_ = this
-        if (is_first_start) {
-            hide_notification()
-            is_first_start = false
-        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, start_id: Int): Int {
