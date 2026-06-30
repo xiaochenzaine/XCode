@@ -98,16 +98,17 @@ class xc_application : Application() {
     }
 
     fun get_language_scope_name(file_name: String): String {
+        val name = File(file_name).name
         return when {
-            file_name.endsWith(".c", ignoreCase = true) -> "source.c"
-            file_name.endsWith(".cpp", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".cc", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".cxx", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".h", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".hpp", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".json", ignoreCase = true) -> "source.json"
-            file_name.endsWith(".cmake", ignoreCase = true) -> "source.cmake"
-            file_name.equals("CMakeLists.txt", ignoreCase = true) -> "source.cmake"
+            name.equals("CMakeLists.txt", ignoreCase = true) -> "source.cmake"
+            name.endsWith(".cmake", ignoreCase = true) -> "source.cmake"
+            name.endsWith(".c", ignoreCase = true) -> "source.c"
+            name.endsWith(".cpp", ignoreCase = true) -> "source.cpp"
+            name.endsWith(".cc", ignoreCase = true) -> "source.cpp"
+            name.endsWith(".cxx", ignoreCase = true) -> "source.cpp"
+            name.endsWith(".h", ignoreCase = true) -> "source.cpp"
+            name.endsWith(".hpp", ignoreCase = true) -> "source.cpp"
+            name.endsWith(".json", ignoreCase = true) -> "source.json"
             else -> "source.cpp"
         }
     }
