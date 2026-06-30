@@ -166,12 +166,7 @@ internal class editor_output_panel_state {
     }
 
     private fun update_task_subtitle_from_output(line: String): Boolean {
-        if (line.isBlank()) return false
-        val trimmed = line.trimStart()
-        return trimmed.startsWith("[") && trimmed.contains("]") && trimmed.contains("/")  // Ninja [1/42]
-            || trimmed.startsWith("Build files have been written")                          // CMake done
-            || trimmed.startsWith("Consolidate compiler generated dependencies")
-            || trimmed.startsWith("Scanning dependencies")
+        return !line.isBlank() && !line.trimStart().startsWith("-- ")
     }
 
     private fun append_lines(
