@@ -16,7 +16,7 @@ class editor_text_action_window(
     editor: CodeEditor
 ) : EditorTextActionWindow(editor) {
 
-    private val action_buttons = mutableListOf<LinearLayout>()
+    private val action_buttons by lazy { mutableListOf<LinearLayout>() }
 
     init {
         val dp = editor.dpUnit
@@ -93,7 +93,7 @@ class editor_text_action_window(
     }
 
     override fun applyColorScheme() {
-        super.applyColorScheme()
+        if (action_buttons.isEmpty()) return
         val color = editor.colorScheme.getColor(EditorColorScheme.TEXT_ACTION_WINDOW_ICON_COLOR)
         action_buttons.forEach { btn ->
             for (i in 0 until btn.childCount) {
