@@ -126,9 +126,7 @@ internal class editor_output_panel_state {
 
     fun append_output(text: String, level: editor_output_line_level = editor_output_line_level.NORMAL) {
         append_lines(output_lines, text, level) { line ->
-            if (update_task_subtitle_from_output(line)) {
-                task_subtitle = line
-            }
+            update_task_subtitle_from_output(line)
         }
     }
 
@@ -166,7 +164,9 @@ internal class editor_output_panel_state {
     }
 
     private fun update_task_subtitle_from_output(line: String): Boolean {
-        return !line.isBlank() && !line.trimStart().startsWith("-- ")
+        if (line.isBlank()) return false
+        task_subtitle = line.trimStart().removePrefix("-- ")
+        return true
     }
 
     private fun append_lines(
