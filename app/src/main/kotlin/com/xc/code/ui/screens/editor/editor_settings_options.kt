@@ -110,17 +110,6 @@ internal fun editor_settings_switch_groups(settings: editor_settings_state): Lis
             )
         ),
         editor_settings_switch_group(
-            title = "补全",
-            items = listOf(
-                editor_settings_switch_item(
-                    title = "标识符补全",
-                    description = "输入时显示补全建议",
-                    checked = settings.auto_completion,
-                    update = { value -> settings.copy(auto_completion = value) }
-                )
-            )
-        ),
-        editor_settings_switch_group(
             title = "clangd",
             items = listOf(
                 editor_settings_switch_item(

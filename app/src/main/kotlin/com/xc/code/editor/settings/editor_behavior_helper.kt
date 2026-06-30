@@ -150,6 +150,6 @@ internal fun apply_textmate_language_settings(
     val c_family_file = is_c_family_file(file_path)
     language.useTab(true)
     language.setTabSize(settings.tab_size.coerceIn(2, 8))
-    language.setAutoCompleteEnabled(settings.auto_completion && c_family_file)
+    language.setAutoCompleteEnabled(c_family_file)
     language.setCompleterKeywords(if (c_family_file) c_cpp_completion_keywords else emptyArray())
 }
