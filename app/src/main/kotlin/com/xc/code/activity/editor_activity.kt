@@ -1094,7 +1094,7 @@ class editor_activity : ComponentActivity() {
         if (cmake_configure_job?.isActive == true || cmake_build_job?.isActive == true) return
 
         output_panel_state.append_log("CMakeLists.txt 已保存，自动初始化 CMake")
-        configure_cmake_project(clean_build = false, show_toast = false) {
+        configure_cmake_project(clean_build = true, show_toast = false) {
             reset_clangd_project()
         }
     }
