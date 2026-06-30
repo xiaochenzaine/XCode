@@ -270,8 +270,6 @@ class editor_activity : ComponentActivity() {
             with_applying_content = { action -> with_applying_editor_content(action) },
             on_content_changed = { handle_editor_content_changed() },
             on_selection_changed = { changed_editor -> handle_editor_selection_changed(changed_editor) },
-            current_comment_action = { current_line_comment_action() },
-            on_toggle_comment = { toggle_line_comment() },
             initial_styles_timeout_ms = initial_editor_styles_timeout_ms
         )
     }
@@ -1596,123 +1594,6 @@ class editor_activity : ComponentActivity() {
         if (state.current_file_path != null) {
             editor.redo()
             update_history_state()
-        }
-    }
-
-    private fun current_line_comment_action(): Boolean? {
-        if (should_use_block_comment()) return current_selection_has_block_comment()
-        return current_line_comment_state()?.should_uncomment
-    }
-
-    private fun current_line_comment_state(): editor_line_comment_state? {
-        if (state.current_file_path == null) return null
-
-        val comment_marker = current_line_comment_marker() ?: return null
-        val cursor = editor.cursor
-        val text = editor.text
-        val line_count = text.lineCount
-        if (line_count <= 0) return null
-
-        var start_line = cursor.leftLine.coerceIn(0, line_count - 1)
-        var end_line = cursor.rightLine.coerceIn(0, line_count - 1)
-        if (start_line > end_line) {
-            val tmp = start_line
-            start_line = end_line
-            end_line = tmp
-        }
-
-        if (cursor.isSelected && cursor.rightColumn == 0 && end_line > start_line) {
-            end_line--
-        }
-
-        val target_lines = (start_line..end_line).map { line -> line to text.getLineString(line) }
-        return create_line_comment_state(target_lines, comment_marker)
-    }
-
-    private fun toggle_line_comment() {
-        if (state.read_only || state.current_file_path == null) return
-
-        if (should_use_block_comment()) {
-            toggle_block_comment()
-            return
-        }
-
-        val comment_marker = current_line_comment_marker() ?: return
-        val comment_state = current_line_comment_state() ?: return
-        val text = editor.text
-
-        text.beginBatchEdit()
-        try {
-            comment_state.lines.asReversed().forEach { (line, line_text) ->
-                if (line_text.isBlank()) return@forEach
-
-                val indent_length = line_comment_indent_length(line_text)
-                if (comment_state.should_uncomment) {
-                    if (!is_toggleable_line_comment(line_text, comment_marker)) return@forEach
-
-                    val after_indent = line_text.substring(indent_length)
-                    when {
-                        after_indent.startsWith("$comment_marker ") -> text.delete(line, indent_length, line, indent_length + comment_marker.length + 1)
-                        after_indent.startsWith(comment_marker) -> text.delete(line, indent_length, line, indent_length + comment_marker.length)
-                    }
-                } else if (!is_line_commented(line_text, comment_marker)) {
-                    text.insert(line, indent_length, "$comment_marker ")
-                }
-            }
-        } finally {
-            text.endBatchEdit()
-        }
-
-        update_history_state()
-        editor.invalidate()
-    }
-
-    private fun should_use_block_comment(): Boolean {
-        val path = state.current_file_path ?: return false
-        val cursor = editor.cursor
-        return is_c_family_file(path) && cursor.isSelected && cursor.leftLine != cursor.rightLine
-    }
-
-    private fun toggle_block_comment() {
-        val cursor = editor.cursor
-        val text = editor.text
-        val start_line = cursor.leftLine
-        val start_column = cursor.leftColumn
-        val end_line = cursor.rightLine
-        val end_column = cursor.rightColumn
-        val selected_text = text.subContent(start_line, start_column, end_line, end_column).toString()
-
-        text.beginBatchEdit()
-        try {
-            if (selected_text.startsWith("/*") && selected_text.endsWith("*/") && selected_text.length >= 4) {
-                text.delete(end_line, end_column - 2, end_line, end_column)
-                text.delete(start_line, start_column, start_line, start_column + 2)
-            } else {
-                text.insert(end_line, end_column, "*/")
-                text.insert(start_line, start_column, "/*")
-            }
-        } finally {
-            text.endBatchEdit()
-        }
-
-        update_history_state()
-        editor.invalidate()
-    }
-
-    private fun current_selection_has_block_comment(): Boolean? {
-        val cursor = editor.cursor
-        if (!cursor.isSelected || cursor.leftLine == cursor.rightLine) return null
-        val selected_text = editor.text.subContent(cursor.leftLine, cursor.leftColumn, cursor.rightLine, cursor.rightColumn).toString()
-        return selected_text.startsWith("/*") && selected_text.endsWith("*/") && selected_text.length >= 4
-    }
-
-    private fun current_line_comment_marker(): String? {
-        val path = state.current_file_path ?: return null
-        val name = File(path).name
-        return when {
-            name.equals("CMakeLists.txt", ignoreCase = true) || name.endsWith(".cmake", ignoreCase = true) -> "#"
-            is_c_family_file(path) -> "//"
-            else -> null
         }
     }
 

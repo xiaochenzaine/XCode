@@ -26,8 +26,6 @@ internal class editor_tab_lifecycle(
     private val with_applying_content: (() -> Unit) -> Unit,
     private val on_content_changed: () -> Unit,
     private val on_selection_changed: (CodeEditor) -> Unit,
-    private val current_comment_action: () -> Boolean?,
-    private val on_toggle_comment: () -> Unit,
     private val initial_styles_timeout_ms: Long
 ) {
     fun create_editor(file_path: String?): CodeEditor {
@@ -49,11 +47,7 @@ internal class editor_tab_lifecycle(
             )
             replaceComponent(
                 EditorTextActionWindow::class.java,
-                editor_text_action_window(
-                    editor = this,
-                    current_comment_action = current_comment_action,
-                    on_toggle_comment = on_toggle_comment
-                )
+                editor_text_action_window(editor = this)
             )
             val code_editor = this
             subscribeEvent(ContentChangeEvent::class.java, EventReceiver { _, _ ->
