@@ -105,7 +105,8 @@ class proot_shell_runner(
 
     private fun format_output_line(prefix: String, message: String, carriage_return: Boolean = false): String {
         val clean_message = message.trimStart()
-        val line = "$prefix $clean_message"
+        val separator = if (clean_message.startsWith("--")) "" else "-- "
+        val line = "$prefix$separator$clean_message"
         return if (carriage_return) "\r$line" else line
     }
 
