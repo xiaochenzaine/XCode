@@ -165,7 +165,10 @@ internal class editor_output_panel_state {
 
     private fun update_task_subtitle_from_output(line: String): Boolean {
         if (line.isBlank()) return false
-        task_subtitle = line.trimStart().removePrefix("-- ")
+        task_subtitle = line.trimStart()
+            .removePrefix("> TaskOut ")
+            .removePrefix("> TaskErr ")
+            .removePrefix("-- ")
         return true
     }
 
