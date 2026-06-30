@@ -591,12 +591,8 @@ class editor_activity : ComponentActivity() {
             output_panel_state.task_subtitle = "正在构建项目"
 
             val success = try {
-                if (!reset_cmake_build_dir(build_dir)) {
-                    output_panel_state.append_output("构建失败，无法清理 build 目录", editor_output_line_level.ERROR)
-                    false
-                } else {
-                    val android_config = project_cmake_config(project_dir)
-                    val configure_command = create_cmake_configure_command(
+                val android_config = project_cmake_config(project_dir)
+                val configure_command = create_cmake_configure_command(
                         source_dir = project_dir.absolutePath,
                         build_dir = build_dir,
                         cmake_toolchain_file = cmake_toolchain_file,
@@ -622,7 +618,6 @@ class editor_activity : ComponentActivity() {
                             on_log = { line -> output_panel_state.append_output(line, output_level_for_cmake_line(line)) }
                         )
                     }
-                }
             } catch (_: CancellationException) {
                 output_panel_state.append_output("构建已停止", editor_output_line_level.WARNING)
                 return@launch
