@@ -610,7 +610,7 @@ class editor_activity : ComponentActivity() {
                         false
                     } else {
                         val parallel_arg = android_config.parallel_jobs.takeIf { it > 0 }?.let { " $it" }.orEmpty()
-                        val build_command = "cmake --build ${shell_quote(build_dir)} --parallel$parallel_arg"
+                        val build_command = "cmake --build ${shell_quote(build_dir)} --clean-first --parallel$parallel_arg"
                         proot_manager.execute_command_with_environment(
                             command = build_command,
                             working_dir = project_dir.absolutePath,
