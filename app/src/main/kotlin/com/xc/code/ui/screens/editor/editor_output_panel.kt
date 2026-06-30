@@ -125,9 +125,7 @@ internal class editor_output_panel_state {
     val log_lines = mutableStateListOf<editor_output_line>()
 
     fun append_output(text: String, level: editor_output_line_level = editor_output_line_level.NORMAL) {
-        append_lines(output_lines, text, level) { line ->
-            task_subtitle = line.removePrefix("[OUT] ").removePrefix("[ERR] ")
-        }
+        append_lines(output_lines, text, level)
     }
 
     fun append_log(text: String, level: editor_output_line_level = editor_output_line_level.INFO) {
@@ -166,15 +164,13 @@ internal class editor_output_panel_state {
     private fun append_lines(
         target: MutableList<editor_output_line>,
         text: String,
-        level: editor_output_line_level,
-        on_line: ((String) -> Unit)? = null
+        level: editor_output_line_level
     ) {
         text.lineSequence()
             .map { line -> line.trimEnd() }
             .filter { line -> line.isNotBlank() }
             .forEach { line ->
                 target.add(editor_output_line(line, level))
-                on_line?.invoke(line)
             }
         if (target.size > editor_output_max_lines) {
             target.subList(0, target.size - editor_output_max_lines).clear()

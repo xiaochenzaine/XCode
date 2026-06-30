@@ -28,11 +28,7 @@ object proot_manager {
                 command = command,
                 working_dir = working_dir,
                 extra_environment = extra_environment,
-                on_log = { message ->
-                    withContext(Dispatchers.Main) {
-                        on_log(message)
-                    }
-                }
+                on_log = on_log
             )
         } catch (e: CancellationException) {
             throw e
