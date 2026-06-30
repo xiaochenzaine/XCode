@@ -6,8 +6,9 @@ import com.xc.code.editor.model.editor_settings_state
 import com.xc.code.editor.session.editor_open_tab
 import com.xc.code.editor.settings.apply_editor_behavior_settings
 import com.xc.code.editor.settings.apply_editor_colors
-import com.xc.code.ui.screens.editor.editor_text_action_window
+import com.xc.code.ui.screens.editor.editor_completion_adapter
 import com.xc.code.ui.screens.editor.editor_diagnostic_tooltip_layout
+import com.xc.code.ui.screens.editor.editor_text_action_window
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.EventReceiver
 import io.github.rosemoe.sora.event.SelectionChangeEvent
@@ -16,6 +17,7 @@ import io.github.rosemoe.sora.graphics.inlayHint.TextInlayHintRenderer
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.text.Content
 import io.github.rosemoe.sora.widget.CodeEditor
+import io.github.rosemoe.sora.widget.component.EditorAutoCompletion
 import io.github.rosemoe.sora.widget.component.EditorDiagnosticTooltipWindow
 import io.github.rosemoe.sora.widget.component.EditorTextActionWindow
 import kotlinx.coroutines.delay
@@ -52,6 +54,9 @@ internal class editor_tab_lifecycle(
                 editor_text_action_window(editor = this)
             )
             diagnosticTooltip.layout = editor_diagnostic_tooltip_layout()
+            getComponent(EditorAutoCompletion::class.java)?.let { ac ->
+                ac.setAdapter(editor_completion_adapter())
+            }
             val code_editor = this
             subscribeEvent(ContentChangeEvent::class.java, EventReceiver { _, _ ->
                 on_content_changed()
