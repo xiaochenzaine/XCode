@@ -221,7 +221,7 @@ class editor_activity : ComponentActivity() {
             on_close_other_tabs = { path -> request_close_other_tabs(path) },
             on_close_all_tabs = { request_close_all_tabs() },
             on_build = { handle_build_button_click() },
-            on_configure_cmake = { configure_cmake_project(clean_build = true, show_toast = true) },
+            on_configure_cmake = { configure_cmake_project(show_toast = true) },
             on_save = { request_save_file() },
             on_format = { format_current_file() },
             on_toggle_read_only = { toggle_read_only() },
@@ -374,7 +374,7 @@ class editor_activity : ComponentActivity() {
             .onSuccess {
                 on_saved()
                 app_toast.show(this, "项目配置已应用", app_toast.LENGTH_SHORT)
-                configure_cmake_project(clean_build = true, show_toast = true)
+                configure_cmake_project(show_toast = true)
             }
             .onFailure { error ->
                 app_toast.show(this, "项目配置保存失败: ${error.message}", app_toast.LENGTH_LONG)
@@ -642,14 +642,14 @@ class editor_activity : ComponentActivity() {
     }
 
     private fun configure_cmake_project() {
-        configure_cmake_project(clean_build = true, show_toast = true)
+        configure_cmake_project(show_toast = true)
     }
 
     private fun configure_cmake_project_if_needed() {
-        configure_cmake_project(clean_build = true, show_toast = false)
+        configure_cmake_project(show_toast = false)
     }
 
-    private fun configure_cmake_project(clean_build: Boolean, show_toast: Boolean, on_success: (() -> Unit)? = null) {
+    private fun configure_cmake_project(show_toast: Boolean, on_success: (() -> Unit)? = null) {
         if (detected_project_info.kind != project_kind.CMAKE) {
             if (show_toast) app_toast.show(this, "当前项目不是 CMake 项目", app_toast.LENGTH_SHORT)
             return
@@ -694,19 +694,11 @@ class editor_activity : ComponentActivity() {
             output_panel_state.task_subtitle = if (show_toast) "正在配置 CMake" else "正在初始化 CMake"
             val android_config = project_cmake_config(project_dir)
 
-            if (clean_build && !reset_cmake_build_dir(build_dir)) {
-                output_panel_state.task_running = false
-                output_panel_state.task_stopping = false
-                output_panel_state.append_output("CMake 配置失败，无法清理 build 目录", editor_output_line_level.ERROR)
-                if (show_toast) app_toast.show(this@editor_activity, "无法清理 build 目录", app_toast.LENGTH_LONG)
-                return@launch
-            }
-
             val command = create_cmake_configure_command(
                 source_dir = project_dir.absolutePath,
                 build_dir = build_dir,
                 cmake_toolchain_file = cmake_toolchain_file,
-                existing_generator = if (clean_build) null else read_existing_cmake_generator(build_dir),
+                existing_generator = null,
                 android_config = android_config
             )
             val success = try {
@@ -1094,7 +1086,7 @@ class editor_activity : ComponentActivity() {
         if (cmake_configure_job?.isActive == true || cmake_build_job?.isActive == true) return
 
         output_panel_state.append_log("CMakeLists.txt 已保存，自动初始化 CMake")
-        configure_cmake_project(clean_build = true, show_toast = false) {
+        configure_cmake_project(show_toast = false) {
             reset_clangd_project()
         }
     }
