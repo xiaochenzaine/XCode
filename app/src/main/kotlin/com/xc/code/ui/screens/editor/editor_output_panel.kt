@@ -628,6 +628,7 @@ private fun editor_output_line_list(
     val colors = app_theme_provider.colors
     var rendered_line_count by remember { mutableStateOf(0) }
     var rendered_revision by remember { mutableStateOf(-1) }
+    var rendered_source by remember { mutableStateOf<Any?>(null) }
     val output_editor = remember {
         CodeEditor(context).apply {
             isEditable = false
@@ -662,7 +663,13 @@ private fun editor_output_line_list(
         output_editor.invalidate()
     }
 
-    LaunchedEffect(revision, lines.size, lines) {
+    LaunchedEffect(revision, lines.size) {
+        if (rendered_source !== lines) {
+            output_editor.setText("")
+            rendered_line_count = 0
+            rendered_revision = -1
+            rendered_source = lines
+        }
         if (rendered_revision == revision && rendered_line_count == lines.size) return@LaunchedEffect
         if (lines.size < rendered_line_count || rendered_revision < 0) {
             output_editor.setText("")
