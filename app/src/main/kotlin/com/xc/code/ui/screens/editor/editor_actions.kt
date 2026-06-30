@@ -333,7 +333,7 @@ private fun editor_symbol_button(
         onClick = { on_insert(symbol) }
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(symbol, color = colors.editor_text, fontSize = 12.5.sp)
+            Text(symbol, color = colors.editor_text, fontSize = 12.5.sp, fontFamily = FontFamily(Font(R.font.jetbrains_mono_regular)))
         }
     }
 }
