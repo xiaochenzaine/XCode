@@ -53,7 +53,12 @@ internal class editor_tab_lifecycle(
                 EditorTextActionWindow::class.java,
                 editor_text_action_window(editor = this)
             )
-            diagnosticTooltip.layout = editor_diagnostic_tooltip_layout()
+            replaceComponent(
+                EditorDiagnosticTooltipWindow::class.java,
+                EditorDiagnosticTooltipWindow(this).apply {
+                    layout = editor_diagnostic_tooltip_layout()
+                }
+            )
             getComponent(EditorAutoCompletion::class.java)?.let { ac ->
                 ac.setAdapter(editor_completion_adapter())
             }
