@@ -18,7 +18,6 @@ class keep_alive_service : Service() {
         const val CHANNEL_ID = "keep_alive_channel"
     }
 
-    private var is_first_start = true
     private var wake_lock: PowerManager.WakeLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -39,14 +38,6 @@ class keep_alive_service : Service() {
         wake_lock?.release()
         xc_application.instance.keep_alive_service_ = null
         super.onDestroy()
-    }
-
-    fun hide_notification() {
-        stopForeground(STOP_FOREGROUND_REMOVE)
-    }
-
-    fun show_notification() {
-        startForeground(NOTIFICATION_ID, create_notification().build())
     }
 
     private fun create_notification_channel() {

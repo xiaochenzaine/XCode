@@ -834,24 +834,6 @@ class editor_activity : ComponentActivity() {
         val extra_cmake_args: String = ""
     )
 
-    private fun read_existing_cmake_generator(build_dir: String): String? {
-        val cache_file = File(build_dir, "CMakeCache.txt")
-        if (!cache_file.isFile) return null
-        return cache_file.useLines { lines ->
-            lines.firstOrNull { it.startsWith("CMAKE_GENERATOR:INTERNAL=") }
-                ?.substringAfter('=')
-                ?.takeIf { it.isNotBlank() }
-        }
-    }
-
-    private fun reset_cmake_build_dir(build_dir: String): Boolean {
-        val root = project_dir.canonicalFile
-        val target = File(build_dir).canonicalFile
-        if (target == root || target.parentFile?.canonicalFile != root || target.name != "build") return false
-        if (!target.exists()) return true
-        return target.deleteRecursively()
-    }
-
     private fun output_level_for_cmake_line(line: String): editor_output_line_level {
         val text = line.lowercase()
         return when {
