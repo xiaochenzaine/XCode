@@ -655,6 +655,8 @@ private fun editor_output_line_list(
             setBlockLineEnabled(false)
             props.stickyScroll = false
             setTypefaceText(com.xc.code.editor.settings.load_editor_typeface(context, settings))
+        }
+    }
 
     LaunchedEffect(colors) {
         val background = colors.editor_bg.toArgb()
