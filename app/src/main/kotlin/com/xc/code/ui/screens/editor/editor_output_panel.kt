@@ -646,6 +646,7 @@ private fun editor_output_line_list(
             setHighlightBracketPair(false)
             setBlockLineEnabled(false)
             props.stickyScroll = false
+            setTypefaceText(androidx.core.content.res.ResourcesCompat.getFont(context, R.font.jetbrains_mono_regular) ?: android.graphics.Typeface.MONOSPACE)
         }
     }
 
