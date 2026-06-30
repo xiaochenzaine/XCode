@@ -169,9 +169,7 @@ internal class editor_output_panel_state {
         if (line.isBlank()) return false
         val trimmed = line.trimStart()
         return trimmed.startsWith("[") && trimmed.contains("]") && trimmed.contains("/")  // Ninja [1/42]
-            || trimmed.startsWith("-- ")                                                     // CMake status
             || trimmed.startsWith("Build files have been written")                          // CMake done
-            || trimmed.startsWith("Configuring done") || trimmed.startsWith("Generating done")
             || trimmed.startsWith("Consolidate compiler generated dependencies")
             || trimmed.startsWith("Scanning dependencies")
     }
