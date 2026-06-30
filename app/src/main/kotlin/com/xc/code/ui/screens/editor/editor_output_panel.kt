@@ -672,6 +672,10 @@ private fun editor_output_line_list(
         output_editor.invalidate()
     }
 
+    LaunchedEffect(settings) {
+        output_editor.setTypefaceText(com.xc.code.editor.settings.load_editor_typeface(context, settings))
+    }
+
     LaunchedEffect(revision, lines.size) {
         if (rendered_source !== lines) {
             output_editor.setText("")
