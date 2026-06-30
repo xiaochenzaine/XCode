@@ -34,8 +34,8 @@ class editor_diagnostic_tooltip_layout : DiagnosticTooltipLayout {
         DiagnosticRegion.SEVERITY_NONE to Color.parseColor("#FF94A3B8")
     )
 
-    override fun attach(w: EditorDiagnosticTooltipWindow) {
-        window = w
+    override fun attach(window: EditorDiagnosticTooltipWindow) {
+        this.window = window
     }
 
     override fun createView(inflater: LayoutInflater): View {
@@ -71,10 +71,10 @@ class editor_diagnostic_tooltip_layout : DiagnosticTooltipLayout {
         return root
     }
 
-    override fun applyColorScheme(scheme: EditorColorScheme) {
+    override fun applyColorScheme(colorScheme: EditorColorScheme) {
         val dp = window.editor.dpUnit
-        val text_color = scheme.getColor(EditorColorScheme.TEXT_NORMAL)
-        val bg_color = scheme.getColor(EditorColorScheme.WHOLE_BACKGROUND)
+        val text_color = colorScheme.getColor(EditorColorScheme.TEXT_NORMAL)
+        val bg_color = colorScheme.getColor(EditorColorScheme.WHOLE_BACKGROUND)
 
         messageText.setTextColor(text_color)
         messageText.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
@@ -113,14 +113,14 @@ class editor_diagnostic_tooltip_layout : DiagnosticTooltipLayout {
         )
     }
 
-    override fun onTextSizeChanged(old: Float, new: Float) {}
+    override fun onTextSizeChanged(oldSizePx: Float, newSizePx: Float) {}
 
-    override fun measureContent(max_w: Int, max_h: Int): Pair<Int, Int> {
+    override fun measureContent(maxWidth: Int, maxHeight: Int): Pair<Int, Int> {
         root.measure(
-            View.MeasureSpec.makeMeasureSpec(max_w, View.MeasureSpec.AT_MOST),
-            View.MeasureSpec.makeMeasureSpec(max_h, View.MeasureSpec.AT_MOST)
+            View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(maxHeight, View.MeasureSpec.AT_MOST)
         )
-        return root.measuredWidth.coerceAtMost(max_w) to root.measuredHeight.coerceAtMost(max_h)
+        return root.measuredWidth.coerceAtMost(maxWidth) to root.measuredHeight.coerceAtMost(maxHeight)
     }
 
     override fun isPointerOverPopup() = pointer_over
