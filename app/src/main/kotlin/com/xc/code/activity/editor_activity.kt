@@ -593,13 +593,12 @@ class editor_activity : ComponentActivity() {
             val success = try {
                 val android_config = project_cmake_config(project_dir)
                 val configure_command = create_cmake_configure_command(
-                        source_dir = project_dir.absolutePath,
-                        build_dir = build_dir,
-                        cmake_toolchain_file = cmake_toolchain_file,
-                        existing_generator = null,
-                        android_config = android_config,
-                        fresh = true
-                    )
+                    source_dir = project_dir.absolutePath,
+                    build_dir = build_dir,
+                    cmake_toolchain_file = cmake_toolchain_file,
+                    existing_generator = null,
+                    android_config = android_config
+                )
                     val configure_success = proot_manager.execute_command_with_environment(
                         command = configure_command,
                         working_dir = project_dir.absolutePath,
@@ -695,8 +694,7 @@ class editor_activity : ComponentActivity() {
                 build_dir = build_dir,
                 cmake_toolchain_file = cmake_toolchain_file,
                 existing_generator = null,
-                android_config = android_config,
-                fresh = true
+                android_config = android_config
             )
             val success = try {
                 proot_manager.execute_command_with_environment(
