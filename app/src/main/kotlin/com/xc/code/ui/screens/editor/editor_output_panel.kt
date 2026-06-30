@@ -427,7 +427,7 @@ private fun editor_output_status_card(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
+            animation = tween(2500, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "editor_output_running_border_rotation"
@@ -811,7 +811,7 @@ private fun Modifier.editor_running_border(
         val border_size = Size(size.width - stroke_width, size.height - stroke_width)
         val straight_width = (border_size.width - border_size.height).coerceAtLeast(0f)
         val perimeter = straight_width * 2f + Math.PI.toFloat() * radius * 2f
-        val runner_length = (perimeter * 0.30f).coerceIn(96.dp.toPx(), 168.dp.toPx())
+        val runner_length = (perimeter * 0.45f).coerceIn(140.dp.toPx(), 220.dp.toPx())
         val gap_length = perimeter - runner_length
         val phase = -perimeter * ((rotation % 360f) / 360f)
 
