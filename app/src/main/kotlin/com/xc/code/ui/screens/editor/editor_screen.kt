@@ -182,6 +182,7 @@ internal fun editor_screen(
                 terminal_cwd = terminal_cwd,
                 terminal_extra_environment = terminal_extra_environment,
                 show_symbol_bar = show_symbol_bar,
+                editor_settings = editor_settings,
                 symbol_bar = {
                     editor_symbol_bar(
                         on_insert = on_insert_symbol

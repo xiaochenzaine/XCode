@@ -205,6 +205,7 @@ internal fun editor_output_bottom_sheet_scaffold(
     terminal_extra_environment: Map<String, String>,
     show_symbol_bar: Boolean = false,
     symbol_bar: @Composable () -> Unit = {},
+    editor_settings: com.xc.code.editor.model.editor_settings_state? = null,
     modifier: Modifier = Modifier,
     content: @Composable (PaddingValues, Float) -> Unit
 ) {
@@ -275,6 +276,7 @@ internal fun editor_output_bottom_sheet_scaffold(
                     content_alpha = panel_content_alpha,
                     button_alpha = panel_button_alpha,
                     bottom_safe_padding = bottom_safe_padding,
+                    editor_settings = editor_settings,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
@@ -331,7 +333,8 @@ private fun editor_output_dock_panel(
     content_alpha: Float,
     button_alpha: Float,
     bottom_safe_padding: Dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    editor_settings: com.xc.code.editor.model.editor_settings_state? = null
 ) {
     val colors = app_theme_provider.colors
     val context = LocalContext.current
@@ -367,6 +370,7 @@ private fun editor_output_dock_panel(
                     terminal_state = terminal_state,
                     terminal_cwd = terminal_cwd,
                     terminal_extra_environment = terminal_extra_environment,
+                    editor_settings = editor_settings,
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -585,7 +589,8 @@ private fun editor_output_content(
     terminal_state: editor_terminal_state,
     terminal_cwd: String,
     terminal_extra_environment: Map<String, String>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    editor_settings: com.xc.code.editor.model.editor_settings_state? = null
 ) {
     if (state.selected_tab == editor_output_tab.Terminal) {
         editor_terminal_panel(
@@ -613,6 +618,7 @@ private fun editor_output_content(
         editor_output_line_list(
             lines = lines,
             revision = state.output_revision,
+            editor_settings = editor_settings,
             modifier = modifier
         )
     }
@@ -622,10 +628,12 @@ private fun editor_output_content(
 private fun editor_output_line_list(
     lines: List<editor_output_line>,
     revision: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    editor_settings: com.xc.code.editor.model.editor_settings_state? = null
 ) {
     val context = LocalContext.current
     val colors = app_theme_provider.colors
+    val settings = editor_settings ?: com.xc.code.editor.model.editor_settings_state()
     var rendered_line_count by remember { mutableStateOf(0) }
     var rendered_revision by remember { mutableStateOf(-1) }
     var rendered_source by remember { mutableStateOf<Any?>(null) }
@@ -646,9 +654,7 @@ private fun editor_output_line_list(
             setHighlightBracketPair(false)
             setBlockLineEnabled(false)
             props.stickyScroll = false
-            setTypefaceText(androidx.core.content.res.ResourcesCompat.getFont(context, R.font.jetbrains_mono_regular) ?: android.graphics.Typeface.MONOSPACE)
-        }
-    }
+            setTypefaceText(com.xc.code.editor.settings.load_editor_typeface(context, settings))
 
     LaunchedEffect(colors) {
         val background = colors.editor_bg.toArgb()
