@@ -31,6 +31,7 @@ android {
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material3)
     implementation("androidx.compose.animation:animation")
     implementation(libs.androidx.material.icons.extended)

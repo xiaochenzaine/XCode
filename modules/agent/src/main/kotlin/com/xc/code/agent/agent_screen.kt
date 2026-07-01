@@ -1,9 +1,19 @@
 package com.xc.code.agent
 
+import android.content.Context
+import android.net.Uri
+import android.widget.ImageView
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -23,18 +33,21 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,6 +68,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -63,11 +78,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.io.File
 import java.time.LocalTime
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.AiSearch02
+import me.rerere.hugeicons.stroke.ArrowLeft01
 import me.rerere.hugeicons.stroke.ArrowUp02
 import me.rerere.hugeicons.stroke.Idea01
 import me.rerere.hugeicons.stroke.Menu03
@@ -75,9 +92,12 @@ import me.rerere.hugeicons.stroke.MessageAdd01
 import me.rerere.hugeicons.stroke.PencilEdit01
 import me.rerere.hugeicons.stroke.Pin
 import me.rerere.hugeicons.stroke.Refresh01
+import me.rerere.hugeicons.stroke.Refresh03
 import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.Copy01
+import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.ChartColumn
 import me.rerere.hugeicons.stroke.BubbleChatQuestion
 import me.rerere.hugeicons.stroke.ServerStack01
@@ -85,9 +105,16 @@ import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Sparkles
 
 private data class agent_message_preview(
-    val role: String,
-    val text: String
+    val role: agent_message_role,
+    val text: String,
+    val time: String,
+    val tool_steps: List<String> = emptyList()
 )
+
+private enum class agent_message_role {
+    User,
+    Assistant
+}
 
 private data class agent_conversation_preview(
     val title: String,
@@ -100,18 +127,66 @@ private enum class agent_search_mode {
     Conversation
 }
 
+private enum class agent_main_page {
+    Chat,
+    Assistant,
+    Stats,
+    Settings
+}
+
+private const val user_prefs_name = "xcode_agent_user_profile"
+private const val user_name_key = "user_name"
+private const val user_avatar_uri_key = "user_avatar_uri"
+private const val default_user_name = "小陈在肝码"
+private const val default_assistant_name = "默认助手"
+
+private fun load_user_name(context: Context): String {
+    return context.getSharedPreferences(user_prefs_name, Context.MODE_PRIVATE)
+        .getString(user_name_key, default_user_name)
+        ?: default_user_name
+}
+
+private fun load_user_avatar_uri(context: Context): String {
+    return context.getSharedPreferences(user_prefs_name, Context.MODE_PRIVATE)
+        .getString(user_avatar_uri_key, "")
+        .orEmpty()
+}
+
+private fun save_user_profile(context: Context, name: String, avatar_uri: String) {
+    context.getSharedPreferences(user_prefs_name, Context.MODE_PRIVATE)
+        .edit()
+        .putString(user_name_key, name)
+        .putString(user_avatar_uri_key, avatar_uri)
+        .apply()
+}
+
+private fun copy_user_avatar_to_private_file(context: Context, source_uri: Uri): String? {
+    val avatar_dir = File(context.filesDir, "user_avatar").apply { mkdirs() }
+    val avatar_file = File(avatar_dir, "avatar_${System.currentTimeMillis()}.jpg")
+    return runCatching {
+        context.contentResolver.openInputStream(source_uri)?.use { input ->
+            avatar_file.outputStream().use { output -> input.copyTo(output) }
+        } ?: return null
+        Uri.fromFile(avatar_file).toString()
+    }.getOrNull()
+}
+
 private val sample_messages = listOf(
     agent_message_preview(
-        role = "Agent",
-        text = "我可以读取当前项目结构、解释构建输出、整理 CMake 配置，并帮你规划下一步修改。"
+        role = agent_message_role.Assistant,
+        text = "我可以读取当前项目结构、解释构建输出、整理 CMake 配置，并帮你规划下一步修改。",
+        time = "14:18"
     ),
     agent_message_preview(
-        role = "You",
-        text = "先分析当前打开的 C++ 项目。"
+        role = agent_message_role.User,
+        text = "先分析当前打开的 C++ 项目。",
+        time = "14:20"
     ),
     agent_message_preview(
-        role = "Agent",
-        text = "可以。后续接入工具后，这里会展示文件读取、命令执行、代码修改等操作结果。"
+        role = agent_message_role.Assistant,
+        text = "可以。后续接入工具后，这里会展示文件读取、命令执行、代码修改等操作结果。",
+        time = "14:20",
+        tool_steps = listOf("读取项目结构", "检查 Gradle 模块", "等待工具权限")
     )
 )
 
@@ -136,74 +211,181 @@ private fun agent_greeting(): String {
 @Composable
 fun agent_screen() {
     val colors = MaterialTheme.colorScheme
+    val context = LocalContext.current
     val drawer_state = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf("") }
+    var user_name by remember { mutableStateOf(load_user_name(context)) }
+    var user_avatar_uri by remember { mutableStateOf(load_user_avatar_uri(context)) }
+    var selected_assistant_name by remember { mutableStateOf(default_assistant_name) }
+    var main_page by remember { mutableStateOf(agent_main_page.Chat) }
+
+    BackHandler(enabled = main_page != agent_main_page.Chat) {
+        main_page = agent_main_page.Chat
+    }
+
+    BackHandler(enabled = main_page == agent_main_page.Chat && drawer_state.isOpen) {
+        scope.launch { drawer_state.close() }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawer_state,
-        drawerContent = { agent_drawer() }
+        gesturesEnabled = main_page == agent_main_page.Chat,
+        drawerContent = {
+            agent_drawer(
+                user_name = user_name,
+                user_avatar_uri = user_avatar_uri,
+                selected_assistant_name = selected_assistant_name,
+                on_user_profile_change = { next_name, next_avatar_uri ->
+                    user_name = next_name
+                    user_avatar_uri = next_avatar_uri
+                    save_user_profile(context, next_name, next_avatar_uri)
+                },
+                on_assistant_click = {
+                    main_page = agent_main_page.Assistant
+                    scope.launch { drawer_state.close() }
+                },
+                on_stats_click = {
+                    main_page = agent_main_page.Stats
+                    scope.launch { drawer_state.close() }
+                },
+                on_settings_click = {
+                    main_page = agent_main_page.Settings
+                    scope.launch { drawer_state.close() }
+                }
+            )
+        }
     ) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawer_state.open() } }) {
-                            Icon(HugeIcons.Menu03, contentDescription = "侧边栏", tint = colors.onBackground, modifier = Modifier.size(22.dp))
+                        if (main_page == agent_main_page.Chat) {
+                            IconButton(onClick = { scope.launch { drawer_state.open() } }) {
+                                Icon(HugeIcons.Menu03, contentDescription = "侧边栏", tint = colors.onBackground, modifier = Modifier.size(22.dp))
+                            }
+                        } else {
+                            agent_back_button(on_click = { main_page = agent_main_page.Chat })
                         }
                     },
                     title = {
                         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                            Text("新会话", color = colors.onBackground, fontSize = 16.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold)
-                            Text("未选择供应商", color = colors.onSurfaceVariant, fontSize = 10.sp, lineHeight = 12.sp)
+                            Text(
+                                when (main_page) {
+                                    agent_main_page.Chat -> "新会话"
+                                    agent_main_page.Assistant -> selected_assistant_name
+                                    agent_main_page.Stats -> "统计"
+                                    agent_main_page.Settings -> "设置"
+                                },
+                                color = colors.onBackground,
+                                fontSize = 16.sp,
+                                lineHeight = 18.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                if (main_page == agent_main_page.Chat) "未选择供应商" else "占位页面",
+                                color = colors.onSurfaceVariant,
+                                fontSize = 10.sp,
+                                lineHeight = 12.sp
+                            )
                         }
                     },
                     actions = {
-                        IconButton(onClick = {}) {
-                            Icon(HugeIcons.Search01, contentDescription = "搜索聊天", tint = colors.onBackground, modifier = Modifier.size(22.dp))
-                        }
-                        IconButton(onClick = {}) {
-                            Icon(HugeIcons.MessageAdd01, contentDescription = "新建会话", tint = colors.onBackground, modifier = Modifier.size(22.dp))
+                        if (main_page == agent_main_page.Chat) {
+                            IconButton(onClick = {}) {
+                                Icon(HugeIcons.Search01, contentDescription = "搜索聊天", tint = colors.onBackground, modifier = Modifier.size(22.dp))
+                            }
+                            IconButton(onClick = {}) {
+                                Icon(HugeIcons.MessageAdd01, contentDescription = "新建会话", tint = colors.onBackground, modifier = Modifier.size(22.dp))
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             },
             bottomBar = {
-                agent_input_bar(
-                    value = input,
-                    on_value_change = { input = it },
-                    on_send = { input = "" }
-                )
+                if (main_page == agent_main_page.Chat) {
+                    agent_input_bar(
+                        value = input,
+                        on_value_change = { input = it },
+                        on_send = { input = "" }
+                    )
+                }
             },
             containerColor = Color.Transparent
         ) { padding_values ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding_values)
-                    .padding(horizontal = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                item { Spacer(modifier = Modifier.height(4.dp)) }
-                items(sample_messages) { message ->
-                    agent_message_bubble(message)
+            AnimatedContent(
+                targetState = main_page,
+                transitionSpec = {
+                    if (targetState.ordinal > initialState.ordinal) {
+                        slideInHorizontally { it }.togetherWith(
+                            slideOutHorizontally { -it / 2 } + scaleOut(targetScale = 0.7f) + fadeOut()
+                        )
+                    } else {
+                        (slideInHorizontally { -it / 2 } + scaleIn(initialScale = 0.7f) + fadeIn()).togetherWith(
+                            slideOutHorizontally { it }
+                        )
+                    }.using(SizeTransform(clip = false))
+                },
+                label = "agent_main_page"
+            ) { page ->
+                when (page) {
+                    agent_main_page.Chat -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding_values)
+                                .padding(horizontal = 14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            item { Spacer(modifier = Modifier.height(4.dp)) }
+                            items(sample_messages) { message ->
+                                agent_message_bubble(
+                                    message = message,
+                                    user_name = user_name,
+                                    user_avatar_uri = user_avatar_uri,
+                                    assistant_name = selected_assistant_name
+                                )
+                            }
+                            item { Spacer(modifier = Modifier.height(8.dp)) }
+                        }
+                    }
+                    agent_main_page.Assistant -> agent_assistant_page(
+                        assistant_name = selected_assistant_name,
+                        modifier = Modifier.padding(padding_values)
+                    )
+                    agent_main_page.Stats -> agent_stats_page(modifier = Modifier.padding(padding_values))
+                    agent_main_page.Settings -> agent_settings_page(modifier = Modifier.padding(padding_values))
                 }
-                item { Spacer(modifier = Modifier.height(8.dp)) }
             }
         }
     }
 }
 
 @Composable
-private fun agent_drawer() {
+private fun agent_drawer(
+    user_name: String,
+    user_avatar_uri: String,
+    selected_assistant_name: String,
+    on_user_profile_change: (String, String) -> Unit,
+    on_assistant_click: () -> Unit,
+    on_stats_click: () -> Unit,
+    on_settings_click: () -> Unit
+) {
     val colors = MaterialTheme.colorScheme
-    var agent_name by remember { mutableStateOf("小陈在肝码") }
-    var editing_name by remember { mutableStateOf(false) }
-    var draft_name by remember { mutableStateOf(agent_name) }
+    val context = LocalContext.current
+    var editing_profile by remember { mutableStateOf(false) }
+    var draft_name by remember { mutableStateOf(user_name) }
     var search_mode by remember { mutableStateOf<agent_search_mode?>(null) }
     var conversation_query by remember { mutableStateOf("") }
     var chat_query by remember { mutableStateOf("") }
+    val avatar_picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { selected_uri ->
+            copy_user_avatar_to_private_file(context, selected_uri)?.let { local_uri ->
+                on_user_profile_change(user_name, local_uri)
+            }
+        }
+    }
     val visible_conversations = remember(conversation_query) {
         if (conversation_query.isBlank()) {
             sample_conversations
@@ -215,49 +397,32 @@ private fun agent_drawer() {
         }
     }
 
-    if (editing_name) {
+    if (editing_profile) {
         AlertDialog(
-            onDismissRequest = { editing_name = false },
-            title = { Text("修改名称") },
+            onDismissRequest = { editing_profile = false },
+            title = { Text("修改用户资料") },
             text = {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    color = colors.surfaceVariant.copy(alpha = 0.72f),
-                    border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.55f))
-                ) {
-                    TextField(
-                        value = draft_name,
-                        onValueChange = { draft_name = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("输入名称", color = colors.onSurfaceVariant) },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent
-                        )
-                    )
-                }
+                agent_profile_text_field(
+                    value = draft_name,
+                    on_value_change = { draft_name = it },
+                    placeholder = "输入名称"
+                )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         val next_name = draft_name.trim()
                         if (next_name.isNotEmpty()) {
-                            agent_name = next_name
+                            on_user_profile_change(next_name, user_avatar_uri)
                         }
-                        editing_name = false
+                        editing_profile = false
                     }
                 ) {
                     Text("确定")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { editing_name = false }) {
+                TextButton(onClick = { editing_profile = false }) {
                     Text("取消")
                 }
             }
@@ -279,18 +444,15 @@ private fun agent_drawer() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Surface(
+                agent_avatar(
+                    name = user_name,
+                    avatar_uri = user_avatar_uri,
                     modifier = Modifier.size(46.dp),
-                    shape = CircleShape,
-                    color = colors.primaryContainer
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(HugeIcons.Sparkles, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(24.dp))
-                    }
-                }
+                    on_click = { avatar_picker.launch("image/*") }
+                )
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(agent_name, color = colors.onSurface, fontSize = 15.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(user_name, color = colors.onSurface, fontSize = 15.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Icon(
                             HugeIcons.PencilEdit01,
                             contentDescription = "编辑",
@@ -299,8 +461,8 @@ private fun agent_drawer() {
                                 .size(13.dp)
                                 .clip(CircleShape)
                                 .clickable {
-                                    draft_name = agent_name
-                                    editing_name = true
+                                    draft_name = user_name
+                                    editing_profile = true
                                 }
                         )
                     }
@@ -389,8 +551,89 @@ private fun agent_drawer() {
                 }
             }
 
-            agent_drawer_footer()
+            agent_drawer_footer(
+                selected_assistant_name = selected_assistant_name,
+                on_assistant_click = on_assistant_click,
+                on_stats_click = on_stats_click,
+                on_settings_click = on_settings_click
+            )
         }
+    }
+}
+
+@Composable
+private fun agent_back_button(on_click: () -> Unit) {
+    FilledTonalIconButton(onClick = on_click) {
+        Icon(HugeIcons.ArrowLeft01, contentDescription = "返回")
+    }
+}
+
+@Composable
+private fun agent_avatar(
+    name: String,
+    avatar_uri: String,
+    modifier: Modifier = Modifier,
+    on_click: () -> Unit = {}
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = colors.primaryContainer,
+        onClick = on_click
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (avatar_uri.isNotBlank()) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { context ->
+                        ImageView(context).apply {
+                            scaleType = ImageView.ScaleType.CENTER_CROP
+                            setImageURI(Uri.parse(avatar_uri))
+                        }
+                    },
+                    update = { image_view -> image_view.setImageURI(Uri.parse(avatar_uri)) }
+                )
+            } else {
+                Icon(
+                    HugeIcons.Sparkles,
+                    contentDescription = null,
+                    tint = colors.onPrimaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun agent_profile_text_field(
+    value: String,
+    on_value_change: (String) -> Unit,
+    placeholder: String
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = colors.surfaceVariant.copy(alpha = 0.72f),
+        border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.55f))
+    ) {
+        TextField(
+            value = value,
+            onValueChange = on_value_change,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            placeholder = { Text(placeholder, color = colors.onSurfaceVariant) },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
+            )
+        )
     }
 }
 
@@ -517,13 +760,41 @@ private fun agent_conversation_menu_item(icon: ImageVector, text: String, on_cli
 }
 
 @Composable
-private fun agent_drawer_footer_icon(icon: ImageVector, content_description: String) {
+private fun agent_drawer_assistant_footer(
+    selected_assistant_name: String,
+    modifier: Modifier = Modifier,
+    on_click: () -> Unit = {}
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(10.dp),
+        color = colors.surfaceVariant.copy(alpha = 0.7f),
+        onClick = on_click
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(selected_assistant_name, color = colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Icon(HugeIcons.BubbleChatQuestion, contentDescription = null, tint = colors.primary, modifier = Modifier.size(17.dp))
+        }
+    }
+}
+
+@Composable
+private fun agent_drawer_footer_icon(
+    icon: ImageVector,
+    content_description: String,
+    on_click: () -> Unit = {}
+) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.size(38.dp),
         shape = CircleShape,
         color = colors.surfaceVariant.copy(alpha = 0.7f),
-        onClick = {}
+        onClick = on_click
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = content_description, tint = colors.onSurfaceVariant, modifier = Modifier.size(19.dp))
@@ -532,7 +803,12 @@ private fun agent_drawer_footer_icon(icon: ImageVector, content_description: Str
 }
 
 @Composable
-private fun agent_drawer_footer() {
+private fun agent_drawer_footer(
+    selected_assistant_name: String,
+    on_assistant_click: () -> Unit,
+    on_stats_click: () -> Unit,
+    on_settings_click: () -> Unit
+) {
     val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
@@ -541,40 +817,180 @@ private fun agent_drawer_footer() {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        agent_drawer_action(icon = HugeIcons.BubbleChatQuestion, label = "助手", modifier = Modifier.weight(1f))
-        agent_drawer_footer_icon(icon = HugeIcons.ChartColumn, content_description = "统计")
-        agent_drawer_footer_icon(icon = HugeIcons.Settings03, content_description = "设置")
+        agent_drawer_assistant_footer(
+            selected_assistant_name = selected_assistant_name,
+            modifier = Modifier.weight(1f),
+            on_click = on_assistant_click
+        )
+        agent_drawer_footer_icon(icon = HugeIcons.ChartColumn, content_description = "统计", on_click = on_stats_click)
+        agent_drawer_footer_icon(icon = HugeIcons.Settings03, content_description = "设置", on_click = on_settings_click)
     }
 }
 
 @Composable
-private fun agent_message_bubble(message: agent_message_preview) {
-    val colors = MaterialTheme.colorScheme
-    val is_user = message.role == "You"
+private fun agent_message_bubble(
+    message: agent_message_preview,
+    user_name: String,
+    user_avatar_uri: String,
+    assistant_name: String
+) {
+    val is_user = message.role == agent_message_role.User
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (is_user) Alignment.End else Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        agent_message_header(
+            message = message,
+            user_name = user_name,
+            user_avatar_uri = user_avatar_uri,
+            assistant_name = assistant_name
+        )
+        if (message.tool_steps.isNotEmpty()) {
+            agent_tool_steps_card(message.tool_steps)
+        }
+        agent_message_content(message)
+        agent_message_actions(message)
+    }
+}
+
+@Composable
+private fun agent_message_header(
+    message: agent_message_preview,
+    user_name: String,
+    user_avatar_uri: String,
+    assistant_name: String
+) {
+    val is_user = message.role == agent_message_role.User
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (is_user) Arrangement.End else Arrangement.Start
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (is_user) colors.primaryContainer else colors.surfaceVariant.copy(alpha = 0.72f))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            Text(
-                text = message.role,
-                color = if (is_user) colors.onPrimaryContainer else colors.primary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+        agent_assistant_identity(message = message, assistant_name = assistant_name, modifier = Modifier.weight(1f))
+        agent_user_identity(
+            message = message,
+            user_name = user_name,
+            user_avatar_uri = user_avatar_uri,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun agent_assistant_identity(
+    message: agent_message_preview,
+    assistant_name: String,
+    modifier: Modifier = Modifier
+) {
+    val colors = MaterialTheme.colorScheme
+    if (message.role != agent_message_role.Assistant) return
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Surface(modifier = Modifier.size(28.dp), shape = CircleShape, color = colors.primaryContainer) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(HugeIcons.Sparkles, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(16.dp))
+            }
+        }
+        Text(assistant_name, color = colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun agent_user_identity(
+    message: agent_message_preview,
+    user_name: String,
+    user_avatar_uri: String,
+    modifier: Modifier = Modifier
+) {
+    val colors = MaterialTheme.colorScheme
+    if (message.role != agent_message_role.User) return
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+    ) {
+        Text(user_name, color = colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        agent_avatar(
+            name = user_name,
+            avatar_uri = user_avatar_uri,
+            modifier = Modifier.size(28.dp)
+        )
+    }
+}
+
+@Composable
+private fun agent_message_content(message: agent_message_preview) {
+    val colors = MaterialTheme.colorScheme
+    val is_user = message.role == agent_message_role.User
+    Surface(
+        modifier = Modifier.widthIn(max = 330.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = if (is_user) colors.primaryContainer.copy(alpha = 0.78f) else colors.surfaceVariant.copy(alpha = 0.58f)
+    ) {
+        SelectionContainer {
             Text(
                 text = message.text,
+                modifier = Modifier.padding(10.dp),
                 color = if (is_user) colors.onPrimaryContainer else colors.onSurface,
                 fontSize = 13.sp,
-                lineHeight = 18.sp
+                lineHeight = 19.sp
             )
+        }
+    }
+}
+
+@Composable
+private fun agent_message_actions(message: agent_message_preview) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        agent_message_action_icon(HugeIcons.Copy01, "复制")
+        agent_message_action_icon(HugeIcons.Refresh03, "重新生成")
+        agent_message_action_icon(HugeIcons.MoreVertical, "更多")
+        Text(message.time, color = colors.onSurfaceVariant.copy(alpha = 0.62f), fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
+    }
+}
+
+@Composable
+private fun agent_message_action_icon(icon: ImageVector, content_description: String) {
+    val colors = MaterialTheme.colorScheme
+    Icon(
+        icon,
+        contentDescription = content_description,
+        modifier = Modifier
+            .clip(CircleShape)
+            .clickable {}
+            .padding(7.dp)
+            .size(15.dp),
+        tint = colors.onSurfaceVariant
+    )
+}
+
+@Composable
+private fun agent_tool_steps_card(steps: List<String>) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surface.copy(alpha = 0.78f),
+        border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.38f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text("执行步骤", color = colors.onSurface, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            steps.forEach { step ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(colors.primary.copy(alpha = 0.72f)))
+                    Text(step, color = colors.onSurfaceVariant, fontSize = 11.sp)
+                }
+            }
         }
     }
 }
