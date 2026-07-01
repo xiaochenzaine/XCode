@@ -105,7 +105,7 @@ class editor_diagnostic_tooltip_layout : DiagnosticTooltipLayout {
         messageText.text = msg
 
         val severity_color = severity_colors[region?.severity ?: DiagnosticRegion.SEVERITY_NONE]
-            ?: severity_colors[DiagnosticRegion.SEVERITY_NONE]!!
+            ?: Color.parseColor("#FF94A3B8")
 
         background.setStroke(
             (window.editor.dpUnit * border_width_dp).toInt().coerceAtLeast(1),

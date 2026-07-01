@@ -21,9 +21,10 @@ object logger_manager {
     var errors_only = true
 
     fun init(context: Context) {
-        log_dir = File(context.cacheDir, "logs")
-        if (!log_dir!!.exists()) {
-            log_dir!!.mkdirs()
+        log_dir = File(context.cacheDir, "logs").also { dir ->
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
         }
         if (!errors_only) i("logger", "Log initialized")
     }

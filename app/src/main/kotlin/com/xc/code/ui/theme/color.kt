@@ -84,6 +84,9 @@ data class app_colors(
     val editor_toolbar_icon: Color,
     val editor_panel_overlay: Color,
     val editor_button_bg: Color,
+    val editor_text_action_bg: Color,
+    val editor_text_action_divider: Color,
+    val editor_text_action_content: Color,
     val editor_tab_add_icon: Color,
     val editor_tab_separator: Color,
     val editor_tab_selected_bg: Color,
@@ -178,6 +181,9 @@ val dark_app_colors = app_colors(
     editor_toolbar_icon = Color(0xFFE8E8F8),           // 编辑器顶部工具栏图标颜色
     editor_panel_overlay = Color(0xD11E1E2A),          // 悬浮面板/抽屉覆盖层背景色
     editor_button_bg = Color(0x15FFFFFF),              // 编辑器圆形/小按钮背景色
+    editor_text_action_bg = Color(0xFF2A2A3A),          // 编辑器文本操作弹窗背景色
+    editor_text_action_divider = Color(0xFF3A3A4A),     // 编辑器文本操作弹窗分隔线颜色
+    editor_text_action_content = Color(0xFFE8E8F8),     // 编辑器文本操作弹窗图标/文字颜色
     editor_tab_add_icon = Color(0xFFFFFFFF),           // Tab 栏新增/工具按钮图标颜色
     editor_tab_separator = Color(0x2EFFFFFF),          // Tab 栏底部分隔线/竖向分隔线颜色
     editor_tab_selected_bg = Color(0x00000000),        // 当前选中 Tab 背景色
@@ -272,6 +278,9 @@ val light_app_colors = app_colors(
     editor_toolbar_icon = Color(0xFF2D2D3F),           // 编辑器顶部工具栏图标颜色
     editor_panel_overlay = Color(0xD1FFFFFF),          // 悬浮面板/抽屉覆盖层背景色
     editor_button_bg = Color(0x15000000),              // 编辑器圆形/小按钮背景色
+    editor_text_action_bg = Color(0xFFEDEDFB),          // 编辑器文本操作弹窗背景色
+    editor_text_action_divider = Color(0xFFD8D8E8),     // 编辑器文本操作弹窗分隔线颜色
+    editor_text_action_content = Color(0xFF2D2D3F),     // 编辑器文本操作弹窗图标/文字颜色
     editor_tab_add_icon = Color(0xFF000000),           // Tab 栏新增/工具按钮图标颜色
     editor_tab_separator = Color(0xFFD8D5E0),          // Tab 栏底部分隔线/竖向分隔线颜色
     editor_tab_selected_bg = Color(0x00000000),        // 当前选中 Tab 背景色

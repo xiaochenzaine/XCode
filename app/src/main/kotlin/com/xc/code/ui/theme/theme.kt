@@ -92,6 +92,16 @@ object theme_manager {
     }
 }
 
+fun resolve_app_colors(context: Context): app_colors {
+    val theme = theme_manager.theme.value
+    val is_dark_theme = when (theme) {
+        app_theme_type.DARK -> true
+        app_theme_type.LIGHT -> false
+        app_theme_type.SYSTEM -> (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    }
+    return if (is_dark_theme) dark_app_colors else light_app_colors
+}
+
 val local_app_theme_color = compositionLocalOf { light_app_colors }
 
 object app_theme_provider {

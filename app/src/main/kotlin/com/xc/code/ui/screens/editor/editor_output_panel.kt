@@ -84,6 +84,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.xc.code.ui.theme.app_theme_provider
 import io.github.rosemoe.sora.widget.CodeEditor
+import io.github.rosemoe.sora.widget.component.EditorTextActionWindow
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -649,6 +650,10 @@ private fun editor_output_line_list(
             setTextSize(11f)
             setLineInfoTextSize(10f)
             setLineSpacing(2f, 1.08f)
+            replaceComponent(
+                EditorTextActionWindow::class.java,
+                editor_text_action_window(editor = this, show_edit_actions = false)
+            )
             setHighlightCurrentLine(false)
             setHighlightCurrentBlock(false)
             setHighlightBracketPair(false)

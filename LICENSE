@@ -1,21 +1,81 @@
-MIT License
+# LICENSE
 
-Copyright (c) 2026 xiaochenzaine
+This project adopts a segmented dual licensing model.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+---
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## 1. Open Source License: GNU AGPL v3
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+This project may be used under the GNU Affero General Public License v3.0 (AGPL v3) if one of the following applies:
+
+- The usage is strictly non-commercial;
+- The usage is for personal, educational, or research purposes;
+- The usage is by an individual or organization with no more than 10 total users.
+
+Full text of AGPL v3: https://www.gnu.org/licenses/agpl-3.0.html
+
+Under AGPL v3, you must comply with its obligations, including source code disclosure requirements when the software is modified, distributed, or provided as a network service.
+
+---
+
+## 2. Commercial License
+
+If your usage does not meet the conditions above, including but not limited to:
+
+- Commercial use, directly or indirectly;
+- Use by an organization or service with more than 10 total users;
+- Use cases where you want to avoid AGPL v3 obligations;
+
+then you must obtain a commercial license from the project author before using this project.
+
+Commercial licensing contact:
+
+- Email: xiaochenzaine@qq.com
+
+---
+
+## 3. License Updates
+
+The project author reserves the right to update the licensing policy for future versions. Existing versions remain governed by the license terms distributed with those versions.
+
+---
+
+# 许可证
+
+本项目采用用户分段双重许可模式。
+
+---
+
+## 1. 开源许可证：GNU AGPL v3
+
+在以下任一条件下，可以基于 GNU Affero General Public License v3.0（AGPL v3）使用本项目：
+
+- 使用场景为严格非商业用途；
+- 或者用于个人、教育、研究目的；
+- 或者由总用户数不超过 10 人的个人或组织使用。
+
+AGPL v3 全文请见：https://www.gnu.org/licenses/agpl-3.0.html
+
+在 AGPL v3 下使用本项目时，必须遵守该协议义务，包括在修改、分发或通过网络服务提供本软件时的源代码公开要求。
+
+---
+
+## 2. 商业许可证
+
+如果使用场景不满足上述条件，包括但不限于：
+
+- 直接或间接商业用途；
+- 总用户数超过 10 人的组织或服务；
+- 希望避免 AGPL v3 义务的使用场景；
+
+则必须在使用本项目之前向项目作者取得商业授权。
+
+商业授权联系方式：
+
+- 邮箱：xiaochenzaine@qq.com
+
+---
+
+## 3. 许可政策更新
+
+项目作者保留对未来版本更新许可政策的权利。已发布版本仍遵循该版本随附的许可条款。

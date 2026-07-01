@@ -16,7 +16,7 @@ class editor_completion_adapter : EditorCompletionAdapter() {
 
     override fun getItemHeight(): Int {
         return TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, 50f,
+            TypedValue.COMPLEX_UNIT_DIP, 76f,
             context.resources.displayMetrics
         ).toInt()
     }
@@ -72,40 +72,32 @@ class editor_completion_adapter : EditorCompletionAdapter() {
         text_col.addView(label)
 
         val detail_text = item.detail
+        val desc_text = item.desc
         if (!detail_text.isNullOrBlank()) {
             val detail = TextView(context).apply {
                 this.text = detail_text
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
-                maxLines = 2
-                ellipsize = android.text.TextUtils.TruncateAt.END
+                maxLines = 3
                 setTextColor(getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_SECONDARY))
             }
             text_col.addView(detail)
         }
-        root.addView(text_col)
-
-        val desc_text = item.desc
         if (!desc_text.isNullOrBlank()) {
             val desc = TextView(context).apply {
                 this.text = desc_text
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
                 maxLines = 1
-                gravity = Gravity.END
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 setTextColor(getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_SECONDARY))
-                layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    leftMargin = (6 * dp).toInt()
-                }
             }
-            root.addView(desc)
+            text_col.addView(desc)
         }
 
+        root.addView(text_col)
+
         if (item.deprecated) {
-            for (i in 0 until root.childCount) {
-                val child = root.getChildAt(i)
+            for (i in 0 until text_col.childCount) {
+                val child = text_col.getChildAt(i)
                 if (child is TextView) {
                     child.paintFlags = child.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
                 }

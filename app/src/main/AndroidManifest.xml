@@ -74,6 +74,13 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
             
         <activity
+            android:name=".activity.agent_activity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.ComposeEmptyActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+            
+        <activity
             android:name=".activity.editor_activity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize"

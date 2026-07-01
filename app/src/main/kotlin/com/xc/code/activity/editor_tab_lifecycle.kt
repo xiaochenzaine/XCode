@@ -59,7 +59,10 @@ internal class editor_tab_lifecycle(
                     layout = editor_diagnostic_tooltip_layout()
                 }
             )
-            getComponent(EditorAutoCompletion::class.java).setAdapter(editor_completion_adapter())
+            getComponent(EditorAutoCompletion::class.java).apply {
+                setCompletionWndPositionMode(EditorAutoCompletion.WINDOW_POS_MODE_FULL_WIDTH_ALWAYS)
+                setAdapter(editor_completion_adapter())
+            }
             val code_editor = this
             subscribeEvent(ContentChangeEvent::class.java, EventReceiver { _, _ ->
                 on_content_changed()

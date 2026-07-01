@@ -48,7 +48,7 @@ fun main_screen(
     on_plugins: () -> Unit = {},
     on_settings: () -> Unit = {},
     on_terminal: () -> Unit = {},
-    on_ai: () -> Unit = {},
+    on_agent: () -> Unit = {},
     recent_projects: List<recent_project> = emptyList(),
     on_project_click: (recent_project) -> Unit = {},
     on_project_remove: (recent_project) -> Unit = {}
@@ -86,7 +86,7 @@ fun main_screen(
             
             top_bar(
                 colors = colors,
-                on_ai_click = on_ai,
+                on_agent_click = on_agent,
                 on_terminal_click = on_terminal,
                 on_settings_click = on_settings
             )
@@ -296,7 +296,7 @@ fun main_screen(
 @Composable
 fun top_bar(
     colors: app_colors,
-    on_ai_click: () -> Unit = {},
+    on_agent_click: () -> Unit = {},
     on_terminal_click: () -> Unit = {},
     on_settings_click: () -> Unit = {}
 ) {
@@ -317,10 +317,10 @@ fun top_bar(
         ) {
             top_bar_icon_button(
                 icon = Icons.Outlined.AutoAwesome,
-                description = "agent",
+                description = "智能",
                 bg = colors.top_button_bg,
                 tint = colors.top_button_icon,
-                onClick = on_ai_click
+                onClick = on_agent_click
             )
             
             top_bar_icon_button(

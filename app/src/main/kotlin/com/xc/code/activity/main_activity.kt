@@ -60,6 +60,7 @@ class main_activity : ComponentActivity() {
                     custom_toolchain_dialog = custom_toolchain_dialog,
                     on_back_to_background = { moveTaskToBack(true) },
                     on_terminal = ::open_terminal,
+                    on_agent = ::open_agent,
                     on_project_click = ::open_recent_project,
                     on_project_remove = ::remove_recent_project,
                     on_create_project = ::create_project,
@@ -118,6 +119,10 @@ class main_activity : ComponentActivity() {
 
     private fun open_terminal() {
         startActivity(Intent(this, terminal_activity::class.java))
+    }
+
+    private fun open_agent() {
+        startActivity(Intent(this, agent_activity::class.java))
     }
 
     private fun set_theme(theme: app_theme_type) {

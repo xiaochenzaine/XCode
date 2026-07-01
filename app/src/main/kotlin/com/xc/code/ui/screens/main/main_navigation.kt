@@ -61,6 +61,7 @@ fun main_navigation(
     custom_toolchain_dialog: toolchain_custom_install_request?,
     on_back_to_background: () -> Unit,
     on_terminal: () -> Unit,
+    on_agent: () -> Unit,
     on_project_click: (recent_project) -> Unit,
     on_project_remove: (recent_project) -> Unit,
     on_create_project: (String, String, String, String, String, String, String) -> Unit,
@@ -118,7 +119,7 @@ fun main_navigation(
                     on_plugins = { nav_controller.navigate("plugins") },
                     on_settings = { nav_controller.navigate("settings") },
                     on_terminal = on_terminal,
-                    on_ai = { nav_controller.navigate("agent") },
+                    on_agent = on_agent,
                     on_project_click = on_project_click,
                     on_project_remove = on_project_remove
                 )
@@ -227,7 +228,6 @@ fun main_navigation(
                 )
             }
             composable("editor_theme_settings") { editor_theme_settings_screen(on_back = { nav_controller.popBackStack() }) }
-            composable("agent") { placeholder_screen("智能") { nav_controller.popBackStack() } }
         }
 
         if (active_toolchain_trigger != null && !toolchain_dialog_visible) {
