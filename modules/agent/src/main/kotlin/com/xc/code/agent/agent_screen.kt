@@ -102,6 +102,7 @@ import me.rerere.hugeicons.stroke.ChartColumn
 import me.rerere.hugeicons.stroke.BubbleChatQuestion
 import me.rerere.hugeicons.stroke.ServerStack01
 import me.rerere.hugeicons.stroke.Settings03
+import me.rerere.hugeicons.stroke.Edit03
 import me.rerere.hugeicons.stroke.Sparkles
 
 private data class agent_message_preview(
@@ -228,9 +229,10 @@ fun agent_screen() {
         scope.launch { drawer_state.close() }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     ModalNavigationDrawer(
         drawerState = drawer_state,
-        gesturesEnabled = main_page == agent_main_page.Chat,
+        gesturesEnabled = true,
         drawerContent = {
             agent_drawer(
                 user_name = user_name,
@@ -241,18 +243,9 @@ fun agent_screen() {
                     user_avatar_uri = next_avatar_uri
                     save_user_profile(context, next_name, next_avatar_uri)
                 },
-                on_assistant_click = {
-                    main_page = agent_main_page.Assistant
-                    scope.launch { drawer_state.close() }
-                },
-                on_stats_click = {
-                    main_page = agent_main_page.Stats
-                    scope.launch { drawer_state.close() }
-                },
-                on_settings_click = {
-                    main_page = agent_main_page.Settings
-                    scope.launch { drawer_state.close() }
-                }
+                on_assistant_click = { main_page = agent_main_page.Assistant },
+                on_stats_click = { main_page = agent_main_page.Stats },
+                on_settings_click = { main_page = agent_main_page.Settings }
             )
         }
     ) {
@@ -260,106 +253,115 @@ fun agent_screen() {
             topBar = {
                 TopAppBar(
                     navigationIcon = {
-                        if (main_page == agent_main_page.Chat) {
-                            IconButton(onClick = { scope.launch { drawer_state.open() } }) {
-                                Icon(HugeIcons.Menu03, contentDescription = "侧边栏", tint = colors.onBackground, modifier = Modifier.size(22.dp))
-                            }
-                        } else {
-                            agent_back_button(on_click = { main_page = agent_main_page.Chat })
+                        IconButton(onClick = { scope.launch { drawer_state.open() } }) {
+                            Icon(HugeIcons.Menu03, contentDescription = "侧边栏", tint = colors.onBackground, modifier = Modifier.size(22.dp))
                         }
                     },
                     title = {
                         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                            Text(
-                                when (main_page) {
-                                    agent_main_page.Chat -> "新会话"
-                                    agent_main_page.Assistant -> selected_assistant_name
-                                    agent_main_page.Stats -> "统计"
-                                    agent_main_page.Settings -> "设置"
-                                },
-                                color = colors.onBackground,
-                                fontSize = 16.sp,
-                                lineHeight = 18.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                if (main_page == agent_main_page.Chat) "未选择供应商" else "占位页面",
-                                color = colors.onSurfaceVariant,
-                                fontSize = 10.sp,
-                                lineHeight = 12.sp
-                            )
+                            Text("新会话", color = colors.onBackground, fontSize = 16.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold)
+                            Text("未选择供应商", color = colors.onSurfaceVariant, fontSize = 10.sp, lineHeight = 12.sp)
                         }
                     },
                     actions = {
-                        if (main_page == agent_main_page.Chat) {
-                            IconButton(onClick = {}) {
-                                Icon(HugeIcons.Search01, contentDescription = "搜索聊天", tint = colors.onBackground, modifier = Modifier.size(22.dp))
-                            }
-                            IconButton(onClick = {}) {
-                                Icon(HugeIcons.MessageAdd01, contentDescription = "新建会话", tint = colors.onBackground, modifier = Modifier.size(22.dp))
-                            }
+                        IconButton(onClick = {}) {
+                            Icon(HugeIcons.Search01, contentDescription = "搜索聊天", tint = colors.onBackground, modifier = Modifier.size(22.dp))
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(HugeIcons.MessageAdd01, contentDescription = "新建会话", tint = colors.onBackground, modifier = Modifier.size(22.dp))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             },
             bottomBar = {
-                if (main_page == agent_main_page.Chat) {
-                    agent_input_bar(
-                        value = input,
-                        on_value_change = { input = it },
-                        on_send = { input = "" }
-                    )
-                }
+                agent_input_bar(
+                    value = input,
+                    on_value_change = { input = it },
+                    on_send = { input = "" }
+                )
             },
             containerColor = Color.Transparent
         ) { padding_values ->
-            AnimatedContent(
-                targetState = main_page,
-                transitionSpec = {
-                    if (targetState.ordinal > initialState.ordinal) {
-                        slideInHorizontally { it }.togetherWith(
-                            slideOutHorizontally { -it / 2 } + scaleOut(targetScale = 0.7f) + fadeOut()
-                        )
-                    } else {
-                        (slideInHorizontally { -it / 2 } + scaleIn(initialScale = 0.7f) + fadeIn()).togetherWith(
-                            slideOutHorizontally { it }
-                        )
-                    }.using(SizeTransform(clip = false))
-                },
-                label = "agent_main_page"
-            ) { page ->
-                when (page) {
-                    agent_main_page.Chat -> {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(padding_values)
-                                .padding(horizontal = 14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            item { Spacer(modifier = Modifier.height(4.dp)) }
-                            items(sample_messages) { message ->
-                                agent_message_bubble(
-                                    message = message,
-                                    user_name = user_name,
-                                    user_avatar_uri = user_avatar_uri,
-                                    assistant_name = selected_assistant_name
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding_values)
+                    .padding(horizontal = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item { Spacer(modifier = Modifier.height(4.dp)) }
+                items(sample_messages) { message ->
+                    agent_message_bubble(
+                        message = message,
+                        user_name = user_name,
+                        user_avatar_uri = user_avatar_uri,
+                        assistant_name = selected_assistant_name
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+            }
+        }
+    }
+
+    AnimatedContent(
+        targetState = main_page,
+        modifier = Modifier.fillMaxSize(),
+        transitionSpec = {
+            if (targetState.ordinal > initialState.ordinal) {
+                slideInHorizontally { it }.togetherWith(
+                    slideOutHorizontally { -it / 2 } + scaleOut(targetScale = 0.7f) + fadeOut()
+                )
+            } else {
+                (slideInHorizontally { -it / 2 } + scaleIn(initialScale = 0.7f) + fadeIn()).togetherWith(
+                    slideOutHorizontally { it }
+                )
+            }.using(SizeTransform(clip = false))
+        },
+        label = "agent_overlay_page"
+    ) { page ->
+        if (page != agent_main_page.Chat) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        navigationIcon = {
+                            agent_back_button(on_click = { main_page = agent_main_page.Chat })
+                        },
+                        title = {
+                            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                                Text(
+                                    when (page) {
+                                        agent_main_page.Assistant -> selected_assistant_name
+                                        agent_main_page.Stats -> "统计"
+                                        agent_main_page.Settings -> "设置"
+                                        agent_main_page.Chat -> "新会话"
+                                    },
+                                    color = colors.onBackground,
+                                    fontSize = 16.sp,
+                                    lineHeight = 18.sp,
+                                    fontWeight = FontWeight.SemiBold
                                 )
+                                Text("占位页面", color = colors.onSurfaceVariant, fontSize = 10.sp, lineHeight = 12.sp)
                             }
-                            item { Spacer(modifier = Modifier.height(8.dp)) }
-                        }
-                    }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.background)
+                    )
+                },
+                containerColor = colors.background
+            ) { padding_values ->
+                when (page) {
                     agent_main_page.Assistant -> agent_assistant_page(
                         assistant_name = selected_assistant_name,
                         modifier = Modifier.padding(padding_values)
                     )
                     agent_main_page.Stats -> agent_stats_page(modifier = Modifier.padding(padding_values))
                     agent_main_page.Settings -> agent_settings_page(modifier = Modifier.padding(padding_values))
+                    agent_main_page.Chat -> Unit
                 }
             }
         }
     }
+}
 }
 
 @Composable
@@ -397,6 +399,8 @@ private fun agent_drawer(
         }
     }
 
+    var delete_conversation by remember { mutableStateOf<agent_conversation_preview?>(null) }
+
     if (editing_profile) {
         AlertDialog(
             onDismissRequest = { editing_profile = false },
@@ -429,6 +433,24 @@ private fun agent_drawer(
         )
     }
 
+    if (delete_conversation != null) {
+        AlertDialog(
+            onDismissRequest = { delete_conversation = null },
+            title = { Text("删除会话") },
+            text = { Text("确定删除「${delete_conversation!!.title}」？") },
+            confirmButton = {
+                TextButton(onClick = { delete_conversation = null }) {
+                    Text("删除", color = colors.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { delete_conversation = null }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp),
         drawerContainerColor = colors.surface
@@ -448,6 +470,7 @@ private fun agent_drawer(
                     name = user_name,
                     avatar_uri = user_avatar_uri,
                     modifier = Modifier.size(46.dp),
+                    editable = true,
                     on_click = { avatar_picker.launch("image/*") }
                 )
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -547,7 +570,10 @@ private fun agent_drawer(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(visible_conversations) { item ->
-                    agent_conversation_item(item)
+                agent_conversation_item(
+                    item = item,
+                    on_delete = { delete_conversation = it }
+                )
                 }
             }
 
@@ -573,34 +599,56 @@ private fun agent_avatar(
     name: String,
     avatar_uri: String,
     modifier: Modifier = Modifier,
+    editable: Boolean = false,
     on_click: () -> Unit = {}
 ) {
     val colors = MaterialTheme.colorScheme
-    Surface(
-        modifier = modifier,
-        shape = CircleShape,
-        color = colors.primaryContainer,
-        onClick = on_click
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            if (avatar_uri.isNotBlank()) {
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { context ->
-                        ImageView(context).apply {
-                            scaleType = ImageView.ScaleType.CENTER_CROP
-                            setImageURI(Uri.parse(avatar_uri))
-                        }
-                    },
-                    update = { image_view -> image_view.setImageURI(Uri.parse(avatar_uri)) }
-                )
-            } else {
-                Icon(
-                    HugeIcons.Sparkles,
-                    contentDescription = null,
-                    tint = colors.onPrimaryContainer,
-                    modifier = Modifier.size(18.dp)
-                )
+    Box(modifier = modifier) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = CircleShape,
+            color = colors.primaryContainer,
+            onClick = on_click
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                if (avatar_uri.isNotBlank()) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { context ->
+                            ImageView(context).apply {
+                                scaleType = ImageView.ScaleType.CENTER_CROP
+                                setImageURI(Uri.parse(avatar_uri))
+                            }
+                        },
+                        update = { image_view -> image_view.setImageURI(Uri.parse(avatar_uri)) }
+                    )
+                } else {
+                    Text(
+                        name.take(1).ifBlank { "你" },
+                        color = colors.onPrimaryContainer,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+        if (editable) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(18.dp),
+                shape = CircleShape,
+                color = colors.tertiaryContainer,
+                onClick = on_click
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        HugeIcons.Edit03,
+                        contentDescription = "编辑头像",
+                        tint = colors.onTertiaryContainer,
+                        modifier = Modifier.size(10.dp)
+                    )
+                }
             }
         }
     }
@@ -701,7 +749,10 @@ private fun agent_drawer_action(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun agent_conversation_item(item: agent_conversation_preview) {
+private fun agent_conversation_item(
+    item: agent_conversation_preview,
+    on_delete: (agent_conversation_preview) -> Unit
+) {
     val colors = MaterialTheme.colorScheme
     var menu_expanded by remember { mutableStateOf(false) }
     Surface(
@@ -742,7 +793,10 @@ private fun agent_conversation_item(item: agent_conversation_preview) {
             ) {
                 agent_conversation_menu_item(icon = HugeIcons.Pin, text = "置顶会话") { menu_expanded = false }
                 agent_conversation_menu_item(icon = HugeIcons.Refresh01, text = "生成标题") { menu_expanded = false }
-                agent_conversation_menu_item(icon = HugeIcons.Delete01, text = "删除会话") { menu_expanded = false }
+                agent_conversation_menu_item(icon = HugeIcons.Delete01, text = "删除会话") {
+                    menu_expanded = false
+                    on_delete(item)
+                }
             }
         }
     }
