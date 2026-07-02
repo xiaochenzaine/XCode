@@ -16,7 +16,7 @@ import com.xc.code.editor.core.*
 import android.net.Uri
 import android.os.Bundle
 import com.xc.code.ui.toast.app_toast
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class editor_activity : ComponentActivity() {
+class editor_activity : FragmentActivity() {
     private lateinit var project_dir: File
     private lateinit var editor: CodeEditor
     private val state = editor_activity_state()
