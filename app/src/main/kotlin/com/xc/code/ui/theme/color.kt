@@ -2,39 +2,251 @@ package com.xc.code.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-data class app_colors(
-    // 渐变 & 背景
+// ── 基础色板（唯一值） ──────────────────────────────────
+private data class base_colors(
+    // 页面 & 表面
+    val bg: Color,
+    val surface: Color,
+    val surface_variant: Color,
+    val surface_pressed: Color,
+    // 文字
+    val text_primary: Color,
+    val text_secondary: Color,
+    val text_dim: Color,
+    val text_dialog: Color,
+    val text_hint: Color,
+    // 强调色
+    val accent: Color,
+    val accent_light: Color,
+    val accent_bg: Color,
+    val accent_bg_strong: Color,
+    // 弹窗
+    val dialog_clone_text: Color,
+    // 渐变（首页用）
     val gradient_start: Color,
     val gradient_middle: Color,
     val gradient_end: Color,
-    
-    // 文字
+    // 按钮 & 图标
+    val button_bg: Color,
+    val logo_tint: Color,
+    val card_chevron: Color,
+    // 分隔线
+    val divider: Color,
+    val divider_dim: Color,
+    // 标签栏
+    val tab_separator: Color,
+    val tab_unselected_bg: Color,
+    val tab_unselected_content: Color,
+    val tab_add_icon: Color,
+    val tab_selected_text: Color,
+    // 按键
+    val key_button_pressed_bg: Color,
+    val key_button_pressed_text: Color,
+    // 终端
+    val terminal_cursor: Int,
+    val terminal_foreground: Int,
+    val terminal_background: Int,
+    // 面板覆盖
+    val panel_overlay: Color,
+    // 状态色
+    val danger: Color,
+    val danger_bg: Color,
+    val success: Color,
+    val success_bg: Color,
+    val warning: Color,
+    val warning_bg: Color,
+)
+
+// ── 深色基础色板 ────────────────────────────────────────
+private val dark_base = base_colors(
+    bg = Color(0xFF1E1E2A),
+    surface = Color(0xFF1F2230),
+    surface_variant = Color(0xFF2A2A3A),
+    surface_pressed = Color(0xFF323446),
+    text_primary = Color(0xFFE8E8F8),
+    text_secondary = Color(0xFF707486),
+    text_dim = Color(0xFF88889C),
+    text_dialog = Color(0xFFE1E1EF),
+    text_hint = Color(0xFF787C8C),
+    accent = Color(0xFFC0CCFF),
+    accent_light = Color(0xFFB6C4FF),
+    accent_bg = Color(0x29C0CCFF),
+    accent_bg_strong = Color(0x26C0CCFF),
+    dialog_clone_text = Color(0xFF1A1A2E),
+    gradient_start = Color(0xFF0B2058),
+    gradient_middle = Color(0xFF121A33),
+    gradient_end = Color(0xFF141622),
+    button_bg = Color(0x15FFFFFF),
+    logo_tint = Color(0xFFF5F5FF),
+    card_chevron = Color(0xFF444556),
+    divider = Color(0x4D787C8C),
+    divider_dim = Color(0x2E787C8C),
+    tab_separator = Color(0x2EFFFFFF),
+    tab_unselected_bg = Color(0x1FFFFFFF),
+    tab_unselected_content = Color(0xFFB0B0BE),
+    tab_add_icon = Color(0xFFFFFFFF),
+    tab_selected_text = Color(0xFFFFFFFF),
+    key_button_pressed_bg = Color(0xFF3A3A4A),
+    key_button_pressed_text = Color(0xFFFFFFFF),
+    terminal_cursor = 0xFFB6C4FF.toInt(),
+    terminal_foreground = 0xFFFFFFFF.toInt(),
+    terminal_background = 0xFF1E1E2A.toInt(),
+    panel_overlay = Color(0xD11E1E2A),
+    danger = Color(0xFFFF5F57),
+    danger_bg = Color(0x29FF5F57),
+    success = Color(0xFF35D07F),
+    success_bg = Color(0x2935D07F),
+    warning = Color(0xFFFFBD2E),
+    warning_bg = Color(0x29FFBD2E),
+)
+
+// ── 浅色基础色板 ────────────────────────────────────────
+private val light_base = base_colors(
+    bg = Color(0xFFFFFFFF),
+    surface = Color(0xFFF1F0FA),
+    surface_variant = Color(0xFFE8E8F4),
+    surface_pressed = Color(0xFFE2E2F0),
+    text_primary = Color(0xFF2D2D3F),
+    text_secondary = Color(0xFF7A7A8C),
+    text_dim = Color(0xFF666678),
+    text_dialog = Color(0xFF333333),
+    text_hint = Color(0xFF888888),
+    accent = Color(0xFF1F54E8),
+    accent_light = Color(0xFF004DEA),
+    accent_bg = Color(0x1F1F54E8),
+    accent_bg_strong = Color(0x261F54E8),
+    dialog_clone_text = Color(0xFFFFFFFF),
+    gradient_start = Color(0xFFEBEDFF),
+    gradient_middle = Color(0xFFF2F1FF),
+    gradient_end = Color(0xFFFAF8FF),
+    button_bg = Color(0x15000000),
+    logo_tint = Color(0xFF2D2D3F),
+    card_chevron = Color(0xFFB0B0C2),
+    divider = Color(0x4D888888),
+    divider_dim = Color(0x2E888888),
+    tab_separator = Color(0xFFD8D5E0),
+    tab_unselected_bg = Color(0xFFF1EFF6),
+    tab_unselected_content = Color(0xFF4A4A4A),
+    tab_add_icon = Color(0xFF000000),
+    tab_selected_text = Color(0xFF000000),
+    key_button_pressed_bg = Color(0xFFEEEEEE),
+    key_button_pressed_text = Color(0xFF000000),
+    terminal_cursor = 0xFF004DEA.toInt(),
+    terminal_foreground = 0xFF1A1A28.toInt(),
+    terminal_background = 0xFFFFFFFF.toInt(),
+    panel_overlay = Color(0xD1FFFFFF),
+    danger = Color(0xFFE5484D),
+    danger_bg = Color(0x1FE5484D),
+    success = Color(0xFF168A4A),
+    success_bg = Color(0x1F168A4A),
+    warning = Color(0xFFB7791F),
+    warning_bg = Color(0x1FB7791F),
+)
+
+// ── 辅助：从 base 构建 app_colors ──────────────────────────
+private fun base_colors.to_app_colors() = app_colors(
+    gradient_start = gradient_start,
+    gradient_middle = gradient_middle,
+    gradient_end = gradient_end,
+    title_large = text_primary,
+    title_highlight = accent,
+    subtitle = text_secondary,
+    section_title = text_primary,
+    card_bg = surface,
+    card_pressed = surface_pressed,
+    card_text_title = text_primary,
+    card_text_subtitle = text_dim,
+    card_icon_bg = accent,
+    card_chevron = card_chevron,
+    logo_tint = logo_tint,
+    top_button_bg = button_bg,
+    top_button_icon = text_primary,
+    search_button_active = accent,
+    search_button_bg_active = accent_bg_strong,
+    input_hint = text_secondary,
+    input_text = text_primary,
+    input_border = accent,
+    dialog_bg = bg,
+    dialog_text = text_dialog,
+    dialog_hint = text_hint,
+    dialog_icon = accent,
+    dialog_cancel = accent,
+    dialog_clone_bg = accent,
+    dialog_clone_text = dialog_clone_text,
+    dialog_card_bg = surface_variant,
+    dialog_input_bg = bg,
+    dialog_input_text = text_dialog,
+    dialog_input_hint = text_hint,
+    dialog_input_border = accent_light,
+    dialog_input_icon = accent_light,
+    dialog_input_icon_hint = text_hint,
+    danger = danger,
+    danger_bg = danger_bg,
+    success = success,
+    success_bg = success_bg,
+    warning = warning,
+    warning_bg = warning_bg,
+    info = accent,
+    info_bg = accent_bg,
+    terminal_cursor = terminal_cursor,
+    terminal_foreground = terminal_foreground,
+    terminal_background = terminal_background,
+    key_button_pressed_bg = key_button_pressed_bg,
+    key_button_pressed_text = key_button_pressed_text,
+    key_button_normal_text = text_dim,
+    key_button_active_text = accent,
+    terminal_tab_add_icon = tab_add_icon,
+    terminal_tab_separator = tab_separator,
+    terminal_tab_selected_bg = Color.Transparent,
+    terminal_tab_unselected_bg = tab_unselected_bg,
+    terminal_tab_selected_icon = accent,
+    terminal_tab_selected_text = tab_selected_text,
+    terminal_tab_unselected_content = tab_unselected_content,
+    editor_bg = bg,
+    editor_text = text_dialog,
+    editor_hint = text_hint,
+    editor_icon = accent,
+    editor_toolbar_icon = text_primary,
+    editor_panel_overlay = panel_overlay,
+    editor_button_bg = button_bg,
+    editor_text_action_bg = surface_variant,
+    editor_text_action_divider = key_button_pressed_bg,
+    editor_text_action_content = text_primary,
+    editor_tab_add_icon = tab_add_icon,
+    editor_tab_separator = tab_separator,
+    editor_tab_selected_bg = Color.Transparent,
+    editor_tab_unselected_bg = tab_unselected_bg,
+    editor_tab_selected_icon = accent,
+    editor_tab_selected_text = tab_selected_text,
+    editor_tab_unselected_content = tab_unselected_content,
+    editor_sidebar_selected_bg = accent_bg,
+    editor_divider = divider,
+    editor_line_divider = divider_dim,
+)
+
+// ── 对外暴露（向下兼容） ──────────────────────────────────
+data class app_colors(
+    val gradient_start: Color,
+    val gradient_middle: Color,
+    val gradient_end: Color,
     val title_large: Color,
     val title_highlight: Color,
     val subtitle: Color,
     val section_title: Color,
-    
-    // 卡片
     val card_bg: Color,
     val card_pressed: Color,
     val card_text_title: Color,
     val card_text_subtitle: Color,
     val card_icon_bg: Color,
     val card_chevron: Color,
-    
-    // 顶部栏 & Logo
     val logo_tint: Color,
     val top_button_bg: Color,
     val top_button_icon: Color,
-    
-    // 搜索 & 输入框
     val search_button_active: Color,
     val search_button_bg_active: Color,
     val input_hint: Color,
     val input_text: Color,
     val input_border: Color,
-    
-    // 弹窗
     val dialog_bg: Color,
     val dialog_text: Color,
     val dialog_hint: Color,
@@ -49,8 +261,6 @@ data class app_colors(
     val dialog_input_border: Color,
     val dialog_input_icon: Color,
     val dialog_input_icon_hint: Color,
-    
-    // 状态色
     val danger: Color,
     val danger_bg: Color,
     val success: Color,
@@ -59,8 +269,6 @@ data class app_colors(
     val warning_bg: Color,
     val info: Color,
     val info_bg: Color,
-    
-    // 终端
     val terminal_cursor: Int,
     val terminal_foreground: Int,
     val terminal_background: Int,
@@ -75,8 +283,6 @@ data class app_colors(
     val terminal_tab_selected_icon: Color,
     val terminal_tab_selected_text: Color,
     val terminal_tab_unselected_content: Color,
-    
-    // 编辑器
     val editor_bg: Color,
     val editor_text: Color,
     val editor_hint: Color,
@@ -96,199 +302,8 @@ data class app_colors(
     val editor_tab_unselected_content: Color,
     val editor_sidebar_selected_bg: Color,
     val editor_divider: Color,
-    val editor_line_divider: Color
+    val editor_line_divider: Color,
 )
 
-val dark_app_colors = app_colors(
-    // ===== 渐变 & 背景 =====
-    gradient_start = Color(0xFF0B2058),     // 渐变起始色
-    gradient_middle = Color(0xFF121A33),    // 渐变中间色
-    gradient_end = Color(0xFF141622),       // 渐变结束色
-    
-    // ===== 文字 =====
-    title_large = Color(0xFFE8E8F8),        // 大标题颜色
-    title_highlight = Color(0xFFC0CCFF),    // 标题高亮色
-    subtitle = Color(0xFF707486),           // 副标题颜色
-    section_title = Color(0xFFE8E8F8),      // 区块标题颜色
-    
-    // ===== 卡片 =====
-    card_bg = Color(0xFF1F2230),            // 卡片背景色
-    card_pressed = Color(0xFF323446),       // 卡片按下背景色
-    card_text_title = Color(0xFFE8E8F8),    // 卡片标题文字颜色
-    card_text_subtitle = Color(0xFF88889C), // 卡片副标题文字颜色
-    card_icon_bg = Color(0xFFC0CCFF),       // 卡片图标背景色
-    card_chevron = Color(0xFF444556),       // 卡片右侧箭头颜色
-    
-    // ===== 顶部栏 & Logo =====
-    logo_tint = Color(0xFFF5F5FF),          // Logo 图标颜色
-    top_button_bg = Color(0x15FFFFFF),      // 顶部按钮背景色
-    top_button_icon = Color(0xFFE8E8F8),    // 顶部按钮图标颜色
-    
-    // ===== 搜索 & 输入框 =====
-    search_button_active = Color(0xFFC0CCFF),      // 搜索按钮激活时的文字/图标颜色
-    search_button_bg_active = Color(0x26C0CCFF),   // 搜索按钮激活时的背景色
-    input_hint = Color(0xFF707486),               // 输入框提示文字颜色
-    input_text = Color(0xFFE8E8F8),               // 输入框输入文字颜色
-    input_border = Color(0xFFC0CCFF),             // 输入框边框颜色（激活时）
-    
-    // ===== 弹窗 =====
-    dialog_bg = Color(0xFF1E1E2A),                // 弹窗背景色
-    dialog_text = Color(0xFFE1E1EF),              // 弹窗主要文字颜色
-    dialog_hint = Color(0xFF787C8C),              // 弹窗提示/次要文字颜色
-    dialog_icon = Color(0xFFC0CCFF),              // 弹窗图标颜色
-    dialog_cancel = Color(0xFFC0CCFF),            // 弹窗取消按钮文字颜色
-    dialog_clone_bg = Color(0xFFC0CCFF),          // 弹窗确认/克隆按钮背景色
-    dialog_clone_text = Color(0xFF1A1A2E),        // 弹窗确认/克隆按钮文字颜色
-    dialog_card_bg = Color(0xFF2A2A3A),           // 弹窗内部卡片背景色
-    dialog_input_bg = Color(0xFF1E1E2A),          // 弹窗输入框背景色
-    dialog_input_text = Color(0xFFE1E1EF),        // 弹窗输入框文字颜色
-    dialog_input_hint = Color(0xFF787C8C),        // 弹窗输入框提示文字颜色
-    dialog_input_border = Color(0xFFB6C4FF),      // 弹窗输入框边框颜色（激活时）
-    dialog_input_icon = Color(0xFFB6C4FF),        // 弹窗输入框图标颜色（激活/有内容时）
-    dialog_input_icon_hint = Color(0xFF787C8C),   // 弹窗输入框图标颜色（未激活/空状态时）
-    
-    // ===== 状态色 =====
-    danger = Color(0xFFFF5F57),                   // 危险/错误/删除颜色
-    danger_bg = Color(0x29FF5F57),                // 危险/错误/删除弱背景
-    success = Color(0xFF35D07F),                  // 成功/已连接颜色
-    success_bg = Color(0x2935D07F),               // 成功/已连接弱背景
-    warning = Color(0xFFFFBD2E),                  // 警告颜色
-    warning_bg = Color(0x29FFBD2E),               // 警告弱背景
-    info = Color(0xFFC0CCFF),                     // 信息/强调颜色
-    info_bg = Color(0x29C0CCFF),                  // 信息/强调弱背景
-    
-    // ===== 终端 =====
-    terminal_cursor = 0xFFB6C4FF.toInt(),        // 终端光标颜色
-    terminal_foreground = 0xFFFFFFFF.toInt(),     // 终端文字颜色
-    terminal_background = 0xFF1E1E2A.toInt(),     // 终端背景颜色
-    key_button_pressed_bg = Color(0xFF3A3A4A),    // 按钮按下背景色
-    key_button_pressed_text = Color(0xFFFFFFFF),  // 按钮按下文字颜色
-    key_button_normal_text = Color(0xFF88889C),   // 按钮普通文字颜色
-    key_button_active_text = Color(0xFFC0CCFF),   // 按钮激活文字颜色
-    terminal_tab_add_icon = Color(0xFFFFFFFF),     // 新建标签按钮颜色
-    terminal_tab_separator = Color(0x2EFFFFFF), // 标签分隔线颜色
-    terminal_tab_selected_bg = Color(0x00000000), // 选中标签背景色
-    terminal_tab_unselected_bg = Color(0x1FFFFFFF), // 未选中标签背景色
-    terminal_tab_selected_icon = Color(0xFFC0CCFF), // 选中标签图标颜色
-    terminal_tab_selected_text = Color(0xFFFFFFFF), // 选中标签文字颜色
-    terminal_tab_unselected_content = Color(0xFFB0B0BE), // 未选中标签文字/图标颜色
-    
-    // ===== 编辑器 =====
-    editor_bg = Color(0xFF1E1E2A),                     // 编辑器页面主背景色
-    editor_text = Color(0xFFE1E1EF),                   // 编辑器 UI 主文字颜色，不是代码语法文字
-    editor_hint = Color(0xFF787C8C),                   // 编辑器次要文字/提示文字/弱图标颜色
-    editor_icon = Color(0xFFC0CCFF),                   // 编辑器强调图标颜色，常用于可操作图标
-    editor_toolbar_icon = Color(0xFFE8E8F8),           // 编辑器顶部工具栏图标颜色
-    editor_panel_overlay = Color(0xD11E1E2A),          // 悬浮面板/抽屉覆盖层背景色
-    editor_button_bg = Color(0x15FFFFFF),              // 编辑器圆形/小按钮背景色
-    editor_text_action_bg = Color(0xFF2A2A3A),          // 编辑器文本操作弹窗背景色
-    editor_text_action_divider = Color(0xFF3A3A4A),     // 编辑器文本操作弹窗分隔线颜色
-    editor_text_action_content = Color(0xFFE8E8F8),     // 编辑器文本操作弹窗图标/文字颜色
-    editor_tab_add_icon = Color(0xFFFFFFFF),           // Tab 栏新增/工具按钮图标颜色
-    editor_tab_separator = Color(0x2EFFFFFF),          // Tab 栏底部分隔线/竖向分隔线颜色
-    editor_tab_selected_bg = Color(0x00000000),        // 当前选中 Tab 背景色
-    editor_tab_unselected_bg = Color(0x1FFFFFFF),      // 未选中 Tab 背景色
-    editor_tab_selected_icon = Color(0xFFC0CCFF),      // 当前选中 Tab 图标/状态点颜色
-    editor_tab_selected_text = Color(0xFFFFFFFF),      // 当前选中 Tab 文件名文字颜色
-    editor_tab_unselected_content = Color(0xFFB0B0BE), // 未选中 Tab 文件名/图标颜色
-    editor_sidebar_selected_bg = Color(0x29C0CCFF),    // 侧边栏选中项背景色
-    editor_divider = Color(0x4D787C8C),                // 编辑器通用分隔线/文件树节点线颜色
-    editor_line_divider = Color(0x2E787C8C)            // 编辑器较弱分隔线颜色
-)
-
-val light_app_colors = app_colors(
-    // ===== 渐变 & 背景 =====
-    gradient_start = Color(0xFFEBEDFF),     // 渐变起始色
-    gradient_middle = Color(0xFFF2F1FF),    // 渐变中间色
-    gradient_end = Color(0xFFFAF8FF),       // 渐变结束色
-    
-    // ===== 文字 =====
-    title_large = Color(0xFF2D2D3F),        // 大标题颜色
-    title_highlight = Color(0xFF1F54E8),    // 标题高亮色
-    subtitle = Color(0xFF7A7A8C),           // 副标题颜色
-    section_title = Color(0xFF2D2D3F),      // 区块标题颜色
-    
-    // ===== 卡片 =====
-    card_bg = Color(0xFFF1F0FA),            // 卡片背景色
-    card_pressed = Color(0xFFE2E2F0),       // 卡片按下背景色
-    card_text_title = Color(0xFF1A1A28),    // 卡片标题文字颜色
-    card_text_subtitle = Color(0xFF666678), // 卡片副标题文字颜色
-    card_icon_bg = Color(0xFF1F54E8),       // 卡片图标背景色
-    card_chevron = Color(0xFFB0B0C2),       // 卡片右侧箭头颜色
-    
-    // ===== 顶部栏 & Logo =====
-    logo_tint = Color(0xFF2D2D3F),          // Logo 图标颜色
-    top_button_bg = Color(0x15000000),      // 顶部按钮背景色
-    top_button_icon = Color(0xFF2D2D3F),    // 顶部按钮图标颜色
-    
-    // ===== 搜索 & 输入框 =====
-    search_button_active = Color(0xFF1F54E8),      // 搜索按钮激活时的文字/图标颜色
-    search_button_bg_active = Color(0x261F54E8),   // 搜索按钮激活时的背景色
-    input_hint = Color(0xFF7A7A8C),               // 输入框提示文字颜色
-    input_text = Color(0xFF2D2D3F),               // 输入框输入文字颜色
-    input_border = Color(0xFF1F54E8),             // 输入框边框颜色（激活时）
-    
-    // ===== 弹窗 =====
-    dialog_bg = Color(0xFFFFFFFF),                // 弹窗背景色
-    dialog_text = Color(0xFF333333),              // 弹窗主要文字颜色
-    dialog_hint = Color(0xFF888888),              // 弹窗提示/次要文字颜色
-    dialog_icon = Color(0xFF004DEA),              // 弹窗图标颜色
-    dialog_cancel = Color(0xFF004DEA),            // 弹窗取消按钮文字颜色
-    dialog_clone_bg = Color(0xFF004DEA),          // 弹窗确认/克隆按钮背景色
-    dialog_clone_text = Color(0xFFFFFFFF),        // 弹窗确认/克隆按钮文字颜色
-    dialog_card_bg = Color(0xFFF5F5F5),           // 弹窗内部卡片背景色
-    dialog_input_bg = Color(0xFFFFFFFF),          // 弹窗输入框背景色
-    dialog_input_text = Color(0xFF333333),        // 弹窗输入框文字颜色
-    dialog_input_hint = Color(0xFF888888),        // 弹窗输入框提示文字颜色
-    dialog_input_border = Color(0xFF004DEA),      // 弹窗输入框边框颜色（激活时）
-    dialog_input_icon = Color(0xFF004DEA),        // 弹窗输入框图标颜色（激活/有内容时）
-    dialog_input_icon_hint = Color(0xFF888888),   // 弹窗输入框图标颜色（未激活/空状态时）
-    
-    // ===== 状态色 =====
-    danger = Color(0xFFE5484D),                   // 危险/错误/删除颜色
-    danger_bg = Color(0x1FE5484D),                // 危险/错误/删除弱背景
-    success = Color(0xFF168A4A),                  // 成功/已连接颜色
-    success_bg = Color(0x1F168A4A),               // 成功/已连接弱背景
-    warning = Color(0xFFB7791F),                  // 警告颜色
-    warning_bg = Color(0x1FB7791F),               // 警告弱背景
-    info = Color(0xFF1F54E8),                     // 信息/强调颜色
-    info_bg = Color(0x1F1F54E8),                  // 信息/强调弱背景
-    
-    // ===== 终端 =====
-    terminal_cursor = 0xFF004DEA.toInt(),        // 终端光标颜色
-    terminal_foreground = 0xFF1A1A28.toInt(),     // 终端文字颜色
-    terminal_background = 0xFFFFFFFF.toInt(),     // 终端背景颜色
-    key_button_pressed_bg = Color(0xFFEEEEEE),    // 按钮按下背景色
-    key_button_pressed_text = Color(0xFF000000),  // 按钮按下文字颜色
-    key_button_normal_text = Color(0xFF888888),   // 按钮普通文字颜色
-    key_button_active_text = Color(0xFF1F54E8),   // 按钮激活文字颜色
-    terminal_tab_add_icon = Color(0xFF000000),     // 新建标签按钮颜色
-    terminal_tab_separator = Color(0xFFD8D5E0),     // 标签分隔线颜色
-    terminal_tab_selected_bg = Color(0x00000000), // 选中标签背景色
-    terminal_tab_unselected_bg = Color(0xFFF1EFF6), // 未选中标签背景色
-    terminal_tab_selected_icon = Color(0xFF1F54E8), // 选中标签图标颜色
-    terminal_tab_selected_text = Color(0xFF000000), // 选中标签文字颜色
-    terminal_tab_unselected_content = Color(0xFF4A4A4A), // 未选中标签文字/图标颜色
-    
-    // ===== 编辑器 =====
-    editor_bg = Color(0xFFFFFFFF),                     // 编辑器页面主背景色
-    editor_text = Color(0xFF333333),                   // 编辑器 UI 主文字颜色，不是代码语法文字
-    editor_hint = Color(0xFF888888),                   // 编辑器次要文字/提示文字/弱图标颜色
-    editor_icon = Color(0xFF004DEA),                   // 编辑器强调图标颜色，常用于可操作图标
-    editor_toolbar_icon = Color(0xFF2D2D3F),           // 编辑器顶部工具栏图标颜色
-    editor_panel_overlay = Color(0xD1FFFFFF),          // 悬浮面板/抽屉覆盖层背景色
-    editor_button_bg = Color(0x15000000),              // 编辑器圆形/小按钮背景色
-    editor_text_action_bg = Color(0xFFEDEDFB),          // 编辑器文本操作弹窗背景色
-    editor_text_action_divider = Color(0xFFD8D8E8),     // 编辑器文本操作弹窗分隔线颜色
-    editor_text_action_content = Color(0xFF2D2D3F),     // 编辑器文本操作弹窗图标/文字颜色
-    editor_tab_add_icon = Color(0xFF000000),           // Tab 栏新增/工具按钮图标颜色
-    editor_tab_separator = Color(0xFFD8D5E0),          // Tab 栏底部分隔线/竖向分隔线颜色
-    editor_tab_selected_bg = Color(0x00000000),        // 当前选中 Tab 背景色
-    editor_tab_unselected_bg = Color(0xFFF1EFF6),      // 未选中 Tab 背景色
-    editor_tab_selected_icon = Color(0xFF1F54E8),      // 当前选中 Tab 图标/状态点颜色
-    editor_tab_selected_text = Color(0xFF000000),      // 当前选中 Tab 文件名文字颜色
-    editor_tab_unselected_content = Color(0xFF4A4A4A), // 未选中 Tab 文件名/图标颜色
-    editor_sidebar_selected_bg = Color(0x29004DEA),    // 侧边栏选中项背景色
-    editor_divider = Color(0x4D888888),                // 编辑器通用分隔线/文件树节点线颜色
-    editor_line_divider = Color(0x2E888888)            // 编辑器较弱分隔线颜色
-)
+val dark_app_colors = dark_base.to_app_colors()
+val light_app_colors = light_base.to_app_colors()
