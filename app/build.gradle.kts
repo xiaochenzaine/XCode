@@ -89,16 +89,12 @@ dependencies {
     implementation(project(":modules:project-file-tree"))
     implementation(project(":modules:toolchain-runtime"))
     implementation(project(":modules:clangd-lsp"))
-    implementation(project(":modules:agent"))
+    implementation(project(":modules:chat-agent:app"))
     implementation(project(":modules:sora-editor"))
     implementation(project(":modules:sora-language-textmate"))
     implementation(project(":modules:sora-oniguruma-native"))
     
     implementation("com.google.code.gson:gson:2.11.0")
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("io.getstream:stream-chat-android-compose:7.3.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

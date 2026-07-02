@@ -8,13 +8,21 @@ import com.xc.code.core.logging.logger_manager
 import com.xc.code.editor.theme.editor_theme_manager
 import com.xc.code.service.keep_alive_service
 import com.xc.code.toolchain.toolchain_runtime_provider
+import com.xc.code.ui.theme.app_theme_type
 import com.xc.code.ui.theme.theme_manager
 import com.xc.code.utils.app_lifecycle_observer
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
+import me.rerere.rikkahub.RikkaHubInitializer
+import me.rerere.rikkahub.ui.theme.ColorMode
+import me.rerere.rikkahub.ui.theme.ThemeStateBridge
 import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.GrammarRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.provider.AssetsFileResolver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.eclipse.tm4e.core.internal.oniguruma.Oniguruma
 import java.io.File
 class xc_application : Application() {
@@ -24,6 +32,7 @@ class xc_application : Application() {
     }
 
     private var textmate_initialized = false
+    private val application_scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     var keep_alive_service_: keep_alive_service? = null
 
@@ -32,6 +41,7 @@ class xc_application : Application() {
         instance = this
 
         theme_manager.init(this)
+        bind_rikkahub_theme_state()
         logger_manager.init(this)
         logger_manager.is_debug = false
         logger_manager.enable_file_log = true
@@ -58,7 +68,28 @@ class xc_application : Application() {
         init_textmate()
         start_keep_alive_service()
         app_lifecycle_observer.init(this)
+        RikkaHubInitializer.init(this)
         setup_uncaught_exception_handler()
+    }
+
+    override fun onTerminate() {
+        RikkaHubInitializer.shutdown(this)
+        super.onTerminate()
+    }
+
+    private fun bind_rikkahub_theme_state() {
+        ThemeStateBridge.setColorMode(theme_manager.theme.value.to_rikkahub_color_mode())
+        application_scope.launch {
+            theme_manager.theme.collect { theme ->
+                ThemeStateBridge.setColorMode(theme.to_rikkahub_color_mode())
+            }
+        }
+    }
+
+    private fun app_theme_type.to_rikkahub_color_mode(): ColorMode = when (this) {
+        app_theme_type.DARK -> ColorMode.DARK
+        app_theme_type.LIGHT -> ColorMode.LIGHT
+        app_theme_type.SYSTEM -> ColorMode.SYSTEM
     }
 
     private fun init_textmate() {

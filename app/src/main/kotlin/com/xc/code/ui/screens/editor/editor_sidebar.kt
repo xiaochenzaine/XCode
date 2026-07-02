@@ -1,5 +1,9 @@
 package com.xc.code.ui.screens.editor
 
+import android.content.Context
+import android.content.ContextWrapper
+import android.view.View
+import android.view.ViewGroup
 import com.xc.code.editor.model.editor_settings_state
 import com.xc.code.editor.model.editor_file_node
 import com.xc.code.project.project_ide_config
@@ -28,8 +32,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.fragment.app.FragmentActivity
 import com.xc.code.project_file_tree.project_file_tree_colors
 import com.xc.code.ui.theme.app_theme_provider
+import me.rerere.rikkahub.RouteFragment
 
 private data class editor_tool_item(
     val icon: ImageVector,
@@ -160,7 +167,7 @@ fun editor_sidebar(
                         on_apply = on_project_config_apply,
                         modifier = Modifier.fillMaxSize()
                     )
-                    2 -> sidebar_placeholder("助手")
+                    2 -> editor_agent_panel(modifier = Modifier.fillMaxSize())
                     3 -> editor_settings_panel(
                         settings = editor_settings,
                         on_settings_change = on_editor_settings_change,
@@ -192,6 +199,51 @@ fun editor_sidebar(
     }
 }
 
+
+@Composable
+private fun editor_agent_panel(modifier: Modifier = Modifier) {
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            androidx.fragment.app.FragmentContainerView(context).apply {
+                id = View.generateViewId()
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+        },
+        update = { view ->
+            val activity = view.context.find_fragment_activity()
+            if (activity != null && activity.supportFragmentManager.findFragmentById(view.id) == null) {
+                view.post {
+                    if (activity.isFinishing || activity.isDestroyed) return@post
+                    if (activity.supportFragmentManager.findFragmentById(view.id) != null) return@post
+                    activity.supportFragmentManager
+                        .beginTransaction()
+                        .replace(view.id, RouteFragment())
+                        .commitAllowingStateLoss()
+                }
+            }
+        },
+        onRelease = { view ->
+            val activity = view.context.find_fragment_activity()
+            val fragment = activity?.supportFragmentManager?.findFragmentById(view.id)
+            if (activity != null && fragment != null) {
+                activity.supportFragmentManager
+                    .beginTransaction()
+                    .remove(fragment)
+                    .commitAllowingStateLoss()
+            }
+        }
+    )
+}
+
+private tailrec fun Context.find_fragment_activity(): FragmentActivity? = when (this) {
+    is FragmentActivity -> this
+    is ContextWrapper -> baseContext.find_fragment_activity()
+    else -> null
+}
 
 @Composable
 private fun sidebar_placeholder(title: String) {
