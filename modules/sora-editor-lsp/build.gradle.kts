@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "io.github.rosemoe.sora.lsp"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26
@@ -34,7 +33,7 @@ android {
 dependencies {
     compileOnly(project(":modules:sora-editor"))
     implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation(libs.kotlinx.coroutines.android)
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.truth:truth:1.4.5")
     testImplementation("org.robolectric:robolectric:4.16.1")

@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "io.github.rosemoe.sora"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26
@@ -35,7 +34,7 @@ android {
 dependencies {
     api("androidx.annotation:annotation:1.10.0")
     implementation("androidx.collection:collection:1.5.0")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.truth:truth:1.4.5")
     testImplementation("org.robolectric:robolectric:4.16.1")

@@ -1,14 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    kotlin("kapt")
 }
 
 android {
     namespace = "com.xc.code"
     ndkVersion = "29.0.14206865"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.xc.code"
@@ -85,9 +83,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
-    
-    implementation(libs.permissions.dispatcher)
-    kapt(libs.permissions.dispatcher.processor)
     
     implementation(project(":modules:terminal-view"))
     implementation(project(":modules:editor-core"))

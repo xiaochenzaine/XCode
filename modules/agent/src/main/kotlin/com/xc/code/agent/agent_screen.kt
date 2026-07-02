@@ -291,9 +291,8 @@ fun agent_screen() {
     var user_avatar_uri by remember { mutableStateOf(load_user_avatar_uri(context)) }
     var selected_assistant_name by remember { mutableStateOf(default_assistant_name) }
     var main_page by remember { mutableStateOf(agent_main_page.Chat) }
-    var conversation_title by remember { mutableStateOf("新会话") }
     var editing_conversation_title by remember { mutableStateOf(false) }
-    var draft_conversation_title by remember { mutableStateOf(conversation_title) }
+    var draft_conversation_title by remember { mutableStateOf("") }
     var input_sheet by remember { mutableStateOf<agent_input_sheet?>(null) }
     var message_more_sheet by remember { mutableStateOf<agent_message_preview?>(null) }
     var show_assistant_picker by remember { mutableStateOf(false) }
@@ -302,9 +301,8 @@ fun agent_screen() {
     var assistant_names by remember { mutableStateOf(listOf(default_assistant_name, "代码助手", "翻译助手")) }
 
     val state = remember { agent_state().apply { load_sample_data() } }
-    val conversation_messages = remember(state.selected_conversation_id) {
-        state.messages_for(state.selected_conversation_id)
-    }
+    val conversation_title = state.selected_conversation?.title ?: "新会话"
+    val conversation_messages = state.messages_for(state.selected_conversation_id)
 
     // 会话重命名弹窗
     if (editing_conversation_title) {
@@ -328,7 +326,7 @@ fun agent_screen() {
             confirmButton = {
                 TextButton(onClick = {
                     val trimmed = draft_conversation_title.trim()
-                    if (trimmed.isNotEmpty()) conversation_title = trimmed
+                    if (trimmed.isNotEmpty()) state.rename_conversation(state.selected_conversation_id, trimmed)
                     editing_conversation_title = false
                 }) { Text("确定") }
             },
@@ -351,13 +349,13 @@ fun agent_screen() {
                 user_avatar_uri = user_avatar_uri,
                 selected_assistant_name = selected_assistant_name,
                 selected_conversation_id = state.selected_conversation_id,
-                on_conversation_select = { state.select_conversation(it) },
+                on_conversation_select = { state.select_conversation(it); scope.launch { drawer_state.close() } },
                 on_pin = { state.toggle_pin(it.id) },
                 on_delete_conversation = { state.delete_conversation(it.id) },
-                on_regenerate_title = {},
+                on_regenerate_title = { state.regenerate_title(it.id) },
                 pinned_ids = state.pinned_ids,
                 conversations = state.conversations,
-                conversation_messages_map = sample_conversation_messages,
+                conversation_messages_map = state.messages_map,
                 on_user_profile_change = { n, a ->
                     user_name = n
                     user_avatar_uri = a
@@ -394,7 +392,7 @@ fun agent_screen() {
                         IconButton(onClick = {}) {
                             Icon(HugeIcons.Search01, contentDescription = "搜索聊天", tint = colors.onBackground, modifier = Modifier.size(22.dp))
                         }
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = { state.create_new_conversation() }) {
                             Icon(HugeIcons.MessageAdd01, contentDescription = "新建会话", tint = colors.onBackground, modifier = Modifier.size(22.dp))
                         }
                     },
@@ -405,7 +403,10 @@ fun agent_screen() {
                 agent_input_bar(
                     value = input,
                     on_value_change = { input = it },
-                    on_send = { input = "" },
+                    on_send = {
+                        state.send_user_message(input, LocalTime.now().let { "%02d:%02d".format(it.hour, it.minute) })
+                        input = ""
+                    },
                     on_provider_click = { input_sheet = agent_input_sheet.Provider },
                     on_search_click = { input_sheet = agent_input_sheet.Search },
                     on_reasoning_click = { input_sheet = agent_input_sheet.Reasoning },
@@ -496,7 +497,10 @@ fun agent_screen() {
     if (message_more_sheet != null) {
         agent_bottom_sheet(on_dismiss = { message_more_sheet = null }) {
             agent_sheet_action_item(HugeIcons.ArrowUp02, "引用回复") { message_more_sheet = null }
-            agent_sheet_action_item(HugeIcons.Delete01, "删除消息") { message_more_sheet = null }
+            agent_sheet_action_item(HugeIcons.Delete01, "删除消息") {
+                message_more_sheet?.let { state.delete_message(state.selected_conversation_id, it) }
+                message_more_sheet = null
+            }
         }
     }
 

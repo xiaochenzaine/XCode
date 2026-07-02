@@ -11,13 +11,13 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.xc.code.ui.dialogs.splash.manage_storage_dialog
 import com.xc.code.ui.dialogs.splash.permission_denied_dialog
 import com.xc.code.ui.dialogs.splash.permission_rationale_dialog
 import com.xc.code.ui.screens.splash.splash_content
 import com.xc.code.ui.theme.app_theme_provider
-import permissions.dispatcher.*
 import java.io.File
 
 fun File.is_ubuntu_rootfs(): Boolean {
@@ -33,8 +33,11 @@ fun File.is_ubuntu_rootfs(): Boolean {
     return has_all_dirs && has_all_files
 }
 
-@RuntimePermissions
 class splash_activity : ComponentActivity() {
+
+    companion object {
+        private const val storage_permission_request_code = 1001
+    }
 
     private var has_navigated = false
     private var is_splash_ready = false
@@ -68,17 +71,13 @@ class splash_activity : ComponentActivity() {
             if (check_permission()) {
                 check_and_navigate()
             } else {
-                request_permission_with_checkWithPermissionCheck()
+                request_permission_with_check()
             }
         }
     }
 
     private fun check_permission(): Boolean {
-        val permissions = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-        return permissions.all { permission ->
+        return storage_permissions().all { permission ->
             ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
         }
     }
@@ -106,41 +105,47 @@ class splash_activity : ComponentActivity() {
         finish()
     }
 
-    @NeedsPermission(
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    )
     fun request_permission_with_check() {
-        if (!has_navigated && check_permission()) {
+        if (has_navigated) return
+        if (check_permission()) {
             check_and_navigate()
+            return
+        }
+        val permissions = storage_permissions()
+        val should_show_rationale = permissions.any { permission ->
+            ActivityCompat.shouldShowRequestPermissionRationale(this, permission)
+        }
+        if (should_show_rationale) {
+            show_rationale_dialog(
+                on_confirm = { request_storage_permissions() },
+                on_deny = { finish() }
+            )
+        } else {
+            request_storage_permissions()
         }
     }
 
-    @OnShowRationale(
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    )
-    fun show_rationale(request: PermissionRequest) {
-        show_rationale_dialog(
-            on_confirm = { request.proceed() },
-            on_deny = { finish() }
+    private fun request_storage_permissions() {
+        ActivityCompat.requestPermissions(
+            this,
+            storage_permissions(),
+            storage_permission_request_code
         )
     }
 
-    @OnPermissionDenied(
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    )
+    private fun storage_permissions(): Array<String> {
+        return arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+    }
+
     fun on_permissions_denied() {
         if (!has_navigated) {
             show_permission_denied_dialog()
         }
     }
 
-    @OnNeverAskAgain(
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    )
     fun on_never_ask_again() {
         if (!has_navigated) {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -177,7 +182,7 @@ class splash_activity : ComponentActivity() {
         setContent {
             app_theme_provider {
                 permission_denied_dialog(
-                    on_retry = { request_permission_with_checkWithPermissionCheck() },
+                    on_retry = { request_permission_with_check() },
                     on_exit = { finish() }
                 )
             }
@@ -192,7 +197,15 @@ class splash_activity : ComponentActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        onRequestPermissionsResult(requestCode, grantResults)
+        if (requestCode != storage_permission_request_code) return
+        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            check_and_navigate()
+            return
+        }
+        val never_ask_again = permissions.isNotEmpty() && permissions.none { permission ->
+            ActivityCompat.shouldShowRequestPermissionRationale(this, permission)
+        }
+        if (never_ask_again) on_never_ask_again() else on_permissions_denied()
     }
 
     override fun onResume() {
