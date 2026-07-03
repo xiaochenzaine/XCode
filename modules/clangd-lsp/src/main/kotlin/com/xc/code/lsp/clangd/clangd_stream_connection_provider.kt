@@ -31,6 +31,7 @@ class clangd_stream_connection_provider(
         if (process?.isAlive == true) return
         validate_runtime()
         patcher.patch(config.runtime_paths)
+        ensure_build_dir_exists()
 
         val command = build_proot_clangd_command()
         val process_environment = proot_environment(
@@ -74,6 +75,12 @@ class clangd_stream_connection_provider(
         require(paths.proot_file.isFile) { "proot not found: ${paths.proot_file.absolutePath}" }
         require(paths.proot_loader_file.isFile) { "proot loader not found: ${paths.proot_loader_file.absolutePath}" }
         require(paths.ubuntu_base_dir.isDirectory) { "Ubuntu rootfs not found: ${paths.ubuntu_base_dir.absolutePath}" }
+    }
+
+    private fun ensure_build_dir_exists() {
+        require(config.build_dir.mkdirs() || config.build_dir.isDirectory) {
+            "Failed to create clangd build directory: ${config.build_dir.absolutePath}"
+        }
     }
 
     private fun build_proot_clangd_command(): List<String> {
