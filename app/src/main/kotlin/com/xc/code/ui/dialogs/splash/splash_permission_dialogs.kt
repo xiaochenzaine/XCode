@@ -17,12 +17,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.xc.code.R
 
 @Composable
 fun manage_storage_dialog(
@@ -37,10 +39,10 @@ fun manage_storage_dialog(
         )
     ) {
         permission_dialog_card(
-            title = "需要所有文件访问权限",
-            message = "Android 11 及以上版本需要授予「所有文件访问权限」才能正常读写文件",
-            cancel_text = "退出",
-            confirm_text = "去设置",
+            title = stringResource(R.string.permission_all_files_title),
+            message = stringResource(R.string.permission_all_files_message),
+            cancel_text = stringResource(R.string.common_exit),
+            confirm_text = stringResource(R.string.permission_go_setting),
             on_cancel = on_deny,
             on_confirm = on_confirm
         )
@@ -60,10 +62,10 @@ fun permission_rationale_dialog(
         )
     ) {
         permission_dialog_card(
-            title = "需要存储权限",
-            message = "为了打开、编辑和保存代码文件，需要访问存储权限",
-            cancel_text = "拒绝",
-            confirm_text = "同意",
+            title = stringResource(R.string.permission_storage_title),
+            message = stringResource(R.string.permission_storage_message),
+            cancel_text = stringResource(R.string.permission_deny),
+            confirm_text = stringResource(R.string.permission_allow),
             on_cancel = on_deny,
             on_confirm = on_confirm
         )
@@ -83,10 +85,10 @@ fun permission_denied_dialog(
         )
     ) {
         permission_dialog_card(
-            title = "权限被拒绝",
-            message = "应用需要存储权限才能正常运行，请在设置中手动开启",
-            cancel_text = "退出",
-            confirm_text = "重试",
+            title = stringResource(R.string.permission_denied_title),
+            message = stringResource(R.string.permission_denied_message),
+            cancel_text = stringResource(R.string.common_exit),
+            confirm_text = stringResource(R.string.common_retry),
             on_cancel = on_exit,
             on_confirm = on_retry
         )

@@ -31,9 +31,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.editor.model.editor_settings_state
 import com.xc.code.editor.settings.import_editor_font
 import com.xc.code.editor.settings.load_editor_settings
@@ -76,9 +78,9 @@ fun editor_settings_screen(
                         imported_font_path = path
                     )
                 )
-                app_toast.show(context, "字体已导入", app_toast.LENGTH_SHORT)
+                app_toast.show(context, context.getString(R.string.editor_settings_font_imported), app_toast.LENGTH_SHORT)
             }.onFailure { error ->
-                app_toast.show(context, "字体导入失败: ${error.message.orEmpty()}", app_toast.LENGTH_LONG)
+                app_toast.show(context, context.getString(R.string.editor_settings_font_import_failed, error.message.orEmpty()), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -110,7 +112,7 @@ fun editor_settings_screen(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.common_back),
                             tint = colors.top_button_icon,
                             modifier = Modifier.size(18.dp)
                         )
@@ -129,14 +131,14 @@ fun editor_settings_screen(
                     .padding(horizontal = 18.dp)
             ) {
                 Text(
-                    text = "编辑器",
+                    text = stringResource(R.string.editor_settings_title),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "设置",
+                    text = stringResource(R.string.settings_section_title),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = colors.subtitle

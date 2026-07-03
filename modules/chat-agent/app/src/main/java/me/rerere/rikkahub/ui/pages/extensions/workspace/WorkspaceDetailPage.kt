@@ -27,11 +27,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -45,7 +43,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,8 +74,6 @@ import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
-import me.rerere.workspace.RootfsInstallProgress
-import me.rerere.workspace.RootfsInstallStage
 import me.rerere.workspace.WorkspaceFileEntry
 import me.rerere.workspace.WorkspaceShellStatus
 import me.rerere.workspace.WorkspaceStorageArea
@@ -426,88 +421,6 @@ private fun WorkspaceInfoRow(
 }
 
 @Composable
-private fun RootfsProgress(progress: RootfsInstallProgress) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        val fraction = progress.totalBytes?.takeIf { it > 0 }?.let {
-            (progress.bytesRead.toFloat() / it).coerceIn(0f, 1f)
-        }
-        if (fraction != null && progress.stage == RootfsInstallStage.DOWNLOADING) {
-            LinearProgressIndicator(
-                progress = { fraction },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        }
-        Text(
-            text = when (progress.stage) {
-                RootfsInstallStage.DOWNLOADING -> {
-                    val total = progress.totalBytes?.let { " / ${formatBytes(it)}" }.orEmpty()
-                    stringResource(R.string.workspace_detail_downloading, formatBytes(progress.bytesRead), total)
-                }
-
-                RootfsInstallStage.EXTRACTING -> {
-                    val entry = progress.currentEntry?.let { " · $it" }.orEmpty()
-                    stringResource(R.string.workspace_detail_extracting, progress.entriesExtracted, entry)
-                }
-
-                RootfsInstallStage.INSTALLED -> stringResource(R.string.workspace_detail_install_complete)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun InstallRootfsDialog(
-    workspace: WorkspaceEntity,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
-    var url by rememberSaveable(workspace.id) { mutableStateOf(DEFAULT_ROOTFS_URL) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.workspace_detail_install_rootfs)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = stringResource(R.string.workspace_detail_install_rootfs_desc, workspace.name),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.workspace_detail_download_url)) },
-                    maxLines = 5,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(url.trim()) },
-                enabled = url.isNotBlank(),
-            ) {
-                Text(stringResource(R.string.common_install))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
-            }
-        },
-    )
-}
-
-@Composable
 private fun WorkspaceFilesPage(
     state: WorkspaceDetailState,
     contentPadding: PaddingValues,
@@ -773,11 +686,7 @@ private fun formatBytes(bytes: Long): String {
 @Composable
 internal fun String.toShellStatusLabel(): String = when (this) {
     WorkspaceShellStatus.DISABLED.name -> stringResource(R.string.workspace_detail_shell_disabled)
-    WorkspaceShellStatus.INSTALLING.name -> stringResource(R.string.workspace_detail_shell_installing)
     WorkspaceShellStatus.READY.name -> stringResource(R.string.workspace_detail_shell_ready)
     WorkspaceShellStatus.BROKEN.name -> stringResource(R.string.workspace_detail_shell_broken)
     else -> lowercase()
 }
-
-private const val DEFAULT_ROOTFS_URL =
-    "https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.3-base-arm64.tar.gz"

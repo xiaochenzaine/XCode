@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.xc.code.project.project_ide_config
 import com.xc.code.project.project_manager
 import com.xc.code.toolchain.toolchain_manager
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 
 @Composable
@@ -67,14 +69,14 @@ fun editor_project_config_panel(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "项目配置",
+            text = stringResource(R.string.project_config_title),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = colors.title_highlight,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
         )
 
-        project_config_group_title("工具链")
+        project_config_group_title(stringResource(R.string.project_config_toolchain))
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(1.dp)
@@ -82,7 +84,7 @@ fun editor_project_config_panel(
             project_config_option_card(
                 icon = Icons.Default.Android,
                 title = "NDK",
-                value = config.ndk_version.ifBlank { "未配置" },
+                value = config.ndk_version.ifBlank { stringResource(R.string.project_config_not_configured) },
                 expanded = expanded_ndk,
                 options = ndk_options,
                 shape = project_config_item_shape(is_top = true, is_bottom = false),
@@ -92,7 +94,7 @@ fun editor_project_config_panel(
             project_config_option_card(
                 icon = Icons.Default.Build,
                 title = "CMake",
-                value = config.cmake_version.ifBlank { "未配置" },
+                value = config.cmake_version.ifBlank { stringResource(R.string.project_config_not_configured) },
                 expanded = expanded_cmake,
                 options = cmake_options,
                 shape = project_config_item_shape(is_top = false, is_bottom = true),
@@ -101,14 +103,14 @@ fun editor_project_config_panel(
             )
         }
 
-        project_config_group_title("构建")
+        project_config_group_title(stringResource(R.string.project_config_build))
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             project_config_option_card(
                 icon = Icons.Default.Android,
-                title = "构建 ABI",
+                title = stringResource(R.string.project_config_abi),
                 value = config.build.abi,
                 expanded = expanded_abi,
                 options = abi_options,
@@ -128,7 +130,7 @@ fun editor_project_config_panel(
             )
             project_config_option_card(
                 icon = Icons.Default.Code,
-                title = "C++ 标准",
+                title = stringResource(R.string.project_cpp_standard),
                 value = "C++${config.build.cpp_standard}",
                 expanded = expanded_cpp,
                 options = cpp_standard_options.map { "C++$it" },
@@ -138,7 +140,7 @@ fun editor_project_config_panel(
             )
             project_config_option_card(
                 icon = Icons.Default.Build,
-                title = "构建类型",
+                title = stringResource(R.string.project_config_build_type),
                 value = config.build.build_type,
                 expanded = expanded_build_type,
                 options = build_type_options,
@@ -152,7 +154,7 @@ fun editor_project_config_panel(
             )
         }
 
-        project_config_group_title("CMake 参数")
+        project_config_group_title(stringResource(R.string.project_config_cmake_args))
         project_config_extra_cmake_args_card(
             value = config.build.extra_cmake_args,
             on_change = { args -> config = config.copy(build = config.build.copy(extra_cmake_args = args)) }
@@ -223,7 +225,7 @@ private fun project_config_option_card(
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "收起" else "展开",
+                    contentDescription = if (expanded) stringResource(R.string.common_collapse) else stringResource(R.string.common_expand),
                     tint = colors.card_chevron,
                     modifier = Modifier.size(18.dp)
                 )
@@ -278,7 +280,7 @@ private fun project_config_parallel_jobs_card(
     on_change: (Int) -> Unit
 ) {
     val colors = app_theme_provider.colors
-    val label = if (value <= 0) "自动" else value.toString()
+    val label = if (value <= 0) stringResource(R.string.project_config_auto) else value.toString()
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = project_config_item_shape(is_top = false, is_bottom = false),
@@ -298,7 +300,7 @@ private fun project_config_parallel_jobs_card(
             ) {
                 project_config_icon(Icons.Default.Tune)
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("并行编译", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.card_text_title)
+                    Text(stringResource(R.string.project_config_parallel), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.card_text_title)
                     Text(label, fontSize = 10.sp, lineHeight = 12.sp, color = colors.card_text_subtitle)
                 }
             }
@@ -359,8 +361,8 @@ private fun project_config_extra_cmake_args_card(
             ) {
                 project_config_icon(Icons.Default.Code)
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("额外 CMake 参数", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.card_text_title)
-                    Text("追加到 CMake 初始化命令", fontSize = 10.sp, lineHeight = 12.sp, color = colors.card_text_subtitle)
+                    Text(stringResource(R.string.project_config_extra_cmake_args), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.card_text_title)
+                    Text(stringResource(R.string.project_config_extra_cmake_args_desc), fontSize = 10.sp, lineHeight = 12.sp, color = colors.card_text_subtitle)
                 }
             }
 
@@ -432,7 +434,7 @@ private fun project_config_extra_cmake_args_card(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.Check,
-                            contentDescription = "添加",
+                            contentDescription = stringResource(R.string.common_add),
                             tint = if (input.isNotBlank()) colors.title_highlight else colors.card_text_subtitle.copy(alpha = 0.45f),
                             modifier = Modifier.size(13.dp)
                         )
@@ -481,7 +483,7 @@ private fun project_config_arg_chip(
             onClick = on_remove
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Close, contentDescription = "移除", tint = colors.card_text_subtitle, modifier = Modifier.size(9.dp))
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_remove), tint = colors.card_text_subtitle, modifier = Modifier.size(9.dp))
             }
         }
     }
@@ -525,7 +527,7 @@ private fun project_config_apply_card(
         ) {
             project_config_icon(Icons.Default.Check)
             Text(
-                text = if (enabled) "应用项目配置" else "项目配置无变化",
+                text = if (enabled) stringResource(R.string.project_config_apply) else stringResource(R.string.project_config_no_changes),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = content_color,

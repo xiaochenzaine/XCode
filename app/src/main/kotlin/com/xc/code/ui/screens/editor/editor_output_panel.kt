@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +83,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.component.EditorTextActionWindow
@@ -93,10 +95,10 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-internal enum class editor_output_tab(val title: String) {
-    Output("构建输出"),
-    Log("IDE日志"),
-    Terminal("IDE终端")
+internal enum class editor_output_tab(val title_res: Int) {
+    Output(R.string.output_tab_build),
+    Log(R.string.output_tab_log),
+    Terminal(R.string.output_tab_terminal)
 }
 
 internal enum class editor_output_line_level {
@@ -117,8 +119,8 @@ private val editor_log_time_formatter: DateTimeFormatter = DateTimeFormatter.ofP
 
 internal class editor_output_panel_state {
     var selected_tab by mutableStateOf(editor_output_tab.Output)
-    var task_title by mutableStateOf("输出控制台")
-    var task_subtitle by mutableStateOf("点击查看输出、问题与日志")
+    var task_title by mutableStateOf("")
+    var task_subtitle by mutableStateOf("")
     var task_running by mutableStateOf(false)
     var task_stopping by mutableStateOf(false)
     var output_revision by mutableStateOf(0)
@@ -292,8 +294,8 @@ internal fun editor_output_bottom_sheet_scaffold(
                         .clearAndSetSemantics {}
                 ) {
                     editor_output_status_card(
-                        title = if (state.task_stopping) "正在停止" else if (state.task_running) "构建中" else state.selected_tab.title,
-                        subtitle = state.task_subtitle,
+                        title = if (state.task_stopping) stringResource(R.string.editor_stopping) else if (state.task_running) stringResource(R.string.output_building) else stringResource(state.selected_tab.title_res),
+                        subtitle = state.task_subtitle.ifBlank { stringResource(R.string.output_subtitle) },
                         running = state.task_running,
                         sheet_progress = sheet_progress,
                         on_click = {
@@ -384,22 +386,23 @@ private fun editor_output_dock_panel(
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                    editor_output_floating_button(
-                        icon = Icons.Default.Share,
-                        content_description = "分享当前内容",
-                        background = colors.card_icon_bg.copy(alpha = 0.82f),
-                        tint = colors.card_text_title,
-                        on_click = {
-                            share_editor_output_text(
-                                context = context,
-                                title = state.selected_tab.title,
-                                text = state.selected_tab_text()
-                            )
-                        }
-                    )
+                        val selected_tab_title = stringResource(state.selected_tab.title_res)
+                        editor_output_floating_button(
+                            icon = Icons.Default.Share,
+                            content_description = stringResource(R.string.output_share),
+                            background = colors.card_icon_bg.copy(alpha = 0.82f),
+                            tint = colors.card_text_title,
+                            on_click = {
+                                share_editor_output_text(
+                                    context = context,
+                                    title = selected_tab_title,
+                                    text = state.selected_tab_text()
+                                )
+                            }
+                        )
                         editor_output_floating_button(
                             icon = Icons.Default.Delete,
-                            content_description = "清理输出内容",
+                            content_description = stringResource(R.string.output_clear),
                             background = colors.editor_icon.copy(alpha = 0.22f),
                             tint = colors.editor_icon,
                             on_click = { state.clear_selected_tab() }
@@ -562,7 +565,7 @@ private fun editor_output_tabs(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = tab.title,
+                        text = stringResource(tab.title_res),
                         color = if (selected) colors.editor_tab_selected_text else colors.editor_tab_unselected_content,
                         fontSize = 12.sp,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
@@ -738,14 +741,14 @@ private fun editor_output_empty_state(
 ) {
     val colors = app_theme_provider.colors
     val title = when (tab) {
-        editor_output_tab.Output -> "暂无构建输出"
-        editor_output_tab.Log -> "暂无 IDE 日志"
-        editor_output_tab.Terminal -> "IDE终端未启动"
+        editor_output_tab.Output -> stringResource(R.string.output_empty_build)
+        editor_output_tab.Log -> stringResource(R.string.output_empty_log)
+        editor_output_tab.Terminal -> stringResource(R.string.output_empty_terminal)
     }
     val subtitle = when (tab) {
-        editor_output_tab.Output -> "点击编译后，构建输出会显示在这里"
-        editor_output_tab.Log -> "项目识别与 IDE 状态会显示在这里"
-        editor_output_tab.Terminal -> "切换到 IDE 终端后会自动创建会话"
+        editor_output_tab.Output -> stringResource(R.string.output_empty_build_desc)
+        editor_output_tab.Log -> stringResource(R.string.output_empty_log_desc)
+        editor_output_tab.Terminal -> stringResource(R.string.output_empty_terminal_desc)
     }
     val icon = when (tab) {
         editor_output_tab.Output -> Icons.Default.Terminal
@@ -791,7 +794,7 @@ private fun share_editor_output_text(
         putExtra(Intent.EXTRA_TEXT, text)
     }
     runCatching {
-        context.startActivity(Intent.createChooser(send_intent, "分享$title"))
+        context.startActivity(Intent.createChooser(send_intent, context.getString(R.string.output_share_title, title)))
     }
 }
 

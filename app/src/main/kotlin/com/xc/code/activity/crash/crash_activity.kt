@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import com.xc.code.R
+import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.toast.app_toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,6 +36,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class crash_activity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(app_locale_manager.wrap_context(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,7 +86,7 @@ class crash_activity : ComponentActivity() {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("Crash Report", text)
         clipboard.setPrimaryClip(clip)
-        app_toast.show(this, "已复制到剪贴板", app_toast.LENGTH_SHORT)
+        app_toast.show(this, getString(R.string.crash_copied), app_toast.LENGTH_SHORT)
     }
 
     private fun save_crash_log_to_file(log: String, stack: String) {
@@ -103,9 +110,9 @@ class crash_activity : ComponentActivity() {
                 writer.write(stack + "\n")
             }
             
-            app_toast.show(this, "已保存到: ${crash_file.absolutePath}", app_toast.LENGTH_LONG)
+            app_toast.show(this, getString(R.string.crash_saved, crash_file.absolutePath), app_toast.LENGTH_LONG)
         } catch (e: Exception) {
-            app_toast.show(this, "保存失败: ${e.message}", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.crash_save_failed, e.message), app_toast.LENGTH_SHORT)
         }
     }
 }
@@ -148,7 +155,7 @@ fun crash_screen(
         Spacer(modifier = Modifier.height(12.dp))
         
         Text(
-            text = "程序出现异常",
+            text = stringResource(R.string.crash_title),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -158,7 +165,7 @@ fun crash_screen(
         Spacer(modifier = Modifier.height(6.dp))
         
         Text(
-            text = "很抱歉，XCode 遇到了一个意外错误",
+            text = stringResource(R.string.crash_subtitle),
             fontSize = 13.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
@@ -175,7 +182,7 @@ fun crash_screen(
                 modifier = Modifier.padding(14.dp)
             ) {
                 Text(
-                    text = "错误信息",
+                    text = stringResource(R.string.crash_error_info),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFE74C3C)
@@ -240,7 +247,7 @@ fun crash_screen(
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("复制", fontSize = 13.sp)
+                Text(stringResource(R.string.common_copy), fontSize = 13.sp)
             }
             
             OutlinedButton(
@@ -254,7 +261,7 @@ fun crash_screen(
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("保存", fontSize = 13.sp)
+                Text(stringResource(R.string.common_save), fontSize = 13.sp)
             }
         }
         
@@ -277,7 +284,7 @@ fun crash_screen(
                     tint = Color.White
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("重启应用", fontSize = 13.sp, color = Color.White)
+                Text(stringResource(R.string.common_restart_app), fontSize = 13.sp, color = Color.White)
             }
             
             Button(
@@ -293,7 +300,7 @@ fun crash_screen(
                     tint = Color.White
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("退出", fontSize = 13.sp, color = Color.White)
+                Text(stringResource(R.string.common_exit), fontSize = 13.sp, color = Color.White)
             }
         }
         

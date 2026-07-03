@@ -28,10 +28,12 @@ import androidx.compose.ui.draw.clip
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.utils.uri_utils
 import com.xc.code.ui.theme.*
 
@@ -68,9 +70,24 @@ fun new_project_dialog(
     var selected_template by remember { mutableStateOf("executable") }
     
     val templates = listOf(
-        template_item("executable", "可执行", Icons.Default.PlayArrow, "生成独立的可执行程序"),
-        template_item("dynamic_lib", "动态库", Icons.Default.DynamicForm, "生成 .so 动态链接库"),
-        template_item("static_lib", "静态库", Icons.AutoMirrored.Filled.LibraryBooks, "生成 .a 静态库文件")
+        template_item(
+            "executable",
+            stringResource(R.string.project_template_executable),
+            Icons.Default.PlayArrow,
+            stringResource(R.string.project_template_executable_desc)
+        ),
+        template_item(
+            "dynamic_lib",
+            stringResource(R.string.project_template_dynamic_lib),
+            Icons.Default.DynamicForm,
+            stringResource(R.string.project_template_dynamic_lib_desc)
+        ),
+        template_item(
+            "static_lib",
+            stringResource(R.string.project_template_static_lib),
+            Icons.AutoMirrored.Filled.LibraryBooks,
+            stringResource(R.string.project_template_static_lib_desc)
+        )
     )
     
     var project_name by remember { mutableStateOf("") }
@@ -166,14 +183,18 @@ fun new_project_dialog(
             ) {
                 if (current_step == 1) {
                     IconButton(onClick = { current_step = 0 }, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = colors.dialog_text)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = colors.dialog_text)
                     }
                 } else {
                     Spacer(modifier = Modifier.width(36.dp))
                 }
                 
                 Text(
-                    text = if (current_step == 0) "新建项目" else "项目配置",
+                    text = if (current_step == 0) {
+                        stringResource(R.string.project_new_title)
+                    } else {
+                        stringResource(R.string.project_config_title)
+                    },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     color = colors.dialog_text
@@ -188,7 +209,7 @@ fun new_project_dialog(
                     },
                     modifier = Modifier.size(36.dp)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "关闭", tint = colors.dialog_hint)
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = colors.dialog_hint)
                 }
             }
             
@@ -306,12 +327,12 @@ fun new_project_dialog(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = "已选择模板",
+                                            text = stringResource(R.string.project_template_selected),
                                             fontSize = 12.sp,
                                             color = colors.dialog_hint
                                         )
                                         Text(
-                                            text = templates.find { it.id == selected_template }?.title ?: "未知",
+                                            text = templates.find { it.id == selected_template }?.title ?: stringResource(R.string.project_template_unknown),
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Medium,
                                             color = colors.dialog_icon
@@ -333,7 +354,7 @@ fun new_project_dialog(
                                         modifier = Modifier.size(20.dp)
                                     )
                                 },
-                                label = { Text("项目名称", color = colors.dialog_input_hint) },
+                                label = { Text(stringResource(R.string.project_name_label), color = colors.dialog_input_hint) },
                                 placeholder = { Text("my_project", color = colors.dialog_input_hint) },
                                 isError = name_error,
                                 modifier = Modifier.fillMaxWidth(),
@@ -356,8 +377,8 @@ fun new_project_dialog(
                                         modifier = Modifier.size(20.dp)
                                     )
                                 },
-                                label = { Text("项目位置", color = colors.dialog_input_hint) },
-                                placeholder = { Text("点击文件夹图标以选择", color = colors.dialog_input_hint) },
+                                label = { Text(stringResource(R.string.project_location_label), color = colors.dialog_input_hint) },
+                                placeholder = { Text(stringResource(R.string.project_location_placeholder), color = colors.dialog_input_hint) },
                                 trailingIcon = {
                                     IconButton(onClick = {
                                         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
@@ -365,7 +386,7 @@ fun new_project_dialog(
                                     }) {
                                         Icon(
                                             Icons.Default.FolderOpen,
-                                            contentDescription = "选择文件夹",
+                                            contentDescription = stringResource(R.string.common_select_folder),
                                             tint = colors.dialog_input_icon_hint,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -392,7 +413,7 @@ fun new_project_dialog(
                                     value = selected_ndk,
                                     onValueChange = {},
                                     readOnly = true,
-                                    label = { Text("NDK 版本", color = colors.dialog_input_hint) },
+                                    label = { Text(stringResource(R.string.project_ndk_version), color = colors.dialog_input_hint) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_ndk) },
                                     modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                                     shape = RoundedCornerShape(14.dp),
@@ -434,7 +455,7 @@ fun new_project_dialog(
                                     value = selected_cmake,
                                     onValueChange = {},
                                     readOnly = true,
-                                    label = { Text("CMake 版本", color = colors.dialog_input_hint) },
+                                    label = { Text(stringResource(R.string.project_cmake_version), color = colors.dialog_input_hint) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_cmake) },
                                     modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                                     shape = RoundedCornerShape(14.dp),
@@ -483,7 +504,7 @@ fun new_project_dialog(
                                         value = "C++$cpp_standard",
                                         onValueChange = {},
                                         readOnly = true,
-                                        label = { Text("C++标准", color = colors.dialog_input_hint) },
+                                        label = { Text(stringResource(R.string.project_cpp_standard), color = colors.dialog_input_hint) },
                                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_cpp_standard) },
                                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                                         shape = RoundedCornerShape(14.dp),
@@ -531,7 +552,7 @@ fun new_project_dialog(
                                         value = android_platform,
                                         onValueChange = {},
                                         readOnly = true,
-                                        label = { Text("Android Platform", color = colors.dialog_input_hint) },
+                                        label = { Text(stringResource(R.string.project_android_platform), color = colors.dialog_input_hint) },
                                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_platform) },
                                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                                         shape = RoundedCornerShape(14.dp),
@@ -575,7 +596,7 @@ fun new_project_dialog(
                             
                             if (!has_toolchains) {
                                 Text(
-                                    text = "需要先安装 NDK 和 CMake 才能创建项目",
+                                    text = stringResource(R.string.project_toolchain_required),
                                     fontSize = 12.sp,
                                     color = colors.dialog_hint
                                 )
@@ -609,7 +630,7 @@ fun new_project_dialog(
                                 ),
                                 shape = RoundedCornerShape(14.dp)
                             ) {
-                                Text("创建项目", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                Text(stringResource(R.string.project_create_button), fontSize = 16.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                     }

@@ -30,7 +30,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -214,7 +213,7 @@ private val Locales by lazy {
         Locale.FRENCH,
         Locale.GERMAN,
         Locale.ITALIAN,
-        Locale("es", "ES")
+        Locale.forLanguageTag("es-ES")
     )
 }
 
@@ -236,7 +235,7 @@ private fun LanguageSelector(
             Locale.FRENCH -> stringResource(R.string.language_french)
             Locale.GERMAN -> stringResource(R.string.language_german)
             Locale.ITALIAN -> stringResource(R.string.language_italian)
-            Locale("es", "ES") -> stringResource(R.string.language_spanish)
+            Locale.forLanguageTag("es-ES") -> stringResource(R.string.language_spanish)
             else -> locale.getDisplayLanguage(Locale.getDefault())
         }
     }

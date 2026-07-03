@@ -16,11 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.xc.code.R
 import com.xc.code.ui.toast.app_toast
 import com.xc.code.ui.theme.app_theme_provider
 import kotlinx.coroutines.delay
@@ -39,7 +42,15 @@ fun install_progress_dialog(
     auto_close_delay: Long = 2000
 ) {
     val scope = rememberCoroutineScope()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    val success_log = stringResource(R.string.install_success)
+    val failed_log = stringResource(R.string.install_failed)
+    val exported_text = stringResource(R.string.install_exported)
+    val export_failed_text = stringResource(R.string.install_export_failed)
+    val background_text = stringResource(R.string.common_background)
+    val export_text = stringResource(R.string.common_export)
+    val close_text = stringResource(R.string.common_close)
+    val preparing_text = stringResource(R.string.install_preparing)
     val colors = app_theme_provider.colors
     val list_state = rememberLazyListState()
     
@@ -73,12 +84,12 @@ fun install_progress_dialog(
         
         if (success) {
             add_log("")
-            add_log("操作成功！")
+            add_log(success_log)
             delay(auto_close_delay)
             on_success()
         } else {
             add_log("")
-            add_log("操作失败")
+            add_log(failed_log)
         }
     }
     
@@ -87,9 +98,9 @@ fun install_progress_dialog(
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val file = java.io.File(java.io.File(context.filesDir, "home/xcode"), "cache/log_$timestamp.txt")
             file.writeText(logs.joinToString("\n"))
-            app_toast.show(context, "已导出到: ${file.absolutePath}", app_toast.LENGTH_LONG)
+            app_toast.show(context, exported_text.format(file.absolutePath), app_toast.LENGTH_LONG)
         } catch (e: Exception) {
-            app_toast.show(context, "导出失败: ${e.message}", app_toast.LENGTH_SHORT)
+            app_toast.show(context, export_failed_text.format(e.message), app_toast.LENGTH_SHORT)
         }
     }
     
@@ -141,17 +152,17 @@ fun install_progress_dialog(
                     Row {
                         if (is_running) {
                             IconButton(onClick = on_minimize, modifier = Modifier.size(22.dp)) {
-                                Icon(Icons.Default.Remove, "后台", tint = colors.card_text_subtitle, modifier = Modifier.size(15.dp))
+                                Icon(Icons.Default.Remove, background_text, tint = colors.card_text_subtitle, modifier = Modifier.size(15.dp))
                             }
                         }
                         IconButton(onClick = { export_logs() }, modifier = Modifier.size(22.dp)) {
-                            Icon(Icons.Default.Download, "导出", tint = colors.card_text_subtitle, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.Download, export_text, tint = colors.card_text_subtitle, modifier = Modifier.size(15.dp))
                         }
                         
                         if (show_close_button) {
                             Spacer(modifier = Modifier.width(4.dp))
                             IconButton(onClick = on_dismiss, modifier = Modifier.size(22.dp)) {
-                                Icon(Icons.Default.Close, "关闭", tint = colors.card_text_subtitle, modifier = Modifier.size(15.dp))
+                                Icon(Icons.Default.Close, close_text, tint = colors.card_text_subtitle, modifier = Modifier.size(15.dp))
                             }
                         }
                     }
@@ -179,8 +190,8 @@ fun install_progress_dialog(
                         ) {
                             items(logs) { log ->
                                 val color = when {
-                                    log.contains("失败") -> colors.danger
-                                    log.contains("成功") -> colors.success
+                                    log.contains("失败") || log.contains(failed_log) -> colors.danger
+                                    log.contains("成功") || log.contains(success_log) -> colors.success
                                     else -> colors.card_text_title
                                 }
                                 Text(
@@ -194,7 +205,7 @@ fun install_progress_dialog(
                             if (logs.isEmpty()) {
                                 item {
                                     Text(
-                                        text = "正在准备...",
+                                        text = preparing_text,
                                         fontSize = 9.sp,
                                         fontFamily = FontFamily.Monospace,
                                         color = colors.card_text_subtitle

@@ -18,11 +18,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 
 @Composable
@@ -50,7 +52,7 @@ fun editor_unsaved_file_dialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "保存更改",
+                    text = stringResource(R.string.editor_save_changes),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     color = colors.dialog_text
@@ -59,7 +61,10 @@ fun editor_unsaved_file_dialog(
         },
         text = {
             Text(
-                text = "${file_name.ifBlank { "当前文件" }} 有未保存更改。",
+                text = stringResource(
+                    R.string.editor_unsaved_message,
+                    file_name.ifBlank { stringResource(R.string.editor_current_file) }
+                ),
                 color = colors.dialog_hint,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -77,7 +82,7 @@ fun editor_unsaved_file_dialog(
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("保存", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.common_save), fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         },
         dismissButton = {
@@ -85,7 +90,7 @@ fun editor_unsaved_file_dialog(
                 onClick = on_discard,
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.dialog_hint)
             ) {
-                Text("取消", fontSize = 14.sp)
+                Text(stringResource(R.string.common_cancel), fontSize = 14.sp)
             }
         }
     )
@@ -115,7 +120,7 @@ fun editor_exit_confirm_dialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "退出编辑器",
+                    text = stringResource(R.string.editor_exit_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     color = colors.dialog_text
@@ -124,7 +129,7 @@ fun editor_exit_confirm_dialog(
         },
         text = {
             Text(
-                text = "确定要退出当前编辑器吗？",
+                text = stringResource(R.string.editor_exit_message),
                 color = colors.dialog_hint,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -140,7 +145,7 @@ fun editor_exit_confirm_dialog(
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("退出", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.common_exit), fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         },
         dismissButton = {
@@ -148,7 +153,7 @@ fun editor_exit_confirm_dialog(
                 onClick = on_cancel,
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.dialog_hint)
             ) {
-                Text("取消", fontSize = 14.sp)
+                Text(stringResource(R.string.common_cancel), fontSize = 14.sp)
             }
         }
     )

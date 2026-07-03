@@ -19,9 +19,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 import kotlin.math.roundToInt
 
@@ -43,7 +45,7 @@ fun editor_settings_panel(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "编辑器",
+            text = stringResource(R.string.editor_settings_title),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = colors.title_highlight,
@@ -66,8 +68,8 @@ fun editor_settings_panel(
 
             editor_settings_slider_card(
                 icon = Icons.Default.Settings,
-                title = "字体大小",
-                description = "调整代码文字大小",
+                title = stringResource(R.string.editor_font_size),
+                description = stringResource(R.string.editor_font_size_desc),
                 value = settings.font_size,
                 value_range = 10f..24f,
                 steps = 13,
@@ -80,8 +82,8 @@ fun editor_settings_panel(
 
             editor_settings_slider_card(
                 icon = Icons.Default.Settings,
-                title = "制表符大小",
-                description = "设置 Tab 占用空格数",
+                title = stringResource(R.string.editor_tab_size),
+                description = stringResource(R.string.editor_tab_size_desc),
                 value = settings.tab_size.toFloat(),
                 value_range = 2f..8f,
                 steps = 5,
@@ -91,16 +93,16 @@ fun editor_settings_panel(
             )
         }
 
-        editor_settings_group_title("主题")
+        editor_settings_group_title(stringResource(R.string.editor_theme_group))
         editor_settings_navigation_card(
             icon = Icons.Default.Palette,
-            title = "编辑器主题",
-            description = "调整编辑器与高亮颜色",
+            title = stringResource(R.string.editor_theme_title),
+            description = stringResource(R.string.editor_theme_desc),
             on_click = on_open_theme_settings
         )
 
         switch_groups.forEach { group ->
-            editor_settings_group_title(group.title)
+            editor_settings_group_title(stringResource(group.title_res))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -109,8 +111,8 @@ fun editor_settings_panel(
                 group.items.forEachIndexed { index, item ->
                     editor_settings_switch_card(
                         icon = Icons.Default.Settings,
-                        title = item.title,
-                        description = item.description,
+                        title = stringResource(item.title_res),
+                        description = stringResource(item.description_res),
                         checked = item.checked,
                         shape = editor_settings_group_item_shape(
                             is_top = index == 0,
@@ -168,14 +170,14 @@ private fun editor_settings_font_card(
     val fonts = listOf(
         "jetbrains_mono" to "JetBrains Mono",
         "roboto" to "Roboto",
-        "imported" to "导入字体"
+        "imported" to stringResource(R.string.editor_settings_imported_font)
     )
     val selected_label = fonts.firstOrNull { it.first == selected_font }?.second ?: "JetBrains Mono"
     var expanded by remember { mutableStateOf(false) }
     editor_settings_expandable_options_card(
         icon = Icons.Default.Settings,
-        title = "编辑器字体",
-        description = "当前字体: $selected_label",
+        title = stringResource(R.string.editor_font_title),
+        description = stringResource(R.string.editor_font_current, selected_label),
         expanded = expanded,
         options = fonts,
         selected_value = selected_font,
@@ -243,7 +245,7 @@ private fun editor_settings_expandable_options_card(
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "收起" else "展开",
+                    contentDescription = if (expanded) stringResource(R.string.common_collapse) else stringResource(R.string.common_expand),
                     tint = colors.card_chevron,
                     modifier = Modifier.size(18.dp)
                 )
@@ -391,7 +393,7 @@ private fun editor_settings_option_row(
         if (selected) {
             Icon(
                 Icons.Default.Done,
-                contentDescription = "已选中",
+                contentDescription = stringResource(R.string.common_selected),
                 tint = colors.title_highlight,
                 modifier = Modifier.size(16.dp)
             )
@@ -452,7 +454,7 @@ private fun editor_settings_navigation_card(
 
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "进入",
+                contentDescription = stringResource(R.string.common_enter),
                 tint = colors.card_chevron,
                 modifier = Modifier.size(18.dp)
             )

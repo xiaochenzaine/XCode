@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -71,7 +72,7 @@ fun main_about_screen(
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.common_back),
                     tint = colors.top_button_icon,
                     modifier = Modifier.size(24.dp)
                 )
@@ -81,14 +82,14 @@ fun main_about_screen(
         Spacer(modifier = Modifier.height(34.dp))
 
         Text(
-            text = "关于",
+            text = stringResource(R.string.about_title),
             fontSize = 34.sp,
             fontWeight = FontWeight.Bold,
             color = colors.title_highlight
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "设置",
+            text = stringResource(R.string.about_subtitle),
             fontSize = 14.sp,
             fontWeight = FontWeight.Light,
             color = colors.subtitle
@@ -143,7 +144,7 @@ fun main_about_screen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "by 小陈在肝码",
+                text = stringResource(R.string.about_author),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.title_highlight
@@ -152,25 +153,25 @@ fun main_about_screen(
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        about_section_title("设备信息", colors)
+        about_section_title(stringResource(R.string.about_device_info), colors)
         about_info_group(
             rows = listOf(
-                "设备" to Build.BRAND + " " + Build.MODEL,
-                "型号" to Build.DEVICE,
-                "系统" to android_text
+                stringResource(R.string.about_device) to Build.BRAND + " " + Build.MODEL,
+                stringResource(R.string.about_model) to Build.DEVICE,
+                stringResource(R.string.about_system) to android_text
             ),
             colors = colors
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        about_section_title("链接", colors)
+        about_section_title(stringResource(R.string.about_links), colors)
         about_link_group(
             colors = colors,
             rows = listOf(
-                about_link_item(Icons.Default.Code, "源代码", "https://github.com", "https://github.com"),
-                about_link_item(Icons.Default.Forum, "官方群", "https://github.com", "https://github.com"),
-                about_link_item(Icons.Default.Campaign, "官方频道", "https://github.com", "https://github.com")
+                about_link_item(Icons.Default.Code, stringResource(R.string.about_source_code), "https://github.com", "https://github.com"),
+                about_link_item(Icons.Default.Forum, stringResource(R.string.about_official_group), "https://github.com", "https://github.com"),
+                about_link_item(Icons.Default.Campaign, stringResource(R.string.about_official_channel), "https://github.com", "https://github.com")
             )
         )
 

@@ -38,6 +38,5 @@ include(
     ":modules:chat-agent:search",
     ":modules:chat-agent:speech",
     ":modules:chat-agent:workspace",
-    ":modules:chat-agent:web",
     ":modules:chat-agent:app",
 )

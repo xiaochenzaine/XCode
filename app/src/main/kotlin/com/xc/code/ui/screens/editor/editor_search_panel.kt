@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 
 @Composable
@@ -109,7 +111,7 @@ fun editor_search_panel(
 
             search_box_row(
                 value = query,
-                placeholder = "输入搜索内容...",
+                placeholder = stringResource(R.string.editor_search_placeholder),
                 expanded = expanded,
                 on_value_change = on_query_change,
                 on_expanded_change = on_expanded_change,
@@ -143,7 +145,7 @@ fun editor_search_panel(
                     IconButton(onClick = on_previous, enabled = has_query, modifier = Modifier.size(30.dp)) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowUp,
-                            contentDescription = "上一个",
+                            contentDescription = stringResource(R.string.editor_previous),
                             tint = if (has_query) colors.editor_text else colors.editor_hint,
                             modifier = Modifier.size(17.dp)
                         )
@@ -151,7 +153,7 @@ fun editor_search_panel(
                     IconButton(onClick = on_next, enabled = has_query, modifier = Modifier.size(30.dp)) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "下一个",
+                            contentDescription = stringResource(R.string.editor_next),
                             tint = if (has_query) colors.editor_text else colors.editor_hint,
                             modifier = Modifier.size(17.dp)
                         )
@@ -159,7 +161,7 @@ fun editor_search_panel(
                 IconButton(onClick = on_close, modifier = Modifier.size(30.dp)) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "关闭搜索",
+                        contentDescription = stringResource(R.string.editor_close_search),
                         tint = colors.editor_text,
                         modifier = Modifier.size(17.dp)
                     )
@@ -178,12 +180,12 @@ fun editor_search_panel(
                     ) {
                         search_text_field(
                             value = replacement,
-                            placeholder = "输入替换内容...",
+                            placeholder = stringResource(R.string.editor_replace_placeholder),
                             on_value_change = on_replacement_change,
                             trailing_content = {
                                 search_replace_mode_button(
                                     selected = replace_all_mode,
-                                    content_description = if (replace_all_mode) "当前替换全部，点击切换为单次替换" else "当前单次替换，点击切换为替换全部",
+                                    content_description = if (replace_all_mode) stringResource(R.string.editor_replace_all_mode) else stringResource(R.string.editor_replace_once_mode),
                                     on_click = { replace_all_mode = !replace_all_mode }
                                 )
                             },
@@ -192,7 +194,7 @@ fun editor_search_panel(
                         search_replace_button(
                             icon = Icons.Default.FindReplace,
                             enabled = can_replace,
-                            content_description = if (replace_all_mode) "执行替换全部" else "执行单次替换",
+                            content_description = if (replace_all_mode) stringResource(R.string.editor_do_replace_all) else stringResource(R.string.editor_do_replace_once),
                             on_click = {
                                 if (replace_all_mode) {
                                     on_replace_all()
@@ -235,7 +237,7 @@ private fun search_box_row(
             IconButton(onClick = { on_expanded_change(!expanded) }, modifier = Modifier.size(28.dp)) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) "收起替换" else "展开替换",
+                    contentDescription = if (expanded) stringResource(R.string.editor_collapse_replace) else stringResource(R.string.editor_expand_replace),
                     tint = colors.editor_hint,
                     modifier = Modifier.size(17.dp)
                 )

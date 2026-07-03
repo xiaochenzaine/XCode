@@ -63,7 +63,6 @@ android {
         compilerOptions.optIn.add("kotlin.uuid.ExperimentalUuidApi")
         compilerOptions.optIn.add("kotlin.time.ExperimentalTime")
         compilerOptions.optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
-        compilerOptions.optIn.add("androidx.navigation3.runtime.ExperimentalNavigation3Api")
     }
 }
 
@@ -206,19 +205,11 @@ dependencies {
     // mcp
     implementation(libs.modelcontextprotocol.kotlin.sdk)
 
-    // jmDNS (mDNS/Bonjour for .local hostname)
-    implementation(libs.jmdns)
-
-    // SLF4J Android binding — routes Ktor/SLF4J logs to logcat
-    implementation(libs.slf4j.api)
-    implementation(libs.slf4j.android)
-
     // sqlite-android (requery SQLite for Android)
     implementation(libs.sqlite.android)
 
     // modules
     implementation(project(":modules:chat-agent:ai"))
-    implementation(project(":modules:chat-agent:web"))
     implementation(project(":modules:chat-agent:document"))
     implementation(project(":modules:chat-agent:highlight"))
     implementation(project(":modules:chat-agent:search"))

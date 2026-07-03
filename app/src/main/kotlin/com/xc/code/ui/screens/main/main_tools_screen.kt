@@ -21,10 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.ui.theme.app_colors
 import com.xc.code.ui.theme.app_theme_provider
 
@@ -58,7 +60,7 @@ private val basic_tool_items = listOf(
     main_basic_tool_item(
         id = "cmake",
         title = "CMake",
-        description = "检查 CMake/Ninja 是否可用，用于初始化构建目录",
+        description = "CMake/Ninja",
         icon = Icons.Default.Build
     )
 )
@@ -165,7 +167,7 @@ fun main_tools_screen(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.common_back),
                             tint = colors.top_button_icon,
                             modifier = Modifier.size(18.dp)
                         )
@@ -184,21 +186,21 @@ fun main_tools_screen(
                     .padding(horizontal = 18.dp)
             ) {
                 Text(
-                    text = "开发工具",
+                    text = stringResource(R.string.tools_title),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_large
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "CMake 构建组件",
+                    text = stringResource(R.string.tools_subtitle),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "管理 CMake 和 Android NDK",
+                    text = stringResource(R.string.tools_desc),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = colors.subtitle
@@ -224,7 +226,7 @@ fun main_tools_screen(
                         main_tools_install_card(
                             icon = Icons.Default.Build,
                             title = "CMake",
-                            description = "用于生成 Ninja 构建目录和 compile_commands.json",
+                            description = stringResource(R.string.tools_cmake_desc),
                             selected_item = selected_cmake,
                             items = cmake_items,
                             installed = selected_cmake.install_key in install_status.installed_cmake_versions,
@@ -236,10 +238,10 @@ fun main_tools_screen(
 
                         main_tools_info_card(
                             icon = Icons.Default.Settings,
-                            title = "CMake 环境",
+                            title = stringResource(R.string.tools_cmake_env),
                             lines = listOf(
-                                "安装到 /home/xcode/cmake/<版本>",
-                                "Ninja 从 APK 内置 libninja_exec.so 复制到 CMake bin"
+                                stringResource(R.string.tools_cmake_path),
+                                stringResource(R.string.tools_cmake_ninja)
                             )
                         )
                     }
@@ -248,7 +250,7 @@ fun main_tools_screen(
                         main_tools_install_card(
                             icon = Icons.Default.Android,
                             title = "Android NDK",
-                            description = "用于 Android ABI 交叉编译和工具链配置",
+                            description = stringResource(R.string.tools_ndk_desc),
                             selected_item = selected_ndk,
                             items = ndk_download_items,
                             installed = selected_ndk.install_key in install_status.installed_ndk_versions,
@@ -260,10 +262,10 @@ fun main_tools_screen(
 
                         main_tools_info_card(
                             icon = Icons.Default.Settings,
-                            title = "NDK 环境",
+                            title = stringResource(R.string.tools_ndk_env),
                             lines = listOf(
-                                "使用 Ubuntu 环境 wget 下载并解压安装",
-                                "缓存位于 /home/xcode/cache，安装到 /home/xcode/ndk"
+                                stringResource(R.string.tools_ndk_install_desc),
+                                stringResource(R.string.tools_ndk_cache_desc)
                             )
                         )
                     }
@@ -450,8 +452,8 @@ private fun main_tools_basic_card(
 
             main_tools_action_button(
                 installed = installed,
-                install_text = "安装",
-                uninstall_text = "卸载",
+                install_text = stringResource(R.string.tools_install),
+                uninstall_text = stringResource(R.string.tools_uninstall),
                 on_install = on_install,
                 on_custom_install = on_custom_install,
                 on_uninstall = on_uninstall
@@ -615,8 +617,8 @@ private fun main_tools_install_card(
 
             main_tools_action_button(
                 installed = installed,
-                install_text = "安装 ${selected_item.version}",
-                uninstall_text = "卸载 ${selected_item.version}",
+                install_text = stringResource(R.string.tools_install_version, selected_item.version),
+                uninstall_text = stringResource(R.string.tools_uninstall_version, selected_item.version),
                 on_install = on_install,
                 on_custom_install = on_custom_install,
                 on_uninstall = on_uninstall
@@ -712,7 +714,7 @@ private fun main_tools_action_button(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "自定义安装",
+                    text = stringResource(R.string.tools_custom_install),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,

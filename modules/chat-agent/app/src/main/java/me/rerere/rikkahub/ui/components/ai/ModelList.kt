@@ -58,6 +58,7 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -617,6 +618,7 @@ private fun ColumnScope.ModelList(
     val providerBadgeListState = rememberLazyListState()
     LaunchedEffect(lazyListState) {
         // 当LazyColumn滚动时，LazyRow也跟随滚动
+        @OptIn(FlowPreview::class)
         snapshotFlow { lazyListState.firstVisibleItemIndex }
             .distinctUntilChanged()
             .debounce(100) // 防抖处理

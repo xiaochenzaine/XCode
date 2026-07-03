@@ -15,9 +15,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -29,10 +31,10 @@ fun splash_content(
     var load_finished by remember { mutableStateOf(false) }
 
     val tips = listOf(
-        "随时随地写代码",
-        "轻量级代码编辑器",
-        "支持 C/C++ 编译",
-        "内置 Linux 终端"
+        stringResource(R.string.splash_tip_code_anywhere),
+        stringResource(R.string.splash_tip_light_editor),
+        stringResource(R.string.splash_tip_cpp_compile),
+        stringResource(R.string.splash_tip_linux_terminal)
     )
 
     val infinite_transition = rememberInfiniteTransition()

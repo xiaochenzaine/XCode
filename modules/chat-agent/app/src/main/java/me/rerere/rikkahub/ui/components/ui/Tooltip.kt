@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package me.rerere.rikkahub.ui.components.ui
 
 import androidx.compose.material3.PlainTooltip

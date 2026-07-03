@@ -25,11 +25,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
+import com.xc.code.R as app_R
 import com.xc.code.ui.theme.app_theme_provider
 
 @Composable
@@ -86,14 +88,14 @@ fun editor_floating_actions(
             ) {
                 compact_floating_icon_button(
                     icon = Icons.AutoMirrored.Filled.Undo,
-                    content_description = "撤销",
+                    content_description = stringResource(app_R.string.editor_undo),
                     enabled = can_undo,
                     tint = if (can_undo) colors.editor_text else colors.editor_hint,
                     on_click = on_undo
                 )
                 compact_floating_icon_button(
                     icon = Icons.AutoMirrored.Filled.Redo,
-                    content_description = "重做",
+                    content_description = stringResource(app_R.string.editor_redo),
                     enabled = can_redo,
                     tint = if (can_redo) colors.editor_text else colors.editor_hint,
                     on_click = on_redo
@@ -101,7 +103,7 @@ fun editor_floating_actions(
                 if (show_save) {
                     compact_floating_icon_button(
                         icon = Icons.Default.Save,
-                        content_description = "保存",
+                        content_description = stringResource(app_R.string.common_save),
                         enabled = has_changes,
                         tint = if (has_changes) colors.editor_icon else colors.editor_hint,
                         on_click = on_save
@@ -110,7 +112,7 @@ fun editor_floating_actions(
                 if (show_format) {
                     compact_floating_painter_button(
                         icon_res = if (format_selection) R.drawable.ic_editor_format_selection else R.drawable.ic_editor_format,
-                        content_description = if (format_selection) "格式化选区" else "格式化全文",
+                        content_description = if (format_selection) stringResource(app_R.string.editor_format_selection) else stringResource(app_R.string.editor_format_all),
                         enabled = can_format,
                         tint = if (can_format) colors.editor_text else colors.editor_hint,
                         on_click = on_format
@@ -238,7 +240,7 @@ fun editor_symbol_bar(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Filled.Settings,
-                                    contentDescription = "符号栏",
+                                    contentDescription = stringResource(app_R.string.editor_symbol_bar),
                                     tint = colors.editor_icon,
                                     modifier = Modifier.size(18.dp)
                                 )

@@ -19,6 +19,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import kotlinx.serialization.Serializable
@@ -49,6 +51,14 @@ fun RikkahubTheme(
 ) {
     val settings by rememberUserSettingsState()
     val bridgeColorMode by ThemeStateBridge.colorMode.collectAsState()
+    val bridgeScale by ThemeStateBridge.scale.collectAsState()
+    val baseDensity = LocalDensity.current
+    val scaledDensity = remember(baseDensity, bridgeScale) {
+        Density(
+            density = baseDensity.density * bridgeScale,
+            fontScale = baseDensity.fontScale
+        )
+    }
     val effectiveColorMode = if (useHostColorMode) bridgeColorMode ?: colorMode else colorMode
 
     val darkTheme = when (effectiveColorMode) {
@@ -96,7 +106,8 @@ fun RikkahubTheme(
     CompositionLocalProvider(
         LocalDarkMode provides darkTheme,
         LocalExtendColors provides extendColors,
-        LocalOverscrollFactory provides null
+        LocalOverscrollFactory provides null,
+        LocalDensity provides scaledDensity
     ) {
         MaterialExpressiveTheme(
             colorScheme = colorSchemeConverted,

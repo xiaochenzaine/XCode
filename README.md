@@ -1,6 +1,6 @@
 # XCode
 
-[中文](#xcode) | [English](#english)
+[中文](README.md) | [English](README_EN.md)
 
 XCode 是一款运行在 Android 上的 C/C++ IDE，目标是在移动设备上完成本地 C/C++ 开发。它集成了代码编辑器、项目文件树、CMake/Ninja 构建流程、clangd 智能代码能力、终端、Agent 助手，以及基于 PRoot 的 Linux 工具链运行环境，可以直接在 Android 设备上编辑、配置、构建和分析 C/C++ 项目。
 
@@ -90,6 +90,8 @@ XCode 集成 RikkaHub 作为 Agent 能力，源码位于：
 modules/chat-agent/
 ```
 
+`modules/chat-agent/` 包含源自 RikkaHub 的修改代码。RikkaHub 来源、许可证和修改说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [modules/chat-agent/LICENSE](modules/chat-agent/LICENSE)。
+
 Agent 目前支持：
 
 - 完整 RikkaHub 聊天页面
@@ -99,6 +101,9 @@ Agent 目前支持：
 - 上传文件通过 `/upload` 暴露给 Agent 读取
 - 技能目录通过 `/skills` 暴露给 Agent
 - XCode 项目目录固定挂载到 `/workspace/XCodeProjects`
+- Agent 跟随 XCode 的主题和语言策略：默认中文，英文备用
+- 使用 XCode 共享 Ubuntu rootfs，不再提供 RikkaHub 独立 rootfs 下载/解压安装
+- 已移除 RikkaHub 外部 Web UI / Web Server、更新检测和独立主题切换
 
 ### XCodeProjects 映射
 
@@ -126,8 +131,9 @@ XCodeProjects
 
 - 已有项目会保留自己的 `CMakeLists.txt` 和 `.clang-format`；模板变更只影响新建项目。
 - 工具链命令会通过应用内的 PRoot 运行环境在设备上执行。
+- Agent 与终端使用 XCode 共享 Ubuntu rootfs：`filesDir/home/xcode/ubuntu-base`。
+- RikkaHub Agent 只保留内置聊天、workspace/tool 能力；外部 Web 访问服务已移除。
 - 停止构建时会停止 Android 进程，并对活动的 CMake/Ninja 进程做兜底清理。
-- Android 构建时不会自动构建 RikkaHub Web UI；Web UI 源码保留在 `modules/chat-agent/web-ui`。
 
 ## 联系方式
 
@@ -137,141 +143,4 @@ XCodeProjects
 
 本项目采用用户分段双重许可模式：符合条件的开源、非商业、个人、教育、研究用途可基于 GNU AGPL v3 使用；其他使用场景需要取得商业授权。详见 [LICENSE](LICENSE)。
 
----
-
-# English
-
-XCode is an Android C/C++ IDE focused on local development on mobile devices. It combines a code editor, project file tree, CMake/Ninja build workflow, clangd language features, an integrated terminal, an Agent assistant, and a PRoot-based Linux toolchain runtime so C/C++ projects can be edited, configured, built, and analyzed directly on Android.
-
-## Features
-
-- C/C++ project creation with executable, static library, and shared library templates
-- CMake and Ninja project configure/build workflow
-- PRoot-based Linux toolchain runtime integration
-- clangd language server support for completion, signature help, symbol highlight, diagnostics, hover, and formatting
-- Sora-based code editor with tabs, file tree, search, editor settings, and shortcut symbol bar
-- Output panel for configure/build/toolchain logs
-- Integrated terminal with the same Linux toolchain environment used by XCode
-- RikkaHub integrated as the Agent assistant module
-- Full Agent page embedded in the editor sidebar
-- Agent / terminal / workspace tools mount the XCode project directory: `/storage/emulated/0/XCodeProjects -> /workspace/XCodeProjects`
-- RikkaHub workspace file manager maps `XCodeProjects` to the real `/storage/emulated/0/XCodeProjects` directory
-- Agent workspace tools can read, edit, write files, and execute shell commands
-- Project configuration for ABI, C++ standard, build type, CMake arguments, and parallel jobs
-- Default `.clang-format` generation for new projects
-- Release build strip rules generated in template `CMakeLists.txt`
-
-## Project Structure
-
-```text
-XCode/
-├── app/                         Android application shell and XCode main UI
-├── modules/chat-agent/          RikkaHub Agent integration module
-│   ├── app/                     RikkaHub Android UI, workspace, services, and tools
-│   ├── ai/                      AI providers, messages, tool calling, and core logic
-│   ├── workspace/               Workspace file system and PRoot shell runner
-│   ├── terminal-emulator/       Terminal emulator
-│   ├── terminal-view/           Terminal view
-│   └── ...
-├── modules/editor-core/         Editor models and shared editor state
-├── modules/project-file-tree/   Project tree UI/components
-├── modules/toolchain-runtime/   PRoot command/runtime integration
-├── modules/clangd-lsp/          clangd language server bridge
-├── modules/sora-editor/         Sora editor module
-├── modules/sora-editor-lsp/     Sora LSP integration
-├── modules/sora-language-textmate/
-├── modules/sora-oniguruma-native/
-└── modules/terminal-*/          XCode native terminal modules
-```
-
-## Requirements
-
-- Android Studio or compatible Gradle environment
-- JDK 17
-- Android SDK with compile SDK 37
-- Android NDK `29.0.14206865`
-- Android device or emulator running Android 8.0+ (`minSdk 26`)
-
-The app currently targets `arm64-v8a` native packaging.
-
-## Build
-
-Clone the repository and build with Gradle:
-
-```bash
-./gradlew assembleDebug
-```
-
-For Android Studio, open the repository root and run the `app` configuration.
-
-## C/C++ Project Workflow
-
-XCode creates CMake-based projects and writes a default `CMakeLists.txt` for the selected template.
-
-New projects include:
-
-- Android ABI validation
-- output directories under the CMake build directory
-- target include directory setup
-- Release-only post-build strip rule using `${CMAKE_STRIP}`
-
-Saving the root `CMakeLists.txt` can trigger a CMake configure refresh so clangd can use the updated `compile_commands.json`.
-
-## clangd
-
-clangd is started through the toolchain runtime and is used for C/C++ intelligent editing features. The editor settings expose user-facing feature switches such as completion, signature help, symbol highlight, formatting, and hover. Diagnostics are handled as part of the language server flow.
-
-## Agent / RikkaHub Integration
-
-XCode integrates RikkaHub as the Agent system. The source code lives in:
-
-```text
-modules/chat-agent/
-```
-
-The Agent currently supports:
-
-- Full RikkaHub chat page
-- Agent access from the editor sidebar
-- Workspace shell command execution
-- Workspace file read, write, and precise edit tools
-- Uploaded files exposed to the Agent through `/upload`
-- Skills exposed to the Agent through `/skills`
-- XCode project directory mounted at `/workspace/XCodeProjects`
-
-### XCodeProjects Mapping
-
-XCode's default project directory is:
-
-```text
-/storage/emulated/0/XCodeProjects
-```
-
-Inside the Agent and terminal it is available as:
-
-```text
-/workspace/XCodeProjects
-```
-
-Inside the RikkaHub workspace file manager it is shown as:
-
-```text
-XCodeProjects
-```
-
-All three paths point to the same real project files.
-
-## Notes
-
-- Existing projects keep their own `CMakeLists.txt` and `.clang-format`; template changes only affect newly created projects.
-- Toolchain commands run through the app's PRoot runtime on device.
-- Build cancellation stops the Android process and uses fallback cleanup for active CMake/Ninja processes.
-- RikkaHub Web UI is not built automatically during Android builds; its source remains under `modules/chat-agent/web-ui`.
-
-## Contact
-
-- Email: xiaochenzaine@qq.com
-
-## License
-
-This project uses a segmented dual licensing model: GNU AGPL v3 for eligible open-source/non-commercial/personal/educational/research use, and a commercial license for other use cases. See [LICENSE](LICENSE) for details.
+本项目集成并修改了 RikkaHub 作为 Agent 模块；RikkaHub 的来源、许可证和修改说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [modules/chat-agent/LICENSE](modules/chat-agent/LICENSE)。

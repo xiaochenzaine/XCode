@@ -19,9 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,7 +64,7 @@ fun main_settings_screen(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.common_back),
                             tint = colors.top_button_icon,
                             modifier = Modifier.size(18.dp)
                         )
@@ -81,21 +83,21 @@ fun main_settings_screen(
                     .padding(horizontal = 18.dp)
             ) {
                 Text(
-                    text = "自定义你的",
+                    text = stringResource(R.string.settings_hero_line_1),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_large
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "使用体验",
+                    text = stringResource(R.string.settings_hero_line_2),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "应用设置与偏好",
+                    text = stringResource(R.string.settings_subtitle),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = colors.subtitle
@@ -110,7 +112,7 @@ fun main_settings_screen(
                     .padding(horizontal = 18.dp)
             ) {
                 Text(
-                    text = "设置",
+                    text = stringResource(R.string.settings_section_title),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight,
@@ -124,8 +126,8 @@ fun main_settings_screen(
                 ) {
                     main_settings_card_item(
                         icon = Icons.Default.BrightnessMedium,
-                        title = "主题",
-                        subtitle = "切换深色/浅色模式",
+                        title = stringResource(R.string.settings_theme_title),
+                        subtitle = stringResource(R.string.settings_theme_subtitle),
                         colors = colors,
                         onClick = on_theme_click,
                         is_top = true,
@@ -136,8 +138,8 @@ fun main_settings_screen(
                     
                     main_settings_card_item(
                         icon = Icons.Default.Code,
-                        title = "编辑器",
-                        subtitle = "字体大小、缩进、自动保存等",
+                        title = stringResource(R.string.settings_editor_title),
+                        subtitle = stringResource(R.string.settings_editor_subtitle),
                         colors = colors,
                         onClick = on_editor_click,
                         is_top = false,
@@ -148,8 +150,8 @@ fun main_settings_screen(
                     
                     main_settings_card_item(
                         icon = Icons.Default.Info,
-                        title = "关于",
-                        subtitle = "版本信息、开源许可",
+                        title = stringResource(R.string.settings_about_title),
+                        subtitle = stringResource(R.string.settings_about_subtitle),
                         colors = colors,
                         onClick = on_about_click,
                         is_top = false,
@@ -240,7 +242,7 @@ private fun main_settings_card_item(
             
             Icon(
                 Icons.Default.ChevronRight,
-                contentDescription = "进入",
+                contentDescription = stringResource(R.string.common_enter),
                 tint = colors.card_chevron,
                 modifier = Modifier.size(16.dp)
             )

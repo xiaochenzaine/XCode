@@ -45,6 +45,10 @@ import com.xc.code.ui.dialogs.main.open_project_dialog
 import com.xc.code.ui.dialogs.main.toolchain_custom_install_dialog
 import com.xc.code.ui.screens.editor.editor_settings_screen
 import com.xc.code.ui.screens.editor.editor_theme_settings_screen
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.xc.code.R
+import com.xc.code.ui.locale.app_language_type
 import com.xc.code.ui.theme.app_theme_provider
 import com.xc.code.ui.theme.app_theme_type
 
@@ -57,6 +61,7 @@ fun main_navigation(
     toolchain_status: main_tools_install_status,
     current_theme: app_theme_type,
     scale_value: Float,
+    current_language: app_language_type,
     toolchain_tasks: List<toolchain_trigger>,
     custom_toolchain_dialog: toolchain_custom_install_request?,
     on_back_to_background: () -> Unit,
@@ -70,10 +75,12 @@ fun main_navigation(
     on_custom_toolchain_dialog_change: (toolchain_custom_install_request?) -> Unit,
     on_theme_change: (app_theme_type) -> Unit,
     on_scale_change: (Float) -> Unit,
+    on_language_change: (app_language_type) -> Unit,
     on_run_toolchain_task: suspend (toolchain_trigger, (String) -> Unit, (Int) -> Unit) -> Boolean,
     on_toolchain_task_success: (toolchain_trigger) -> Unit
 ) {
     val colors = app_theme_provider.colors
+    val context = LocalContext.current
     val nav_controller = rememberNavController()
     val current_back_stack by nav_controller.currentBackStackEntryAsState()
     var show_new_project_dialog by remember { mutableStateOf(false) }
@@ -131,7 +138,7 @@ fun main_navigation(
                     on_install_cmake = { version, source, sha256 ->
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "安装 CMake $version",
+                                title = context.getString(R.string.toolchain_task_install_cmake, version),
                                 action = toolchain_action.INSTALL_CMAKE,
                                 source = source,
                                 version = version,
@@ -141,10 +148,10 @@ fun main_navigation(
                     },
                     on_custom_install_cmake = {
                         on_custom_toolchain_dialog_change(
-                            toolchain_custom_install_request("自定义安装 CMake") { path ->
+                            toolchain_custom_install_request(context.getString(R.string.toolchain_task_custom_install_cmake)) { path ->
                                 on_toolchain_trigger_change(
                                     toolchain_trigger(
-                                        title = "自定义安装 CMake",
+                                        title = context.getString(R.string.toolchain_task_custom_install_cmake),
                                         action = toolchain_action.INSTALL_CMAKE_ARCHIVE,
                                         source = path
                                     )
@@ -155,7 +162,7 @@ fun main_navigation(
                     on_uninstall_cmake = { version ->
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "卸载 CMake $version",
+                                title = context.getString(R.string.toolchain_task_uninstall_cmake, version),
                                 action = toolchain_action.UNINSTALL_CMAKE,
                                 version = version
                             )
@@ -164,7 +171,7 @@ fun main_navigation(
                     on_install_ndk = { version, source, sha256 ->
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "安装 NDK $version",
+                                title = context.getString(R.string.toolchain_task_install_ndk, version),
                                 action = toolchain_action.INSTALL_NDK_URL,
                                 source = source,
                                 version = version,
@@ -174,10 +181,10 @@ fun main_navigation(
                     },
                     on_custom_install_ndk = {
                         on_custom_toolchain_dialog_change(
-                            toolchain_custom_install_request("自定义安装 NDK") { path ->
+                            toolchain_custom_install_request(context.getString(R.string.toolchain_task_custom_install_ndk)) { path ->
                                 on_toolchain_trigger_change(
                                     toolchain_trigger(
-                                        title = "自定义安装 NDK",
+                                        title = context.getString(R.string.toolchain_task_custom_install_ndk),
                                         action = toolchain_action.INSTALL_NDK_ARCHIVE,
                                         source = path
                                     )
@@ -188,7 +195,7 @@ fun main_navigation(
                     on_uninstall_ndk = { version ->
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "卸载 NDK $version",
+                                title = context.getString(R.string.toolchain_task_uninstall_ndk, version),
                                 action = toolchain_action.UNINSTALL_NDK,
                                 version = version
                             )
@@ -198,7 +205,7 @@ fun main_navigation(
                 )
             }
 
-            composable("plugins") { placeholder_screen("插件") { nav_controller.popBackStack() } }
+            composable("plugins") { placeholder_screen(stringResource(R.string.main_plugins_placeholder_title)) { nav_controller.popBackStack() } }
             composable("settings") {
                 main_settings_screen(
                     on_back = { nav_controller.popBackStack() },
@@ -216,8 +223,10 @@ fun main_navigation(
                 main_theme_settings_screen(
                     current_theme = current_theme,
                     scale_value = scale_value,
+                    current_language = current_language,
                     on_theme_change = on_theme_change,
                     on_scale_change = on_scale_change,
+                    on_language_change = on_language_change,
                     on_back = { nav_controller.popBackStack() }
                 )
             }
@@ -241,7 +250,14 @@ fun main_navigation(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Download, contentDescription = null, tint = colors.card_text_title, modifier = Modifier.size(16.dp))
-                    Text(text = if (toolchain_tasks.size > 1) "后台任务 ${toolchain_tasks.size}" else "后台任务", color = colors.card_text_title)
+                    Text(
+                        text = if (toolchain_tasks.size > 1) {
+                            stringResource(R.string.background_task_count, toolchain_tasks.size)
+                        } else {
+                            stringResource(R.string.background_task)
+                        },
+                        color = colors.card_text_title
+                    )
                 }
             }
         }
@@ -311,7 +327,7 @@ fun placeholder_screen(title: String, on_back: () -> Unit) {
                     IconButton(onClick = on_back) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.common_back),
                             tint = colors.top_button_icon
                         )
                     }
@@ -327,7 +343,7 @@ fun placeholder_screen(title: String, on_back: () -> Unit) {
                 .padding(padding_values),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "$title 页面开发中...", color = colors.subtitle)
+            Text(text = stringResource(R.string.placeholder_page_developing, title), color = colors.subtitle)
         }
     }
 }

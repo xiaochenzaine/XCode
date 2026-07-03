@@ -31,10 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -72,7 +74,7 @@ fun install_screen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Ubuntu基础环境安装",
+            text = stringResource(R.string.install_rootfs_title),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -116,7 +118,7 @@ fun install_screen(
                     IconButton(onClick = on_export_logs, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.Default.Download,
-                            contentDescription = "导出",
+                            contentDescription = stringResource(R.string.common_export),
                             tint = Color.White.copy(alpha = 0.6f),
                             modifier = Modifier.size(16.dp)
                         )

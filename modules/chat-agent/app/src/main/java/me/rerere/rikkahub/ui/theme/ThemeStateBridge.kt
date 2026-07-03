@@ -13,7 +13,14 @@ object ThemeStateBridge {
     private val _colorMode = MutableStateFlow<ColorMode?>(null)
     val colorMode: StateFlow<ColorMode?> = _colorMode.asStateFlow()
 
+    private val _scale = MutableStateFlow(1f)
+    val scale: StateFlow<Float> = _scale.asStateFlow()
+
     fun setColorMode(mode: ColorMode?) {
         _colorMode.value = mode
+    }
+
+    fun setScale(scale: Float) {
+        _scale.value = scale.coerceIn(0.5f, 1.5f)
     }
 }

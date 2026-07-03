@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package me.rerere.rikkahub.utils
 
 import android.Manifest

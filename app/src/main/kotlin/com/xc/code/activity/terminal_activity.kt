@@ -1,5 +1,6 @@
 package com.xc.code.activity
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,12 +11,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.terminal.remember_terminal_state
 import com.xc.code.ui.terminal.terminal_close_last_behavior
 import com.xc.code.ui.terminal.terminal_panel
 import com.xc.code.ui.theme.app_theme_provider
 
 class terminal_activity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(app_locale_manager.wrap_context(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

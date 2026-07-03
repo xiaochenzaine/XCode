@@ -1,6 +1,7 @@
 package com.xc.code.activity
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.dialogs.splash.manage_storage_dialog
 import com.xc.code.ui.dialogs.splash.permission_denied_dialog
 import com.xc.code.ui.dialogs.splash.permission_rationale_dialog
@@ -34,6 +36,10 @@ fun File.is_ubuntu_rootfs(): Boolean {
 }
 
 class splash_activity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(app_locale_manager.wrap_context(newBase))
+    }
 
     companion object {
         private const val storage_permission_request_code = 1001

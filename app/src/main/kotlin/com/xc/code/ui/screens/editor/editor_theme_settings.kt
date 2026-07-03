@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -61,6 +62,7 @@ import com.xc.code.editor.theme.editor_theme_preview_palette
 import com.xc.code.editor.theme.editor_theme_manager
 import com.xc.code.ui.dialogs.editor.editor_theme_color_dialog
 import com.xc.code.ui.dialogs.editor.editor_theme_reset_dialog
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 
 @Composable
@@ -97,7 +99,7 @@ fun editor_theme_settings_screen(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.common_back),
                             tint = colors.top_button_icon,
                             modifier = Modifier.size(18.dp)
                         )
@@ -116,14 +118,14 @@ fun editor_theme_settings_screen(
                     .padding(horizontal = 18.dp)
             ) {
                 Text(
-                    text = "编辑器主题",
+                    text = stringResource(R.string.editor_theme_title),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "颜色设置",
+                    text = stringResource(R.string.editor_theme_color_settings),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = colors.subtitle
@@ -172,7 +174,7 @@ internal fun editor_theme_color_section(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "编辑器颜色",
+                text = stringResource(R.string.editor_theme_colors),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.title_highlight,
@@ -193,12 +195,12 @@ internal fun editor_theme_color_section(
             ) {
                 Icon(
                     imageVector = Icons.Default.RestartAlt,
-                    contentDescription = "恢复默认颜色",
+                    contentDescription = stringResource(R.string.editor_reset_colors),
                     tint = colors.card_text_subtitle,
                     modifier = Modifier.size(14.dp)
                 )
                 Text(
-                    text = "恢复默认",
+                    text = stringResource(R.string.editor_reset_default),
                     fontSize = 10.sp,
                     color = colors.card_text_subtitle
                 )
@@ -209,7 +211,7 @@ internal fun editor_theme_color_section(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        editor_theme_subtitle("编辑器界面颜色")
+        editor_theme_subtitle(stringResource(R.string.editor_interface_colors))
 
         Column(
             modifier = Modifier
@@ -234,7 +236,7 @@ internal fun editor_theme_color_section(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        editor_theme_subtitle("语法高亮颜色")
+        editor_theme_subtitle(stringResource(R.string.editor_syntax_colors))
 
         Column(
             modifier = Modifier
@@ -272,9 +274,9 @@ internal fun editor_theme_color_section(
                     token_color_items = editor_theme_manager.load_token_color_items(context)
                     preview_palette = editor_theme_manager.load_preview_palette(context)
                     editing_color_item = null
-                    app_toast.show(context, "颜色已保存", app_toast.LENGTH_SHORT)
+                    app_toast.show(context, context.getString(R.string.editor_color_saved), app_toast.LENGTH_SHORT)
                 } else {
-                    app_toast.show(context, "颜色格式错误", app_toast.LENGTH_SHORT)
+                    app_toast.show(context, context.getString(R.string.editor_color_invalid), app_toast.LENGTH_SHORT)
                 }
             }
         )
@@ -292,9 +294,9 @@ internal fun editor_theme_color_section(
                     token_color_items = editor_theme_manager.load_token_color_items(context)
                     preview_palette = editor_theme_manager.load_preview_palette(context)
                     editing_token_item = null
-                    app_toast.show(context, "颜色已保存", app_toast.LENGTH_SHORT)
+                    app_toast.show(context, context.getString(R.string.editor_color_saved), app_toast.LENGTH_SHORT)
                 } else {
-                    app_toast.show(context, "颜色格式错误", app_toast.LENGTH_SHORT)
+                    app_toast.show(context, context.getString(R.string.editor_color_invalid), app_toast.LENGTH_SHORT)
                 }
             }
         )
@@ -310,9 +312,9 @@ internal fun editor_theme_color_section(
                     color_items = editor_theme_manager.load_color_items(context)
                     token_color_items = editor_theme_manager.load_token_color_items(context)
                     preview_palette = editor_theme_manager.load_preview_palette(context)
-                    app_toast.show(context, "编辑器颜色已恢复默认", app_toast.LENGTH_SHORT)
+                    app_toast.show(context, context.getString(R.string.editor_colors_reset), app_toast.LENGTH_SHORT)
                 } else {
-                    app_toast.show(context, "恢复默认失败", app_toast.LENGTH_SHORT)
+                    app_toast.show(context, context.getString(R.string.editor_reset_failed), app_toast.LENGTH_SHORT)
                 }
             }
         )
@@ -344,14 +346,14 @@ private fun editor_theme_preview_card(preview_palette: editor_theme_preview_pale
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "主题预览",
+                    text = stringResource(R.string.editor_theme_preview),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = foreground,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = "左右滑动切换 C++ / CMake",
+                    text = stringResource(R.string.editor_theme_preview_hint),
                     fontSize = 9.sp,
                     color = foreground.copy(alpha = 0.62f)
                 )
@@ -705,7 +707,7 @@ private fun editor_theme_color_card(
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 Text(
-                    text = value.ifBlank { "未设置" },
+                    text = value.ifBlank { stringResource(R.string.common_not_set) },
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = colors.card_text_subtitle

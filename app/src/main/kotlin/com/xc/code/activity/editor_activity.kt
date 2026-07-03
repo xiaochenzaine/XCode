@@ -14,7 +14,9 @@ import com.xc.code.editor.model.*
 import com.xc.code.editor.core.*
 
 import android.net.Uri
+import android.content.Context
 import android.os.Bundle
+import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.toast.app_toast
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.BackHandler
@@ -56,6 +58,10 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class editor_activity : FragmentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(app_locale_manager.wrap_context(newBase))
+    }
     private lateinit var project_dir: File
     private lateinit var editor: CodeEditor
     private val state = editor_activity_state()

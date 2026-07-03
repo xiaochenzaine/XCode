@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 import io.github.rosemoe.sora.widget.CodeEditor
 
@@ -61,7 +63,7 @@ fun editor_tabs_bar(
         ) {
             Icon(
                 imageVector = if (toolbar_visible) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (toolbar_visible) "隐藏工具栏" else "显示工具栏",
+                contentDescription = if (toolbar_visible) stringResource(R.string.editor_hide_toolbar) else stringResource(R.string.editor_show_toolbar),
                 tint = colors.editor_tab_add_icon,
                 modifier = Modifier.size(20.dp)
             )
@@ -76,7 +78,7 @@ fun editor_tabs_bar(
         ) {
             if (tabs.isEmpty()) {
                 Text(
-                    text = "未打开任何文件",
+                    text = stringResource(R.string.editor_no_open_file),
                     color = colors.editor_tab_unselected_content,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -139,7 +141,7 @@ fun editor_tabs_bar(
                         if (tab.pinned) {
                             Icon(
                                 imageVector = Icons.Default.PushPin,
-                                contentDescription = "已置顶",
+                                contentDescription = stringResource(R.string.editor_pinned),
                                 tint = colors.editor_icon,
                                 modifier = Modifier.size(13.dp)
                             )
@@ -187,7 +189,7 @@ fun editor_tabs_bar(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "标签菜单",
+                                contentDescription = stringResource(R.string.editor_tab_menu),
                                 tint = colors.editor_tab_unselected_content,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -198,7 +200,7 @@ fun editor_tabs_bar(
                             onDismissRequest = { menu_expanded = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text(if (tab.pinned) "取消置顶" else "置顶") },
+                                text = { Text(if (tab.pinned) stringResource(R.string.editor_unpin) else stringResource(R.string.editor_pin)) },
                                 onClick = {
                                     menu_expanded = false
                                     on_pin_tab(tab.path)
@@ -206,7 +208,7 @@ fun editor_tabs_bar(
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("关闭当前") },
+                                text = { Text(stringResource(R.string.editor_close_current)) },
                                 enabled = can_close_tab,
                                 onClick = {
                                     menu_expanded = false
@@ -214,7 +216,7 @@ fun editor_tabs_bar(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("关闭其他") },
+                                text = { Text(stringResource(R.string.editor_close_others)) },
                                 enabled = has_closable_others,
                                 onClick = {
                                     menu_expanded = false
@@ -253,7 +255,7 @@ fun editor_top_bar(
             IconButton(onClick = on_toggle_drawer) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "侧边栏",
+                    contentDescription = stringResource(R.string.editor_sidebar),
                     tint = colors.editor_toolbar_icon
                 )
             }
@@ -263,7 +265,7 @@ fun editor_top_bar(
                 IconButton(onClick = on_build) {
                     Icon(
                         imageVector = Icons.Default.Stop,
-                        contentDescription = if (build_stopping) "正在停止" else "停止",
+                        contentDescription = if (build_stopping) stringResource(R.string.editor_stopping) else stringResource(R.string.editor_stop),
                         tint = Color(0xFFFF5252)
                     )
                 }
@@ -271,14 +273,14 @@ fun editor_top_bar(
                 IconButton(onClick = on_build) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "编译",
+                        contentDescription = stringResource(R.string.editor_build),
                         tint = colors.success
                     )
                 }
                 IconButton(onClick = on_configure_cmake) {
                     Icon(
                         imageVector = Icons.Default.Autorenew,
-                        contentDescription = "初始化 CMake",
+                        contentDescription = stringResource(R.string.editor_init_cmake),
                         tint = colors.editor_toolbar_icon
                     )
                 }
@@ -287,14 +289,14 @@ fun editor_top_bar(
                 IconButton(onClick = on_toggle_read_only) {
                     Icon(
                         imageVector = if (read_only) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = "只读",
+                        contentDescription = stringResource(R.string.editor_read_only),
                         tint = if (read_only) colors.editor_icon else colors.editor_toolbar_icon
                     )
                 }
                 IconButton(onClick = on_toggle_search) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "搜索",
+                        contentDescription = stringResource(R.string.editor_search),
                         tint = if (search_visible) colors.editor_icon else colors.editor_toolbar_icon
                     )
                 }

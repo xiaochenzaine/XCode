@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package me.rerere.rikkahub.ui.pages.imggen
 
 import androidx.activity.compose.BackHandler

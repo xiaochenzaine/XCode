@@ -32,10 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,7 +84,7 @@ fun toolchain_custom_install_dialog(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "选择本地压缩包进行安装",
+                        text = stringResource(R.string.toolchain_custom_archive_title),
                         fontSize = 12.sp,
                         color = colors.dialog_hint
                     )
@@ -98,7 +100,7 @@ fun toolchain_custom_install_dialog(
                 singleLine = true,
                 label = {
                     Text(
-                        text = "压缩包路径",
+                        text = stringResource(R.string.toolchain_archive_path),
                         fontSize = 12.sp,
                         color = colors.dialog_input_hint
                     )
@@ -156,7 +158,7 @@ fun toolchain_custom_install_dialog(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "安装",
+                        text = stringResource(R.string.tools_install),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )

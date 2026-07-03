@@ -12,7 +12,6 @@ data class Workspace(
 
 enum class WorkspaceShellStatus {
     DISABLED,
-    INSTALLING,
     READY,
     BROKEN,
 }
@@ -21,20 +20,6 @@ enum class WorkspaceStorageArea {
     FILES,
     LINUX,
 }
-
-enum class RootfsInstallStage {
-    DOWNLOADING,
-    EXTRACTING,
-    INSTALLED,
-}
-
-data class RootfsInstallProgress(
-    val stage: RootfsInstallStage,
-    val bytesRead: Long = 0,
-    val totalBytes: Long? = null,
-    val entriesExtracted: Int = 0,
-    val currentEntry: String? = null,
-)
 
 data class WorkspaceConfig(
     val maxReadBytes: Long = 512 * 1024,

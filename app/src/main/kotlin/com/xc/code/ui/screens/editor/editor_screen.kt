@@ -18,12 +18,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 import com.xc.code.ui.dialogs.editor.editor_create_entry_dialog
 import io.github.rosemoe.sora.event.EventReceiver
@@ -114,7 +116,7 @@ internal fun editor_screen(
     var editor_focused by remember { mutableStateOf(false) }
     val terminal_state = remember_editor_terminal_state()
     val drawer_progress = remember { Animatable(0f) }
-    val safe_project_name = project_name.ifBlank { "项目" }
+    val safe_project_name = project_name.ifBlank { stringResource(R.string.project_name_label) }
     val density = LocalDensity.current
     val drawer_width_px = with(density) { drawer_width.toPx() }
     val drawer_progress_value = drawer_progress.value
@@ -329,7 +331,7 @@ internal fun editor_screen(
                         }
                     } else {
                         empty_editor_placeholder(
-                            text = if (loading) "正在加载..." else "未打开任何文件",
+                            text = if (loading) stringResource(R.string.editor_loading) else stringResource(R.string.editor_no_open_file),
                             modifier = Modifier.fillMaxSize()
                         )
                     }

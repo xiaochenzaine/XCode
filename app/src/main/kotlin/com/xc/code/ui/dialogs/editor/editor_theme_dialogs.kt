@@ -34,10 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xc.code.editor.theme.editor_theme_manager
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -86,8 +88,8 @@ fun editor_theme_color_dialog(
                         value = editing_value,
                         onValueChange = { editing_value = it },
                         singleLine = true,
-                        label = { Text("颜色值") },
-                        placeholder = { Text("#RRGGBB 或 #RRGGBBAA") },
+                        label = { Text(stringResource(R.string.editor_color_value)) },
+                        placeholder = { Text(stringResource(R.string.editor_color_placeholder)) },
                         isError = editing_value.isNotBlank() && !is_valid,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colors.dialog_input_border,
@@ -116,7 +118,7 @@ fun editor_theme_color_dialog(
                 )
 
                 Text(
-                    text = "支持 #RRGGBB 和 #RRGGBBAA，透明度写在最后两位。",
+                    text = stringResource(R.string.editor_color_help),
                     fontSize = 11.sp,
                     color = colors.dialog_hint
                 )
@@ -133,7 +135,7 @@ fun editor_theme_color_dialog(
                     disabledContentColor = colors.dialog_hint
                 )
             ) {
-                Text("保存")
+                Text(stringResource(R.string.common_save))
             }
         },
         dismissButton = {
@@ -141,7 +143,7 @@ fun editor_theme_color_dialog(
                 onClick = on_dismiss,
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.dialog_cancel)
             ) {
-                Text("取消")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -155,7 +157,7 @@ private fun editor_theme_color_palette(
 ) {
     val colors = app_theme_provider.colors
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Text("快捷色板", color = colors.dialog_text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.editor_quick_palette), color = colors.dialog_text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -196,7 +198,7 @@ private fun editor_theme_alpha_palette(
     val colors = app_theme_provider.colors
     if (value == null) return
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Text("透明度", color = colors.dialog_text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.editor_alpha), color = colors.dialog_text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -241,14 +243,14 @@ fun editor_theme_reset_dialog(
         containerColor = colors.dialog_bg,
         title = {
             Text(
-                text = "恢复默认颜色",
+                text = stringResource(R.string.editor_reset_colors),
                 color = colors.dialog_text,
                 fontWeight = FontWeight.SemiBold
             )
         },
         text = {
             Text(
-                text = "会把编辑器颜色恢复为 assets/textmate/themes/xcode.json 的默认值。",
+                text = stringResource(R.string.editor_reset_colors_desc),
                 color = colors.dialog_hint,
                 fontSize = 13.sp
             )
@@ -261,7 +263,7 @@ fun editor_theme_reset_dialog(
                     contentColor = colors.dialog_clone_text
                 )
             ) {
-                Text("恢复")
+                Text(stringResource(R.string.common_restore))
             }
         },
         dismissButton = {
@@ -269,7 +271,7 @@ fun editor_theme_reset_dialog(
                 onClick = on_dismiss,
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.dialog_cancel)
             ) {
-                Text("取消")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )

@@ -13,9 +13,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 
 @Composable
@@ -26,8 +28,8 @@ fun editor_create_entry_dialog(
 ) {
     val colors = app_theme_provider.colors
     var name by remember(is_folder) { mutableStateOf("") }
-    val title = if (is_folder) "新建文件夹" else "新建文件"
-    val placeholder = if (is_folder) "文件夹名称" else "文件名称"
+    val title = if (is_folder) stringResource(R.string.editor_new_folder) else stringResource(R.string.editor_new_file)
+    val placeholder = if (is_folder) stringResource(R.string.editor_folder_name) else stringResource(R.string.editor_file_name)
 
     AlertDialog(
         onDismissRequest = on_dismiss,
@@ -64,12 +66,12 @@ fun editor_create_entry_dialog(
                 enabled = name.trim().isNotEmpty(),
                 onClick = { on_confirm(name.trim()) }
             ) {
-                Text("创建", color = colors.dialog_clone_bg)
+                Text(stringResource(R.string.common_create), color = colors.dialog_clone_bg)
             }
         },
         dismissButton = {
             TextButton(onClick = on_dismiss) {
-                Text("取消", color = colors.dialog_hint)
+                Text(stringResource(R.string.common_cancel), color = colors.dialog_hint)
             }
         }
     )

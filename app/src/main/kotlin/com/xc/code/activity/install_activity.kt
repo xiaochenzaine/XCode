@@ -1,7 +1,9 @@
 package com.xc.code.activity
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.toast.app_toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +31,10 @@ import java.util.Date
 import java.util.Locale
 
 class install_activity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(app_locale_manager.wrap_context(newBase))
+    }
     private var logs by mutableStateOf<List<String>>(emptyList())
     private var is_downloading by mutableStateOf(false)
     private var is_extracting by mutableStateOf(false)

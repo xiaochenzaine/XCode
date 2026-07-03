@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,7 +99,7 @@ fun main_screen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "打开或创建",
+                    text = stringResource(R.string.main_hero_line_1),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_large
@@ -107,7 +108,7 @@ fun main_screen(
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = "您的下一个项目",
+                    text = stringResource(R.string.main_hero_line_2),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight
@@ -126,7 +127,7 @@ fun main_screen(
             Spacer(modifier = Modifier.height(30.dp))
             
             Text(
-                text = "快捷操作",
+                text = stringResource(R.string.main_quick_actions),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.section_title
@@ -141,8 +142,8 @@ fun main_screen(
             ) {
                 action_card_item(
                     icon = Icons.Default.Add,
-                    title = "新建项目",
-                    subtitle = "创建新的项目",
+                    title = stringResource(R.string.main_new_project_title),
+                    subtitle = stringResource(R.string.main_new_project_subtitle),
                     colors = colors,
                     on_click = on_new_project,
                     is_top = true,
@@ -153,8 +154,8 @@ fun main_screen(
                 
                 action_card_item(
                     icon = Icons.Default.FolderOpen,
-                    title = "打开项目",
-                    subtitle = "打开已有项目",
+                    title = stringResource(R.string.main_open_project_title),
+                    subtitle = stringResource(R.string.main_open_project_subtitle),
                     colors = colors,
                     on_click = on_open_project,
                     is_top = false,
@@ -165,8 +166,8 @@ fun main_screen(
                 
                 action_card_item(
                     icon = Icons.Default.Extension,
-                    title = "插件管理",
-                    subtitle = "管理 XCode 插件",
+                    title = stringResource(R.string.main_plugins_title),
+                    subtitle = stringResource(R.string.main_plugins_subtitle),
                     colors = colors,
                     on_click = on_plugins,
                     is_top = false,
@@ -177,8 +178,8 @@ fun main_screen(
                 
                 action_card_item(
                     icon = Icons.Default.Build,
-                    title = "开发工具",
-                    subtitle = "管理 NDK Cmake 组件",
+                    title = stringResource(R.string.main_tools_title),
+                    subtitle = stringResource(R.string.main_tools_subtitle),
                     colors = colors,
                     on_click = on_tools,
                     is_top = false,
@@ -205,7 +206,7 @@ fun main_screen(
                             OutlinedTextField(
                                 value = search_text,
                                 onValueChange = { search_text = it },
-                                placeholder = { Text("搜索最近项目...", color = colors.input_hint) },
+                                placeholder = { Text(stringResource(R.string.main_search_recent_projects), color = colors.input_hint) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focus_requester)
@@ -228,7 +229,7 @@ fun main_screen(
                             )
                         } else {
                             Text(
-                                text = "最近项目",
+                                text = stringResource(R.string.main_recent_projects),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = colors.section_title
@@ -248,7 +249,7 @@ fun main_screen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 if (show_search) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = if (show_search) "取消搜索" else "搜索",
+                                contentDescription = if (show_search) stringResource(R.string.main_cancel_search) else stringResource(R.string.main_search),
                                 tint = if (show_search) colors.search_button_active else colors.top_button_icon,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -268,7 +269,11 @@ fun main_screen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (search_text.isNotBlank()) "未找到相关项目" else "暂无最近项目",
+                            text = if (search_text.isNotBlank()) {
+                                stringResource(R.string.main_no_search_results)
+                            } else {
+                                stringResource(R.string.main_no_recent_projects)
+                            }, 
                             color = colors.input_hint,
                             fontSize = 14.sp
                         )
@@ -317,7 +322,7 @@ fun top_bar(
         ) {
             top_bar_icon_button(
                 icon = Icons.Outlined.AutoAwesome,
-                description = "智能",
+                description = stringResource(R.string.main_agent_desc),
                 bg = colors.top_button_bg,
                 tint = colors.top_button_icon,
                 onClick = on_agent_click
@@ -447,7 +452,7 @@ fun action_card_item(
             
             Icon(
                 Icons.Default.ChevronRight,
-                contentDescription = "进入",
+                contentDescription = stringResource(R.string.common_enter),
                 tint = colors.card_chevron,
                 modifier = Modifier.size(16.dp)
             )
@@ -576,7 +581,7 @@ fun recent_project_card(
         ) {
             Icon(
                 Icons.Default.Close,
-                contentDescription = "移除项目",
+                contentDescription = stringResource(R.string.main_remove_project),
                 tint = colors.input_hint,
                 modifier = Modifier.size(16.dp)
             )

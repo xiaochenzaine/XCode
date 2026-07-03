@@ -49,6 +49,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
+import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
@@ -112,15 +113,12 @@ import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSpeechPage
-import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
-import me.rerere.rikkahub.ui.pages.setting.SettingWebPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.stats.StatsPage
 import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
@@ -141,6 +139,7 @@ class RouteFragment : Fragment() {
 
     private var navStack: MutableList<NavKey>? = null
 
+    @OptIn(ExperimentalCoilApi::class)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -388,16 +387,8 @@ class RouteFragment : Fragment() {
                                 WebViewPage(key.url, key.content)
                             }
 
-                            entry<Screen.SettingTheme> {
-                                SettingThemePage()
-                            }
-
                             entry<Screen.SettingPreferences> {
                                 SettingPreferencesPage()
-                            }
-
-                            entry<Screen.SettingPreferencesTheme> {
-                                SettingPreferencesThemePage()
                             }
 
                             entry<Screen.SettingPreferencesNotification> {
@@ -452,10 +443,6 @@ class RouteFragment : Fragment() {
 
                             entry<Screen.SettingFiles> {
                                 SettingFilesPage()
-                            }
-
-                            entry<Screen.SettingWeb> {
-                                SettingWebPage()
                             }
 
                             entry<Screen.Debug> {
@@ -616,13 +603,7 @@ sealed interface Screen : NavKey {
     data class WebView(val url: String = "", val content: String = "") : Screen
 
     @Serializable
-    data object SettingTheme : Screen
-
-    @Serializable
     data object SettingPreferences : Screen
-
-    @Serializable
-    data object SettingPreferencesTheme : Screen
 
     @Serializable
     data object SettingPreferencesNotification : Screen
@@ -662,9 +643,6 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingFiles : Screen
-
-    @Serializable
-    data object SettingWeb : Screen
 
     @Serializable
     data object Debug : Screen

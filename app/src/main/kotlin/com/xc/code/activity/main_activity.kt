@@ -1,7 +1,9 @@
 package com.xc.code.activity
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import com.xc.code.R
 import com.xc.code.ui.toast.app_toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,6 +21,8 @@ import com.xc.code.toolchain.install_ndk_from_url
 import com.xc.code.toolchain.toolchain_manager
 import com.xc.code.toolchain.uninstall_cmake_tool
 import com.xc.code.toolchain.uninstall_ndk_tool
+import com.xc.code.ui.locale.app_language_type
+import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.screens.main.main_navigation
 import com.xc.code.ui.screens.main.main_tools_install_status
 import com.xc.code.ui.screens.main.recent_project
@@ -34,12 +38,17 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class main_activity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(app_locale_manager.wrap_context(newBase))
+    }
     private var recent_projects by mutableStateOf<List<recent_project>>(emptyList())
     private var toolchain_status by mutableStateOf(main_tools_install_status())
     private var ndk_versions by mutableStateOf(emptyList<String>())
     private var cmake_versions by mutableStateOf(emptyList<String>())
     private var current_theme by mutableStateOf(app_theme_type.SYSTEM)
     private var scale_value by mutableStateOf(1f)
+    private var current_language by mutableStateOf(app_language_type.SYSTEM)
     private var toolchain_tasks by mutableStateOf<List<toolchain_trigger>>(emptyList())
     private var custom_toolchain_dialog by mutableStateOf<toolchain_custom_install_request?>(null)
 
@@ -56,6 +65,7 @@ class main_activity : ComponentActivity() {
                     toolchain_status = toolchain_status,
                     current_theme = current_theme,
                     scale_value = scale_value,
+                    current_language = current_language,
                     toolchain_tasks = toolchain_tasks,
                     custom_toolchain_dialog = custom_toolchain_dialog,
                     on_back_to_background = { moveTaskToBack(true) },
@@ -75,6 +85,7 @@ class main_activity : ComponentActivity() {
                     on_custom_toolchain_dialog_change = { custom_toolchain_dialog = it },
                     on_theme_change = ::set_theme,
                     on_scale_change = ::set_scale,
+                    on_language_change = ::set_language,
                     on_run_toolchain_task = ::run_toolchain_task,
                     on_toolchain_task_success = ::on_toolchain_task_success
                 )
@@ -93,6 +104,7 @@ class main_activity : ComponentActivity() {
             refresh_toolchain_status()
             current_theme = theme_manager.theme.value
             scale_value = theme_manager.scale.value
+            current_language = app_locale_manager.language.value
         }
     }
 
@@ -135,13 +147,19 @@ class main_activity : ComponentActivity() {
         scale_value = scale
     }
 
+    private fun set_language(language: app_language_type) {
+        app_locale_manager.set_language(this, language)
+        current_language = language
+        recreate()
+    }
+
     private fun open_recent_project(project: recent_project) {
         lifecycleScope.launch {
             val project_dir = File(project.path)
             if (!project_dir.exists() || !project_dir.isDirectory) {
                 project_manager.remove_recent_project(project.path)
                 reload_recent_projects()
-                app_toast.show(this@main_activity, "项目不存在，已从最近项目移除", app_toast.LENGTH_LONG)
+                app_toast.show(this@main_activity, getString(R.string.main_project_missing_removed), app_toast.LENGTH_LONG)
                 return@launch
             }
 
@@ -151,7 +169,7 @@ class main_activity : ComponentActivity() {
                 reload_recent_projects()
                 open_editor(info.name, info.path)
             }.onFailure { error ->
-                app_toast.show(this@main_activity, "打开失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this@main_activity, getString(R.string.main_open_failed, error.message), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -160,7 +178,7 @@ class main_activity : ComponentActivity() {
         lifecycleScope.launch {
             project_manager.remove_recent_project(project.path)
             reload_recent_projects()
-            app_toast.show(this@main_activity, "已从最近项目移除", app_toast.LENGTH_SHORT)
+            app_toast.show(this@main_activity, getString(R.string.main_recent_project_removed), app_toast.LENGTH_SHORT)
         }
     }
 
@@ -186,10 +204,10 @@ class main_activity : ComponentActivity() {
             result.onSuccess { project_dir ->
                 project_manager.add_recent_project(project_dir.absolutePath)
                 reload_recent_projects()
-                app_toast.show(this@main_activity, "项目已创建: ${project_dir.name}", app_toast.LENGTH_SHORT)
+                app_toast.show(this@main_activity, getString(R.string.main_project_created, project_dir.name), app_toast.LENGTH_SHORT)
                 open_editor(project_dir.name, project_dir.absolutePath)
             }.onFailure { error ->
-                app_toast.show(this@main_activity, "创建失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this@main_activity, getString(R.string.main_create_failed, error.message), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -202,7 +220,7 @@ class main_activity : ComponentActivity() {
                 reload_recent_projects()
                 open_editor(project.name, project.path)
             }.onFailure { error ->
-                app_toast.show(this@main_activity, "打开失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this@main_activity, getString(R.string.main_open_failed, error.message), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -233,7 +251,7 @@ class main_activity : ComponentActivity() {
 
     private fun on_toolchain_task_success(trigger: toolchain_trigger) {
         toolchain_tasks = toolchain_tasks.drop(1)
-        app_toast.show(this, "${trigger.title} 完成", app_toast.LENGTH_SHORT)
+        app_toast.show(this, getString(R.string.main_task_finished, trigger.title), app_toast.LENGTH_SHORT)
         lifecycleScope.launch { refresh_toolchain_status() }
     }
 

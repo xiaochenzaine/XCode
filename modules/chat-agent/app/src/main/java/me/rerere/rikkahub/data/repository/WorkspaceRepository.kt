@@ -2,9 +2,7 @@ package me.rerere.rikkahub.data.repository
 
 import android.os.Environment
 import android.util.Log
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
@@ -12,8 +10,6 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.db.dao.WorkspaceDAO
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.utils.JsonInstant
-import me.rerere.workspace.RootfsInstallProgress
-import me.rerere.workspace.RootfsInstaller
 import me.rerere.workspace.WorkspaceCommandResult
 import me.rerere.workspace.WorkspaceFileEntry
 import me.rerere.workspace.WorkspaceManager
@@ -27,7 +23,6 @@ import kotlin.uuid.Uuid
 class WorkspaceRepository(
     private val dao: WorkspaceDAO,
     private val manager: WorkspaceManager,
-    private val rootfsInstaller: RootfsInstaller,
     private val settingsStore: SettingsStore,
 ) {
     fun listFlow(): Flow<List<WorkspaceEntity>> = dao.listFlow()
@@ -43,9 +38,7 @@ class WorkspaceRepository(
                 continue
             }
             val statusName = workspace.shellStatus
-            if ((statusName == WorkspaceShellStatus.READY.name || statusName == WorkspaceShellStatus.INSTALLING.name)
-                && !manager.hasRootfs(workspace.root)
-            ) {
+            if (statusName == WorkspaceShellStatus.READY.name && !manager.hasRootfs(workspace.root)) {
                 Log.w(TAG, "Rootfs missing, resetting shell status: id=${workspace.id}")
                 updateShellState(workspace.id, WorkspaceShellStatus.DISABLED.name)
             }
@@ -121,42 +114,6 @@ class WorkspaceRepository(
         } else {
             updateShellState(workspace.id, WorkspaceShellStatus.BROKEN.name)
             false
-        }
-    }
-
-    suspend fun installRootfs(
-        id: String,
-        url: String,
-        onProgress: (RootfsInstallProgress) -> Unit = {},
-    ): Boolean {
-        val workspace = dao.getById(id) ?: return false
-        if (manager.usesSharedRootfs()) {
-            manager.ensureWorkspace(workspace.root)
-            updateShellState(workspace, if (manager.hasRootfs(workspace.root)) WorkspaceShellStatus.READY.name else WorkspaceShellStatus.DISABLED.name)
-            return manager.hasRootfs(workspace.root)
-        }
-        updateShellState(workspace, WorkspaceShellStatus.INSTALLING.name)
-        try {
-            // runInterruptible 让协程取消转成线程中断, 打断 install 内阻塞的下载/解压循环
-            runInterruptible(Dispatchers.IO) {
-                rootfsInstaller.install(workspace.root, url, onProgress)
-            }
-            updateShellState(workspace, WorkspaceShellStatus.READY.name)
-            return true
-        } catch (e: CancellationException) {
-            withContext(NonCancellable) {
-                restoreShellState(workspace)
-            }
-            throw e
-        } catch (e: InterruptedException) {
-            withContext(NonCancellable) {
-                restoreShellState(workspace)
-            }
-            throw CancellationException("Rootfs install cancelled").also { it.initCause(e) }
-        } catch (e: Throwable) {
-            Log.e(TAG, "installRootfs failed: workspace=${workspace.id}, root=${workspace.root}, url=$url", e)
-            updateShellState(workspace, WorkspaceShellStatus.BROKEN.name)
-            throw e
         }
     }
 
@@ -421,10 +378,6 @@ class WorkspaceRepository(
                 }
             )
         }
-    }
-
-    private suspend fun restoreShellState(workspace: WorkspaceEntity) {
-        updateShellState(workspace.id, workspace.shellStatus)
     }
 
     private suspend fun updateShellState(

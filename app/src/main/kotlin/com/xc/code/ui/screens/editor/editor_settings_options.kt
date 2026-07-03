@@ -1,150 +1,152 @@
 package com.xc.code.ui.screens.editor
 
+import androidx.annotation.StringRes
+import com.xc.code.R
 import com.xc.code.editor.model.editor_settings_state
 
 internal data class editor_settings_switch_item(
-    val title: String,
-    val description: String,
+    @StringRes val title_res: Int,
+    @StringRes val description_res: Int,
     val checked: Boolean,
     val update: (Boolean) -> editor_settings_state
 )
 
 internal data class editor_settings_switch_group(
-    val title: String,
+    @StringRes val title_res: Int,
     val items: List<editor_settings_switch_item>
 )
 
 internal fun editor_settings_switch_groups(settings: editor_settings_state): List<editor_settings_switch_group> {
     return listOf(
         editor_settings_switch_group(
-            title = "行号",
+            title_res = R.string.editor_group_line_number,
             items = listOf(
                 editor_settings_switch_item(
-                    title = "显示行号",
-                    description = "左侧显示行号",
+                    title_res = R.string.editor_show_line_number,
+                    description_res = R.string.editor_show_line_number_desc,
                     checked = settings.line_numbers,
                     update = { value -> settings.copy(line_numbers = value) }
                 )
             )
         ),
         editor_settings_switch_group(
-            title = "显示效果",
+            title_res = R.string.editor_group_display,
             items = listOf(
                 editor_settings_switch_item(
-                    title = "当前行高亮",
-                    description = "高亮光标所在行",
+                    title_res = R.string.editor_current_line,
+                    description_res = R.string.editor_current_line_desc,
                     checked = settings.current_line_highlight,
                     update = { value -> settings.copy(current_line_highlight = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "括号匹配",
-                    description = "标出配对括号",
+                    title_res = R.string.editor_bracket_pair,
+                    description_res = R.string.editor_bracket_pair_desc,
                     checked = settings.bracket_pair_highlight,
                     update = { value -> settings.copy(bracket_pair_highlight = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "代码块线",
-                    description = "显示代码块层级线",
+                    title_res = R.string.editor_block_lines,
+                    description_res = R.string.editor_block_lines_desc,
                     checked = settings.block_lines,
                     update = { value -> settings.copy(block_lines = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "代码块结束提示",
-                    description = "结尾提示代码块开头",
+                    title_res = R.string.editor_block_end_hints,
+                    description_res = R.string.editor_block_end_hints_desc,
                     checked = settings.block_end_hints,
                     update = { value -> settings.copy(block_end_hints = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "粘滞滚动",
-                    description = "顶部固定当前代码块",
+                    title_res = R.string.editor_sticky_scroll,
+                    description_res = R.string.editor_sticky_scroll_desc,
                     checked = settings.sticky_scroll,
                     update = { value -> settings.copy(sticky_scroll = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "显示空白符号",
-                    description = "显示空格和缩进标记",
+                    title_res = R.string.editor_whitespace,
+                    description_res = R.string.editor_whitespace_desc,
                     checked = settings.whitespace_symbols,
                     update = { value -> settings.copy(whitespace_symbols = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "显示行尾符",
-                    description = "显示每行换行标记",
+                    title_res = R.string.editor_line_separator,
+                    description_res = R.string.editor_line_separator_desc,
                     checked = settings.line_separator,
                     update = { value -> settings.copy(line_separator = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "字体连字",
-                    description = "合并显示常见符号",
+                    title_res = R.string.editor_font_ligatures,
+                    description_res = R.string.editor_font_ligatures_desc,
                     checked = settings.font_ligatures,
                     update = { value -> settings.copy(font_ligatures = value) }
                 )
             )
         ),
         editor_settings_switch_group(
-            title = "编辑行为",
+            title_res = R.string.editor_group_behavior,
             items = listOf(
                 editor_settings_switch_item(
-                    title = "自动换行",
-                    description = "长行自动折到下一行",
+                    title_res = R.string.editor_word_wrap,
+                    description_res = R.string.editor_word_wrap_desc,
                     checked = settings.word_wrap,
                     update = { value -> settings.copy(word_wrap = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "手势缩放",
-                    description = "双指缩放代码文字",
+                    title_res = R.string.editor_pinch_zoom,
+                    description_res = R.string.editor_pinch_zoom_desc,
                     checked = settings.pinch_zoom,
                     update = { value -> settings.copy(pinch_zoom = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "光标闪烁",
-                    description = "光标闪烁显示",
+                    title_res = R.string.editor_cursor_blink,
+                    description_res = R.string.editor_cursor_blink_desc,
                     checked = settings.cursor_blink,
                     update = { value -> settings.copy(cursor_blink = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "自动缩进",
-                    description = "换行时自动补缩进",
+                    title_res = R.string.editor_auto_indent,
+                    description_res = R.string.editor_auto_indent_desc,
                     checked = settings.auto_indent,
                     update = { value -> settings.copy(auto_indent = value) }
                 )
             )
         ),
         editor_settings_switch_group(
-            title = "clangd",
+            title_res = R.string.editor_clangd_enabled,
             items = listOf(
                 editor_settings_switch_item(
-                    title = "启用 clangd",
-                    description = "启用 C/C++ 智能功能",
+                    title_res = R.string.editor_clangd_enabled,
+                    description_res = R.string.editor_clangd_enabled_desc,
                     checked = settings.clangd_enabled,
                     update = { value -> settings.copy(clangd_enabled = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "补全",
-                    description = "提供代码补全",
+                    title_res = R.string.editor_completion,
+                    description_res = R.string.editor_completion_desc,
                     checked = settings.clangd_completion,
                     update = { value -> settings.copy(clangd_completion = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "参数提示",
-                    description = "显示函数参数",
+                    title_res = R.string.editor_signature_help,
+                    description_res = R.string.editor_signature_help_desc,
                     checked = settings.clangd_signature_help,
                     update = { value -> settings.copy(clangd_signature_help = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "符号高亮",
-                    description = "标出同一符号",
+                    title_res = R.string.editor_symbol_highlight,
+                    description_res = R.string.editor_symbol_highlight_desc,
                     checked = settings.clangd_document_highlight,
                     update = { value -> settings.copy(clangd_document_highlight = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "格式化",
-                    description = "整理代码格式",
+                    title_res = R.string.editor_formatting,
+                    description_res = R.string.editor_formatting_desc,
                     checked = settings.clangd_formatting,
                     update = { value -> settings.copy(clangd_formatting = value) }
                 ),
                 editor_settings_switch_item(
-                    title = "悬浮提示",
-                    description = "显示类型和文档",
+                    title_res = R.string.editor_hover,
+                    description_res = R.string.editor_hover_desc,
                     checked = settings.clangd_hover,
                     update = { value -> settings.copy(clangd_hover = value) }
                 )

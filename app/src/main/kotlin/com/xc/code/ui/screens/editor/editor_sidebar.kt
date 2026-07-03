@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import com.xc.code.project_file_tree.project_file_tree_colors
+import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
 import me.rerere.rikkahub.RouteFragment
 
@@ -71,14 +73,12 @@ fun editor_sidebar(
 ) {
 
     val colors = app_theme_provider.colors
-    val tools = remember {
-        listOf(
-            editor_tool_item(Icons.Default.Folder, "文件"),
-            editor_tool_item(Icons.Default.Tune, "项目配置"),
-            editor_tool_item(Icons.Outlined.AutoAwesome, "助手"),
-            editor_tool_item(Icons.Default.Settings, "设置")
-        )
-    }
+    val tools = listOf(
+        editor_tool_item(Icons.Default.Folder, stringResource(R.string.editor_tool_files)),
+        editor_tool_item(Icons.Default.Tune, stringResource(R.string.editor_tool_project_config)),
+        editor_tool_item(Icons.Outlined.AutoAwesome, stringResource(R.string.editor_tool_agent)),
+        editor_tool_item(Icons.Default.Settings, stringResource(R.string.editor_tool_settings))
+    )
 
     Surface(
         modifier = Modifier
@@ -192,7 +192,7 @@ fun editor_sidebar(
                 shape = CircleShape
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "调整宽度", tint = colors.editor_hint, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.editor_adjust_width), tint = colors.editor_hint, modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -252,7 +252,7 @@ private fun sidebar_placeholder(title: String) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(Icons.Default.Description, contentDescription = null, tint = colors.editor_hint, modifier = Modifier.size(28.dp))
             Text(title, color = colors.editor_text, fontSize = 14.sp)
-            Text("待接入", color = colors.editor_hint, fontSize = 12.sp)
+            Text(stringResource(R.string.editor_pending), color = colors.editor_hint, fontSize = 12.sp)
         }
     }
 }

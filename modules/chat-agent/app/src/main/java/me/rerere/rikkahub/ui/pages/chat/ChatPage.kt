@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package me.rerere.rikkahub.ui.pages.chat
 
 import android.net.Uri

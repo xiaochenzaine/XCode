@@ -8,6 +8,7 @@ import com.xc.code.core.logging.logger_manager
 import com.xc.code.editor.theme.editor_theme_manager
 import com.xc.code.service.keep_alive_service
 import com.xc.code.toolchain.toolchain_runtime_provider
+import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.theme.app_theme_type
 import com.xc.code.ui.theme.theme_manager
 import com.xc.code.utils.app_lifecycle_observer
@@ -40,6 +41,7 @@ class xc_application : Application() {
         super.onCreate()
         instance = this
 
+        app_locale_manager.init(this)
         theme_manager.init(this)
         bind_rikkahub_theme_state()
         logger_manager.init(this)
@@ -79,9 +81,15 @@ class xc_application : Application() {
 
     private fun bind_rikkahub_theme_state() {
         ThemeStateBridge.setColorMode(theme_manager.theme.value.to_rikkahub_color_mode())
+        ThemeStateBridge.setScale(theme_manager.scale.value)
         application_scope.launch {
             theme_manager.theme.collect { theme ->
                 ThemeStateBridge.setColorMode(theme.to_rikkahub_color_mode())
+            }
+        }
+        application_scope.launch {
+            theme_manager.scale.collect { scale ->
+                ThemeStateBridge.setScale(scale)
             }
         }
     }

@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import com.xc.code.R
 import android.widget.TextView
 import androidx.compose.ui.graphics.toArgb
 import com.xc.code.ui.theme.resolve_app_colors
@@ -43,15 +44,15 @@ class editor_text_action_window(
         setSize(0, (48 * dp).toInt())
         popup.animationStyle = io.github.rosemoe.sora.R.style.text_action_popup_animation
 
-        add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_content_copy_20, "复制") { editor.copyText() }
+        add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_content_copy_20, editor.context.getString(R.string.common_copy)) { editor.copyText() }
         add_divider(container, dp)
         if (show_edit_actions) {
-            add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_content_cut_20, "剪切") { editor.cutText() }
+            add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_content_cut_20, editor.context.getString(R.string.common_cut)) { editor.cutText() }
             add_divider(container, dp)
-            add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_content_paste_20, "粘贴") { editor.pasteText() }
+            add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_content_paste_20, editor.context.getString(R.string.common_paste)) { editor.pasteText() }
             add_divider(container, dp)
         }
-        add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_select_all_20, "全选") { editor.selectAll() }
+        add_button(container, dp, io.github.rosemoe.sora.R.drawable.round_select_all_20, editor.context.getString(R.string.common_select_all)) { editor.selectAll() }
         applyColorScheme()
     }
 

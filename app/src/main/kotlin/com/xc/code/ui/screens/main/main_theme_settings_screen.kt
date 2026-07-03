@@ -19,9 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
+import com.xc.code.ui.locale.app_language_type
 import com.xc.code.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,12 +32,15 @@ import com.xc.code.ui.theme.*
 fun main_theme_settings_screen(
     current_theme: app_theme_type,
     scale_value: Float,
+    current_language: app_language_type,
     on_theme_change: (app_theme_type) -> Unit,
     on_scale_change: (Float) -> Unit,
+    on_language_change: (app_language_type) -> Unit,
     on_back: () -> Unit
 ) {
     val colors = app_theme_provider.colors
     var expanded by remember { mutableStateOf(false) }
+    var language_expanded by remember { mutableStateOf(false) }
     
     val theme_icon = when (current_theme) {
         app_theme_type.LIGHT -> Icons.Default.WbSunny
@@ -70,7 +76,7 @@ fun main_theme_settings_screen(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.common_back),
                             tint = colors.top_button_icon,
                             modifier = Modifier.size(18.dp)
                         )
@@ -89,14 +95,14 @@ fun main_theme_settings_screen(
                     .padding(horizontal = 18.dp)
             ) {
                 Text(
-                    text = "主题",
+                    text = stringResource(R.string.theme_title),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "设置",
+                    text = stringResource(R.string.theme_subtitle),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = colors.subtitle
@@ -111,7 +117,7 @@ fun main_theme_settings_screen(
                     .padding(horizontal = 18.dp)
             ) {
                 Text(
-                    text = "外观",
+                    text = stringResource(R.string.theme_section_appearance),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight,
@@ -149,7 +155,7 @@ fun main_theme_settings_screen(
                             ) {
                                 Icon(
                                     theme_icon,
-                                    contentDescription = "主题",
+                                    contentDescription = stringResource(R.string.theme_title),
                                     tint = colors.card_icon_bg,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -161,16 +167,16 @@ fun main_theme_settings_screen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
-                                    text = "主题模式",
+                                    text = stringResource(R.string.theme_mode_title),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = colors.card_text_title
                                 )
                                 Text(
                                     text = when (current_theme) {
-                                        app_theme_type.DARK -> "深色模式"
-                                        app_theme_type.LIGHT -> "浅色模式"
-                                        app_theme_type.SYSTEM -> "跟随系统"
+                                        app_theme_type.DARK -> stringResource(R.string.theme_mode_dark)
+                                        app_theme_type.LIGHT -> stringResource(R.string.theme_mode_light)
+                                        app_theme_type.SYSTEM -> stringResource(R.string.theme_mode_system)
                                     },
                                     fontSize = 10.sp,
                                     lineHeight = 10.sp,
@@ -181,7 +187,7 @@ fun main_theme_settings_screen(
                             
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (expanded) "收起" else "展开",
+                                contentDescription = if (expanded) stringResource(R.string.common_collapse) else stringResource(R.string.common_expand),
                                 tint = colors.card_chevron,
                                 modifier = Modifier.size(20.dp).rotate(if (expanded) 180f else 0f)
                             )
@@ -190,7 +196,7 @@ fun main_theme_settings_screen(
                         if (expanded) {
                             Column {
                                 theme_option_item(
-                                    title = "浅色模式",
+                                    title = stringResource(R.string.theme_mode_light),
                                     is_selected = current_theme == app_theme_type.LIGHT,
                                     colors = colors,
                                     onClick = {
@@ -200,7 +206,7 @@ fun main_theme_settings_screen(
                                 )
                                 
                                 theme_option_item(
-                                    title = "深色模式",
+                                    title = stringResource(R.string.theme_mode_dark),
                                     is_selected = current_theme == app_theme_type.DARK,
                                     colors = colors,
                                     onClick = {
@@ -210,7 +216,7 @@ fun main_theme_settings_screen(
                                 )
                                 
                                 theme_option_item(
-                                    title = "跟随系统",
+                                    title = stringResource(R.string.theme_mode_system),
                                     is_selected = current_theme == app_theme_type.SYSTEM,
                                     colors = colors,
                                     onClick = {
@@ -247,7 +253,7 @@ fun main_theme_settings_screen(
                             ) {
                                 Icon(
                                     Icons.Default.ZoomIn,
-                                    contentDescription = "应用缩放",
+                                    contentDescription = stringResource(R.string.theme_app_scale_title),
                                     tint = colors.card_icon_bg,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -259,13 +265,13 @@ fun main_theme_settings_screen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
-                                    text = "应用缩放",
+                                    text = stringResource(R.string.theme_app_scale_title),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = colors.card_text_title
                                 )
                                 Text(
-                                    text = "当前缩放: ${String.format("%.2f", scale_value)}x",
+                                    text = stringResource(R.string.theme_app_scale_current, scale_value),
                                     fontSize = 10.sp,
                                     lineHeight = 10.sp,
                                     fontWeight = FontWeight.Light,
@@ -298,9 +304,125 @@ fun main_theme_settings_screen(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = stringResource(R.string.language_title),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.title_highlight,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(1.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = colors.card_bg),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column {
+                        val language_interaction_source = remember { MutableInteractionSource() }
+                        val language_is_pressed by language_interaction_source.collectIsPressedAsState()
+                        val language_header_bg = if (language_is_pressed) colors.card_pressed else colors.card_bg
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(language_header_bg)
+                                .clickable(
+                                    interactionSource = language_interaction_source,
+                                    indication = ripple(bounded = true)
+                                ) { language_expanded = !language_expanded }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(colors.card_icon_bg.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Language,
+                                    contentDescription = stringResource(R.string.language_title),
+                                    tint = colors.card_icon_bg,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.language_mode_title),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colors.card_text_title
+                                )
+                                Text(
+                                    text = current_language.display_name(),
+                                    fontSize = 10.sp,
+                                    lineHeight = 10.sp,
+                                    fontWeight = FontWeight.Light,
+                                    color = colors.card_text_subtitle
+                                )
+                            }
+
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (language_expanded) stringResource(R.string.common_collapse) else stringResource(R.string.common_expand),
+                                tint = colors.card_chevron,
+                                modifier = Modifier.size(20.dp).rotate(if (language_expanded) 180f else 0f)
+                            )
+                        }
+
+                        if (language_expanded) {
+                            Column {
+                                theme_option_item(
+                                    title = stringResource(R.string.language_mode_system),
+                                    is_selected = current_language == app_language_type.SYSTEM,
+                                    colors = colors,
+                                    onClick = {
+                                        on_language_change(app_language_type.SYSTEM)
+                                        language_expanded = false
+                                    }
+                                )
+                                theme_option_item(
+                                    title = stringResource(R.string.language_mode_zh),
+                                    is_selected = current_language == app_language_type.ZH,
+                                    colors = colors,
+                                    onClick = {
+                                        on_language_change(app_language_type.ZH)
+                                        language_expanded = false
+                                    }
+                                )
+                                theme_option_item(
+                                    title = stringResource(R.string.language_mode_en),
+                                    is_selected = current_language == app_language_type.EN,
+                                    colors = colors,
+                                    onClick = {
+                                        on_language_change(app_language_type.EN)
+                                        language_expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
+}
+
+@Composable
+private fun app_language_type.display_name(): String = when (this) {
+    app_language_type.SYSTEM -> stringResource(R.string.language_mode_system)
+    app_language_type.ZH -> stringResource(R.string.language_mode_zh)
+    app_language_type.EN -> stringResource(R.string.language_mode_en)
 }
 
 @Composable
@@ -342,7 +464,7 @@ private fun theme_option_item(
         if (is_selected) {
             Icon(
                 Icons.Default.Check,
-                contentDescription = "已选中",
+                contentDescription = stringResource(R.string.common_selected),
                 tint = colors.title_highlight,
                 modifier = Modifier.size(18.dp)
             )

@@ -42,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +56,7 @@ import com.termux.terminal.TextStyle
 import com.termux.view.TerminalView
 import com.termux.view.TerminalViewClient
 import com.xc.code.toolchain.toolchain_manager
+import com.xc.code.R
 import com.xc.code.toolchain.toolchain_runtime_provider
 import com.xc.code.toolchain.runtime.proot_environment
 import com.xc.code.ui.theme.app_colors
@@ -423,7 +425,7 @@ private fun terminal_tabs_bar(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "新建标签",
+                contentDescription = stringResource(R.string.terminal_new_tab),
                 tint = colors.terminal_tab_add_icon,
                 modifier = Modifier.size(18.dp)
             )
@@ -514,7 +516,7 @@ private fun terminal_tab_item(
                 .padding(end = close_end_padding)
                 .size(close_size)
         ) {
-            Icon(Icons.Default.Close, contentDescription = "关闭标签", tint = colors.terminal_tab_unselected_content, modifier = Modifier.size(close_icon_size))
+            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.terminal_close_tab), tint = colors.terminal_tab_unselected_content, modifier = Modifier.size(close_icon_size))
         }
     }
 }

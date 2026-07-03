@@ -12,9 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.R
 import com.xc.code.utils.uri_utils
 import com.xc.code.ui.theme.*
 
@@ -79,7 +81,7 @@ fun open_project_dialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "打开项目",
+                    text = stringResource(R.string.project_open_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     color = colors.dialog_text
@@ -94,7 +96,7 @@ fun open_project_dialog(
                 OutlinedTextField(
                     value = project_path,
                     onValueChange = { project_path = it },
-                    label = { Text("项目路径", color = colors.dialog_input_hint) },
+                    label = { Text(stringResource(R.string.project_path_label), color = colors.dialog_input_hint) },
                     placeholder = { Text("/storage/emulated/0/XCodeProjects", color = colors.dialog_input_hint) },
                     trailingIcon = {
                         IconButton(
@@ -106,7 +108,7 @@ fun open_project_dialog(
                         ) {
                             Icon(
                                 Icons.Default.FolderOpen,
-                                contentDescription = "选择文件夹",
+                                contentDescription = stringResource(R.string.common_select_folder),
                                 tint = colors.dialog_input_icon_hint,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -137,7 +139,7 @@ fun open_project_dialog(
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.width(100.dp)
             ) {
-                Text("打开", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.common_open), fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         },
         dismissButton = {
@@ -147,7 +149,7 @@ fun open_project_dialog(
                     contentColor = colors.dialog_cancel
                 )
             ) {
-                Text("取消", fontSize = 14.sp)
+                Text(stringResource(R.string.common_cancel), fontSize = 14.sp)
             }
         }
     )
