@@ -39,6 +39,8 @@ import io.github.rosemoe.sora.lang.smartEnter.NewlineHandler
 import io.github.rosemoe.sora.lsp.editor.completion.CompletionItemProvider
 import io.github.rosemoe.sora.lsp.editor.completion.LspCompletionItem
 import io.github.rosemoe.sora.lsp.editor.format.LspFormatter
+import io.github.rosemoe.sora.lsp.editor.semantic.SemanticToken
+import io.github.rosemoe.sora.lsp.editor.semantic.SemanticTokensAnalyzeManager
 import io.github.rosemoe.sora.lsp.events.EventType
 import io.github.rosemoe.sora.lsp.events.completion.completion
 import io.github.rosemoe.sora.lsp.events.document.DocumentChangeEvent
@@ -59,6 +61,9 @@ class LspLanguage(var editor: LspEditor) : Language {
 
     var wrapperLanguage: Language? = null
     var completionItemProvider: CompletionItemProvider<*>
+    private var semanticAnalyzeManager: SemanticTokensAnalyzeManager? = null
+    private var semanticBaseAnalyzeManager: AnalyzeManager? = null
+    private var pendingSemanticTokens: List<SemanticToken> = emptyList()
 
     init {
         _formatter = LspFormatter(this)
@@ -73,7 +78,42 @@ class LspLanguage(var editor: LspEditor) : Language {
     }
 
     override fun getAnalyzeManager(): AnalyzeManager {
-        return wrapperLanguage?.analyzeManager ?: EmptyLanguage.EmptyAnalyzeManager.INSTANCE
+        val base = wrapperLanguage?.analyzeManager ?: EmptyLanguage.EmptyAnalyzeManager.INSTANCE
+        if (base === EmptyLanguage.EmptyAnalyzeManager.INSTANCE) {
+            return base
+        }
+        val current = semanticAnalyzeManager
+        if (current != null && semanticBaseAnalyzeManager === base) {
+            return current
+        }
+        semanticBaseAnalyzeManager = base
+        return SemanticTokensAnalyzeManager(
+            base = base,
+            editorProvider = { editor.editor },
+            onBaseStylesReady = {
+                // 用户现在通过“编辑一下内容”才能触发 clangd 语义颜色，根因是 didOpen 后请求太早。
+                // 等 TextMate 首次基础高亮真正进入编辑器后，再主动请求 clangd semantic tokens。
+                editor.requestSemanticTokensWithRetry()
+            }
+        ).also { manager ->
+            semanticAnalyzeManager = manager
+            // semanticTokens 可能比 TextMate AnalyzeManager 更早返回。
+            // 这里把之前收到的 token 补给新 manager，避免必须手动刷新 clangd 才有语义颜色。
+            if (pendingSemanticTokens.isNotEmpty()) {
+                manager.updateSemanticTokens(pendingSemanticTokens)
+            }
+        }
+    }
+
+    fun updateSemanticTokens(tokens: List<SemanticToken>) {
+        // clangd 刚打开文件或重建索引时，semanticTokens/full 可能短暂返回空列表。
+        // 如果此时直接清空 overlay，用户会看到语义颜色闪一下或必须手动刷新。
+        // 已经有语义颜色时，忽略短暂空结果；真正的新颜色会由后续自动重试覆盖。
+        if (tokens.isEmpty() && pendingSemanticTokens.isNotEmpty()) {
+            return
+        }
+        pendingSemanticTokens = tokens
+        semanticAnalyzeManager?.updateSemanticTokens(tokens)
     }
 
     override fun getInterruptionLevel(): Int {
@@ -203,6 +243,9 @@ class LspLanguage(var editor: LspEditor) : Language {
 
     override fun destroy() {
         formatter.destroy()
+        semanticAnalyzeManager = null
+        semanticBaseAnalyzeManager = null
+        pendingSemanticTokens = emptyList()
         wrapperLanguage?.destroy()
     }
 

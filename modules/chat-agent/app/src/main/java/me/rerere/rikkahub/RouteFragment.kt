@@ -29,9 +29,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -42,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -124,12 +128,37 @@ import me.rerere.rikkahub.ui.pages.stats.StatsPage
 import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
+import me.rerere.rikkahub.ui.theme.LocalEmbeddedBackground
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
+import me.rerere.rikkahub.ui.theme.ThemeStateBridge
 import me.rerere.rikkahub.utils.openUsageAccessSettings
 import okhttp3.OkHttpClient
 import org.koin.android.ext.android.inject
 import org.koin.compose.koinInject
 import kotlin.uuid.Uuid
+
+private object EmbeddedRouteFragmentStateStore {
+    private val navStacks = mutableMapOf<String, List<NavKey>>()
+    private val currentChatIds = mutableMapOf<String, String>()
+
+    fun save(key: String?, stack: List<NavKey>?) {
+        if (key.isNullOrBlank() || stack.isNullOrEmpty()) return
+        navStacks[key] = stack.toList()
+        stack.lastOrNull { it is Screen.Chat }?.let { chat ->
+            currentChatIds[key] = (chat as Screen.Chat).id
+        }
+    }
+
+    fun restoreStack(key: String?): List<NavKey>? {
+        if (key.isNullOrBlank()) return null
+        return navStacks[key]
+    }
+
+    fun restoreCurrentChatId(key: String?): String? {
+        if (key.isNullOrBlank()) return null
+        return currentChatIds[key]
+    }
+}
 
 class RouteFragment : Fragment() {
 
@@ -180,6 +209,12 @@ class RouteFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
     }
 
+    override fun onDestroyView() {
+        EmbeddedRouteFragmentStateStore.save(embeddedStateKey(), navStack)
+        navStack = null
+        super.onDestroyView()
+    }
+
     /**
      * Handles a new intent delivered to the hosting activity. Currently used to
      * push a chat screen for a specific conversation id.
@@ -188,6 +223,16 @@ class RouteFragment : Fragment() {
         intent.getStringExtra("conversationId")?.let { id ->
             navStack?.add(Screen.Chat(id))
         }
+    }
+
+    private fun hostedWorkspaceInitialCwd(): String? {
+        return arguments?.getString("host_initial_workspace_cwd")
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    private fun embeddedStateKey(): String? {
+        return arguments?.getString("host_conversation_id")
+            ?: arguments?.getString("host_project_root_path")
     }
 
     @Composable
@@ -238,10 +283,22 @@ class RouteFragment : Fragment() {
             }
         }
         val migrationState by DatabaseMigrationTracker.state.collectAsStateWithLifecycle()
+        val embeddedBackground = remember {
+            arguments?.takeIf { it.containsKey("host_embedded_background_color") }
+                ?.getInt("host_embedded_background_color")
+                ?.let { Color(it) }
+        }
+
+        val hostedWorkspaceCwd = remember { hostedWorkspaceInitialCwd() }
 
         val ctx = requireContext()
+        val stateKey = remember { embeddedStateKey() }
+        val restoredCurrentChatId = remember(stateKey) {
+            EmbeddedRouteFragmentStateStore.restoreCurrentChatId(stateKey)
+        }
+        val fixedConversationId = arguments?.getString("host_conversation_id")?.takeIf { it.isNotBlank() }
         val startScreen = Screen.Chat(
-            id = if (ctx.readBooleanPreference("create_new_conversation_on_start", true)) {
+            id = restoredCurrentChatId ?: fixedConversationId ?: if (ctx.readBooleanPreference("create_new_conversation_on_start", true)) {
                 Uuid.random().toString()
             } else {
                 ctx.readStringPreference(
@@ -251,8 +308,13 @@ class RouteFragment : Fragment() {
             }
         )
 
-        val backStack = rememberNavBackStack(startScreen)
-        SideEffect { this@RouteFragment.navStack = backStack }
+        val restoredStack = remember(stateKey) { EmbeddedRouteFragmentStateStore.restoreStack(stateKey) }
+        val initialStack = restoredStack?.takeIf { it.isNotEmpty() } ?: listOf(startScreen)
+        val backStack = rememberNavBackStack(*initialStack.toTypedArray())
+        SideEffect {
+            this@RouteFragment.navStack = backStack
+            EmbeddedRouteFragmentStateStore.save(stateKey, backStack)
+        }
 
         ShareHandler(backStack)
 
@@ -265,6 +327,7 @@ class RouteFragment : Fragment() {
                 LocalToaster provides toastState,
                 LocalTTSState provides tts,
                 LocalASRState provides asr,
+                LocalEmbeddedBackground provides embeddedBackground,
             ) {
                 Toaster(
                     state = toastState,
@@ -312,7 +375,8 @@ class RouteFragment : Fragment() {
                                     id = Uuid.parse(key.id),
                                     text = key.text,
                                     files = key.files.map { it.toUri() },
-                                    nodeId = key.nodeId?.let { Uuid.parse(it) }
+                                    nodeId = key.nodeId?.let { Uuid.parse(it) },
+                                    initialWorkspaceCwd = hostedWorkspaceCwd,
                                 )
                             }
 

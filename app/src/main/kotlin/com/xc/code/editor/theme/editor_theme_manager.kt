@@ -1,21 +1,21 @@
 package com.xc.code.editor.theme
 
-import com.xc.code.core.logging.logger_manager
-
 import android.content.Context
-import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
-import io.github.rosemoe.sora.langs.textmate.registry.model.ThemeModel
+import com.xc.code.core.logging.logger_manager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.eclipse.tm4e.core.registry.IThemeSource
 import org.json.JSONObject
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 import java.util.Locale
 
+private enum class editor_theme_color_section {
+    COLORS,
+    SYNTAX
+}
+
 private data class editor_theme_color_definition(
+    val section: editor_theme_color_section,
     val key: String,
     val title: String,
     val description: String
@@ -25,13 +25,6 @@ data class editor_theme_color_item(
     val key: String,
     val title: String,
     val description: String,
-    val value: String
-)
-
-data class editor_theme_token_color_item(
-    val index: Int,
-    val title: String,
-    val scope: String,
     val value: String
 )
 
@@ -46,63 +39,136 @@ data class editor_theme_preview_palette(
     val line_number: String,
     val active_line_number: String,
     val keyword: String,
+    val keyword_directive: String,
     val type: String,
+    val type_builtin: String,
+    val namespace: String,
     val function: String,
+    val method: String,
     val string: String,
+    val string_special: String,
     val number: String,
     val comment: String,
     val constant: String,
+    val constant_builtin: String,
+    val variable_builtin: String,
+    val property: String,
     val operator: String,
-    val punctuation: String
+    val punctuation: String,
+    val punctuation_bracket: String,
+    val punctuation_delimiter: String
 )
 
 object editor_theme_manager {
-    private const val DEFAULT_THEME_ASSET = "textmate/themes/xcode.json"
-    private const val USER_THEME_DIR = "textmate/themes"
-    private const val USER_THEME_FILE = "xcode.json"
-    private const val THEME_NAME = "xcode_user"
+    private const val DEFAULT_THEME_ASSET = "editor/themes/default.json"
+    private const val USER_THEME_DIR = "editor/themes"
+    private const val USER_THEME_FILE = "colors.json"
 
     private val _version = MutableStateFlow(0)
     val version: StateFlow<Int> = _version.asStateFlow()
 
     private val color_definitions = listOf(
-        editor_theme_color_definition("editor.background", "编辑器背景", "代码编辑区的整体背景色"),
-        editor_theme_color_definition("editor.foreground", "默认文字", "没有语法高亮命中时的代码文字颜色"),
-        editor_theme_color_definition("editorCursor.foreground", "光标", "插入光标的颜色"),
-        editor_theme_color_definition("editor.selectionHandleBackground", "选择手柄", "文本选择拖动手柄的颜色"),
-        editor_theme_color_definition("editor.selectionBackground", "选中背景", "选中文本时的背景色"),
-        editor_theme_color_definition("editor.lineHighlightBackground", "当前行背景", "光标所在行的背景色"),
-        editor_theme_color_definition("editor.findMatchBackground", "当前搜索匹配", "当前搜索结果的背景色"),
-        editor_theme_color_definition("editor.findMatchBorder", "当前搜索边框", "当前搜索结果的边框颜色"),
-        editor_theme_color_definition("editor.findMatchHighlightBackground", "其它搜索匹配", "其它搜索结果的背景色"),
-        editor_theme_color_definition("editor.findMatchHighlightBorder", "其它搜索边框", "其它搜索结果的边框颜色"),
-        editor_theme_color_definition("highlightedDelimitersForeground", "括号匹配", "匹配括号和定界符的高亮颜色"),
-        editor_theme_color_definition("editorIndentGuide.background", "缩进参考线", "普通缩进参考线颜色"),
-        editor_theme_color_definition("editorIndentGuide.activeBackground", "当前缩进线", "当前层级/代码块辅助线颜色"),
-        editor_theme_color_definition("editorWhitespace.foreground", "空白符号", "空格和缩进可见标记颜色"),
-        editor_theme_color_definition("editorLineNumber.foreground", "行号", "普通行号文字颜色"),
-        editor_theme_color_definition("editorLineNumber.activeForeground", "当前行号", "当前行号文字颜色"),
-        editor_theme_color_definition("editor.lineDivider", "行分割线", "编辑器内部弱分割线颜色"),
-        editor_theme_color_definition("scrollbarSlider.background", "滚动条", "滚动条普通状态颜色"),
-        editor_theme_color_definition("scrollbarSlider.activeBackground", "滚动条激活", "拖动滚动条时的颜色"),
-        editor_theme_color_definition("editor.wordHighlightBackground", "单词高亮", "相同单词弱高亮背景色"),
-        editor_theme_color_definition("editor.wordHighlightStrongBackground", "强单词高亮", "相同单词强高亮背景色"),
-        editor_theme_color_definition("editorError.foreground", "错误诊断", "代码错误波浪线和诊断弹窗边框颜色"),
-        editor_theme_color_definition("editorWarning.foreground", "警告诊断", "代码警告波浪线和诊断弹窗边框颜色"),
-        editor_theme_color_definition("editorInfo.foreground", "提示诊断", "代码提示波浪线和诊断弹窗边框颜色"),
-        editor_theme_color_definition("editorSuggestWidget.background", "补全背景", "补全窗口背景色"),
-        editor_theme_color_definition("editorSuggestWidget.foreground", "补全文字", "补全窗口普通文字颜色"),
-        editor_theme_color_definition("editorSuggestWidget.highlightForeground", "补全高亮文字", "补全匹配字符颜色"),
-        editor_theme_color_definition("editorSuggestWidget.selectedBackground", "补全选中项", "补全窗口选中项背景色"),
-        editor_theme_color_definition("tooltipBackground", "提示背景", "编辑器提示弹窗背景色"),
-        editor_theme_color_definition("tooltipBriefMessageColor", "提示主文字", "提示弹窗主要文字颜色"),
-        editor_theme_color_definition("tooltipDetailedMessageColor", "提示说明文字", "提示弹窗说明文字颜色"),
-        editor_theme_color_definition("tooltipActionColor", "提示操作文字", "提示弹窗操作文字颜色")
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.background", "背景", "编辑区背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.foreground", "文字", "普通文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorCursor.foreground", "光标", "输入光标"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.selectionBackground", "选中背景", "选中文本背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.selectionForeground", "选中文字", "选中文本前景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.selectionBorder", "选中边框", "选中文本边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.selectionHandle", "选区手柄", "拖动选择手柄"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.lineHighlightBackground", "当前行", "光标所在行背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.lineHighlightBorder", "当前行边框", "光标所在行边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorWhitespace.foreground", "空白符", "空格、制表符"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorLineNumber.foreground", "行号", "普通行号"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorLineNumber.activeForeground", "当前行号", "当前行号"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorLineNumber.panelBackground", "行号面板背景", "行号面板背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorLineNumber.panelForeground", "行号面板文字", "行号面板文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorIndentGuide.background", "缩进线", "普通缩进线"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorIndentGuide.activeBackground", "活动缩进线", "当前缩进线"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSideBlockLine.foreground", "代码块边线", "侧边代码块线"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "highlightedDelimitersForeground", "括号匹配文字", "匹配括号文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "highlightedDelimitersBackground", "括号匹配背景", "匹配括号背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "highlightedDelimitersBorder", "括号匹配边框", "匹配括号边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "highlightedDelimitersUnderline", "括号匹配下划线", "匹配括号下划线"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.findMatchBackground", "搜索命中", "当前搜索命中背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.findMatchHighlightBackground", "搜索其他命中", "其他搜索命中背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.findMatchBorder", "搜索命中边框", "当前搜索命中边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.wordHighlightBackground", "单词高亮", "相同单词背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.wordHighlightStrongBackground", "强单词高亮", "强单词背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.wordHighlightBorder", "单词高亮边框", "相同单词边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editor.wordHighlightStrongBorder", "强单词高亮边框", "强单词边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSuggestWidget.background", "补全背景", "补全窗口背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSuggestWidget.foreground", "补全文字", "补全普通文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSuggestWidget.highlightForeground", "补全高亮", "补全匹配文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSuggestWidget.selectedBackground", "补全选中", "补全选中项背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSuggestWidget.secondaryForeground", "补全次要文字", "补全次要文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSuggestWidget.corner", "补全角标", "补全窗口角标/装饰"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorHoverWidget.background", "悬浮背景", "悬浮提示背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorHoverWidget.foreground", "悬浮文字", "悬浮提示文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorHoverWidget.highlightForeground", "悬浮高亮文字", "悬浮提示高亮文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorHoverWidget.border", "悬浮边框", "悬浮提示边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "scrollbarSlider.background", "滚动条", "滚动条滑块"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "scrollbarSlider.track", "滚动条轨道", "滚动条轨道"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "scrollbarSlider.activeBackground", "活动滚动条", "按下/活动滚动条滑块"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorMinimap.background", "小地图背景", "代码小地图背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorMinimap.viewportBackground", "小地图视口", "代码小地图当前视口"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorMinimap.viewportBorder", "小地图视口边框", "代码小地图当前视口边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorInlayHint.foreground", "内联提示文字", "内联提示文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorInlayHint.background", "内联提示背景", "内联提示背景"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "namespace", "命名空间", "Tree-sitter/语义高亮命名空间"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "type", "类型", "类型名称"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "function", "函数", "普通函数"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "parameter", "参数", "函数参数"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "variable", "变量", "普通变量"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "property", "属性/字段", "对象属性、字段、JSON/YAML key"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "macro", "宏", "宏与特殊函数"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "enumMember", "枚举成员/常量", "枚举成员、常量、true/false/null"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "method", "方法", "成员函数、方法"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "keyword", "关键字", "语言关键字"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "operator", "运算符", "运算符与特殊标点"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "comment", "注释", "代码注释"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "string", "字符串", "字符串字面量"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "number", "数字", "数字字面量"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "modifier", "修饰符", "修饰关键字"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "typeParameter", "类型参数", "模板/泛型类型参数"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "class", "类/结构体", "class/struct 类型"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "enum", "枚举类型", "enum 类型"),
+        editor_theme_color_definition(editor_theme_color_section.SYNTAX, "punctuation", "标点", "括号、逗号、冒号等标点"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorError.foreground", "错误", "错误诊断颜色"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorWarning.foreground", "警告", "警告诊断颜色"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorInfo.foreground", "信息", "信息诊断颜色"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "tooltipBackground", "诊断提示背景", "错误、警告提示背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "tooltipBriefMessageColor", "诊断标题", "诊断主要文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "tooltipDetailedMessageColor", "诊断详情", "诊断详细说明文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "tooltipActionColor", "诊断操作", "诊断可点击操作文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "signatureHelp.background", "参数提示背景", "函数参数提示背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "signatureHelp.border", "参数提示边框", "函数参数提示边框"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "signatureHelp.foreground", "参数提示文字", "函数参数提示普通文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "signatureHelp.activeParameterForeground", "当前参数文字", "当前参数高亮文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorTextAction.background", "文本操作背景", "复制/粘贴操作栏背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorTextAction.iconForeground", "文本操作图标", "复制/粘贴操作栏图标"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorHardWrapMarker.foreground", "自动换行标记", "硬换行/自动换行标记"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSnippet.activeBackground", "片段编辑背景", "正在编辑的 snippet 背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSnippet.relatedBackground", "片段关联背景", "关联 snippet 占位背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorSnippet.inactiveBackground", "片段非活动背景", "非活动 snippet 占位背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorUnderline.foreground", "下划线", "普通下划线"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorStrikethrough.foreground", "删除线", "删除线"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorLineDivider.foreground", "行分隔线", "编辑器行分隔线"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorStaticSpan.background", "静态标记背景", "静态 Span 背景"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorStaticSpan.foreground", "静态标记文字", "静态 Span 文字"),
+        editor_theme_color_definition(editor_theme_color_section.COLORS, "editorFunctionChar.border", "函数字符边框", "函数字符背景描边")
     )
 
+    private val syntax_keys = color_definitions
+        .filter { definition -> definition.section == editor_theme_color_section.SYNTAX }
+        .map { definition -> definition.key }
+        .toSet()
+
     fun init(context: Context) {
+        set_current_theme(context)
+    }
+
+    fun set_current_theme(context: Context) {
         ensure_user_theme(context)
-        reload_textmate_theme(context)
     }
 
     fun user_theme_file(context: Context): File {
@@ -110,56 +176,36 @@ object editor_theme_manager {
     }
 
     fun load_color_items(context: Context): List<editor_theme_color_item> {
-        val colors = load_color_map(context)
+        val values = load_color_map(context)
         return color_definitions.map { definition ->
             editor_theme_color_item(
                 key = definition.key,
                 title = definition.title,
                 description = definition.description,
-                value = colors[definition.key].orEmpty()
+                value = values[definition.key].orEmpty()
             )
         }
     }
 
-    fun load_token_color_items(context: Context): List<editor_theme_token_color_item> {
-        val json = read_theme_json(context, ensure_user_theme(context))
-        val token_colors = json.optJSONArray("tokenColors") ?: return emptyList()
-        val result = mutableListOf<editor_theme_token_color_item>()
-        for (index in 0 until token_colors.length()) {
-            val item = token_colors.optJSONObject(index) ?: continue
-            val settings = item.optJSONObject("settings") ?: continue
-            val foreground = settings.optString("foreground").takeIf { it.isNotBlank() } ?: continue
-            val scopes = token_scopes(item.opt("scope"))
-            val title = item.optString("name").takeIf { it.isNotBlank() }
-                ?: scopes.firstOrNull().orEmpty().ifBlank { "语法颜色 ${index + 1}" }
-            result.add(
-                editor_theme_token_color_item(
-                    index = index,
-                    title = title,
-                    scope = scopes.joinToString(", "),
-                    value = foreground
-                )
-            )
-        }
-        return result
+    fun load_theme_object(context: Context): JSONObject? {
+        return runCatching { read_theme_json(context, ensure_user_theme(context)) }.getOrNull()
     }
 
     fun load_color_object(context: Context): JSONObject? {
+        return load_theme_object(context)?.optJSONObject("colors")
+    }
+
+    fun load_syntax_object(context: Context): JSONObject? {
         return runCatching {
-            read_theme_json(context, ensure_user_theme(context)).optJSONObject("colors")
+            read_theme_json(context, ensure_user_theme(context)).optJSONObject("syntax")
         }.getOrNull()
     }
 
     fun load_preview_palette(context: Context): editor_theme_preview_palette {
-        val colors = load_color_map(context)
-        val json = read_theme_json(context, ensure_user_theme(context))
+        val values = load_color_map(context)
 
         fun editor_color(key: String, fallback: String): String {
-            return colors[key].orEmpty().ifBlank { fallback }
-        }
-
-        fun token_color(fallback: String, vararg scopes: String): String {
-            return find_token_color(json, scopes.toList()) ?: fallback
+            return values[key].orEmpty().ifBlank { fallback }
         }
 
         return editor_theme_preview_palette(
@@ -172,15 +218,25 @@ object editor_theme_manager {
             block_line = editor_color("editorIndentGuide.activeBackground", "#5A7A9A"),
             line_number = editor_color("editorLineNumber.foreground", "#5A7A9A"),
             active_line_number = editor_color("editorLineNumber.activeForeground", "#4A9EFF"),
-            keyword = token_color("#E5B567", "keyword.control", "keyword"),
-            type = token_color("#7DB7E8", "storage.type", "entity.name.type", "support.type"),
-            function = token_color("#7FD6C2", "entity.name.function", "meta.function-call"),
-            string = token_color("#A5C25C", "string"),
-            number = token_color("#D19A66", "constant.numeric"),
-            comment = token_color("#6A7A8A", "comment"),
-            constant = token_color("#FF9E64", "constant.language"),
-            operator = token_color("#89DDFF", "keyword.operator"),
-            punctuation = token_color("#FFD166", "punctuation.section")
+            keyword = editor_color("keyword", "#FF8F73"),
+            keyword_directive = editor_color("keyword", "#FF5370"),
+            type = editor_color("type", "#4EC9B0"),
+            type_builtin = editor_color("type", "#5DAEFF"),
+            namespace = editor_color("namespace", "#B7A6FF"),
+            function = editor_color("function", "#DCDCAA"),
+            method = editor_color("method", "#82AAFF"),
+            string = editor_color("string", "#A6E3A1"),
+            string_special = editor_color("macro", "#F6C177"),
+            number = editor_color("number", "#F6C177"),
+            comment = editor_color("comment", "#6F8496"),
+            constant = editor_color("enumMember", "#FFB86C"),
+            constant_builtin = editor_color("enumMember", "#F78C6C"),
+            variable_builtin = editor_color("variable", "#FFCB6B"),
+            property = editor_color("property", "#9CDCFE"),
+            operator = editor_color("operator", "#89DDFF"),
+            punctuation = editor_color("punctuation", "#A9BED1"),
+            punctuation_bracket = editor_color("punctuation", "#DDE7F0"),
+            punctuation_delimiter = editor_color("punctuation", "#A9BED1")
         )
     }
 
@@ -189,10 +245,11 @@ object editor_theme_manager {
         return runCatching {
             val theme_file = ensure_user_theme(context)
             val json = read_theme_json(context, theme_file)
-            val colors = json.optJSONObject("colors") ?: JSONObject().also { json.put("colors", it) }
-            colors.put(key, normalized)
+            val section_name = if (key in syntax_keys) "syntax" else "colors"
+            val section = json.optJSONObject(section_name) ?: JSONObject().also { json.put(section_name, it) }
+            section.put(key, normalized)
             write_theme_json(theme_file, json)
-            reload_textmate_theme(context)
+            reload_theme(context)
             true
         }.getOrElse { error ->
             logger_manager.e("editor_theme_manager", "Failed to update editor theme color: ${error.message}", error)
@@ -200,28 +257,10 @@ object editor_theme_manager {
         }
     }
 
-    fun update_token_color(context: Context, index: Int, value: String): Boolean {
-        val normalized = normalize_color(value) ?: return false
-        return runCatching {
-            val theme_file = ensure_user_theme(context)
-            val json = read_theme_json(context, theme_file)
-            val token_colors = json.optJSONArray("tokenColors") ?: return false
-            val item = token_colors.optJSONObject(index) ?: return false
-            val settings = item.optJSONObject("settings") ?: JSONObject().also { item.put("settings", it) }
-            settings.put("foreground", normalized)
-            write_theme_json(theme_file, json)
-            reload_textmate_theme(context)
-            true
-        }.getOrElse { error ->
-            logger_manager.e("editor_theme_manager", "Failed to update token color: ${error.message}", error)
-            false
-        }
-    }
-
     fun reset_to_default(context: Context): Boolean {
         return runCatching {
             copy_default_theme(context, user_theme_file(context))
-            reload_textmate_theme(context)
+            reload_theme(context)
             true
         }.getOrElse { error ->
             logger_manager.e("editor_theme_manager", "Failed to reset editor theme: ${error.message}", error)
@@ -229,36 +268,9 @@ object editor_theme_manager {
         }
     }
 
-    fun set_current_theme(context: Context): Boolean {
+    fun reload_theme(context: Context): Boolean {
         return runCatching {
-            val registry = ThemeRegistry.getInstance()
-            if (!registry.setTheme(THEME_NAME)) {
-                reload_textmate_theme(context)
-            } else {
-                true
-            }
-        }.getOrElse { error ->
-            logger_manager.e("editor_theme_manager", "Failed to set editor theme: ${error.message}", error)
-            false
-        }
-    }
-
-    fun reload_textmate_theme(context: Context): Boolean {
-        return runCatching {
-            val theme_file = ensure_user_theme(context)
-            val registry = ThemeRegistry.getInstance()
-            val existing = registry.findThemeByFileName(THEME_NAME)
-            if (existing != null) {
-                existing.load()
-                existing.setDark(true)
-                registry.setTheme(existing)
-            } else {
-                val model = ThemeModel(create_theme_source(theme_file), THEME_NAME)
-                model.setDark(true)
-                model.load()
-                registry.loadTheme(model, true)
-                registry.setTheme(model)
-            }
+            ensure_user_theme(context)
             _version.value = _version.value + 1
             true
         }.getOrElse { error ->
@@ -293,36 +305,6 @@ object editor_theme_manager {
         }.getOrNull()
     }
 
-    private fun find_token_color(json: JSONObject, candidates: List<String>): String? {
-        val token_colors = json.optJSONArray("tokenColors") ?: return null
-        for (index in 0 until token_colors.length()) {
-            val item = token_colors.optJSONObject(index) ?: continue
-            val settings = item.optJSONObject("settings") ?: continue
-            val foreground = settings.optString("foreground").takeIf { it.isNotBlank() } ?: continue
-            val scopes = token_scopes(item.opt("scope"))
-            if (candidates.any { candidate -> scopes.any { scope -> scope == candidate } }) {
-                return foreground
-            }
-            if (candidates.any { candidate -> scopes.any { scope -> candidate.startsWith("$scope.") } }) {
-                return foreground
-            }
-        }
-        return null
-    }
-
-    private fun token_scopes(value: Any?): List<String> {
-        return when (value) {
-            is String -> value.split(',').map { it.trim() }.filter { it.isNotBlank() }
-            is org.json.JSONArray -> buildList {
-                for (index in 0 until value.length()) {
-                    val scope = value.optString(index).trim()
-                    if (scope.isNotBlank()) add(scope)
-                }
-            }
-            else -> emptyList()
-        }
-    }
-
     private fun ensure_user_theme(context: Context): File {
         val theme_file = user_theme_file(context)
         if (!theme_file.exists()) {
@@ -348,25 +330,18 @@ object editor_theme_manager {
             current.put("name", defaults.optString("name", "XCode"))
             changed = true
         }
-
-        val current_colors = current.optJSONObject("colors") ?: JSONObject().also {
-            current.put("colors", it)
+        if (!current.has("type")) {
+            current.put("type", defaults.optString("type", "dark"))
             changed = true
         }
-        val default_colors = defaults.optJSONObject("colors")
-        if (default_colors != null) {
-            val keys = default_colors.keys()
-            while (keys.hasNext()) {
-                val key = keys.next()
-                if (!current_colors.has(key)) {
-                    current_colors.put(key, default_colors.optString(key))
-                    changed = true
-                }
-            }
-        }
 
-        if (!current.has("tokenColors") && defaults.has("tokenColors")) {
-            current.put("tokenColors", defaults.optJSONArray("tokenColors"))
+        if (migrate_legacy_semantic_colors(current)) {
+            changed = true
+        }
+        if (merge_section_defaults(current, defaults, "colors")) {
+            changed = true
+        }
+        if (merge_section_defaults(current, defaults, "syntax")) {
             changed = true
         }
 
@@ -375,13 +350,54 @@ object editor_theme_manager {
         }
     }
 
+    private fun merge_section_defaults(current: JSONObject, defaults: JSONObject, section_name: String): Boolean {
+        var changed = false
+        val current_section = current.optJSONObject(section_name) ?: JSONObject().also {
+            current.put(section_name, it)
+            changed = true
+        }
+        val default_section = defaults.optJSONObject(section_name)
+        if (default_section != null) {
+            val keys = default_section.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                if (!current_section.has(key)) {
+                    current_section.put(key, default_section.optString(key))
+                    changed = true
+                }
+            }
+        }
+        return changed
+    }
+
+    private fun migrate_legacy_semantic_colors(theme: JSONObject): Boolean {
+        val colors = theme.optJSONObject("colors") ?: return false
+        val syntax = theme.optJSONObject("syntax") ?: JSONObject().also { theme.put("syntax", it) }
+        var changed = false
+        syntax_keys.forEach { key ->
+            val legacy_key = "semantic.$key"
+            if (colors.has(legacy_key)) {
+                if (!syntax.has(key)) {
+                    syntax.put(key, colors.optString(legacy_key))
+                }
+                colors.remove(legacy_key)
+                changed = true
+            }
+        }
+        return changed
+    }
+
     private fun load_color_map(context: Context): Map<String, String> {
         val theme_file = ensure_user_theme(context)
-        val current_colors = read_theme_json(context, theme_file).optJSONObject("colors")
-        val default_colors = read_default_theme_json(context).optJSONObject("colors")
+        val current = read_theme_json(context, theme_file)
+        val defaults = read_default_theme_json(context)
         return color_definitions.associate { definition ->
-            val value = current_colors?.optString(definition.key).orEmpty()
-                .ifBlank { default_colors?.optString(definition.key).orEmpty() }
+            val section_name = when (definition.section) {
+                editor_theme_color_section.COLORS -> "colors"
+                editor_theme_color_section.SYNTAX -> "syntax"
+            }
+            val value = current.optJSONObject(section_name)?.optString(definition.key).orEmpty()
+                .ifBlank { defaults.optJSONObject(section_name)?.optString(definition.key).orEmpty() }
             definition.key to value
         }
     }
@@ -409,15 +425,5 @@ object editor_theme_manager {
     private fun write_theme_json(theme_file: File, json: JSONObject) {
         theme_file.parentFile?.mkdirs()
         theme_file.writeText(json.toString(2))
-    }
-
-    private fun create_theme_source(theme_file: File): IThemeSource {
-        return object : IThemeSource {
-            override fun getReader(): BufferedReader {
-                return BufferedReader(InputStreamReader(theme_file.inputStream()))
-            }
-
-            override fun getFilePath(): String = theme_file.absolutePath
-        }
     }
 }

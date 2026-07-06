@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -75,6 +77,7 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.service.ChatError
+import me.rerere.rikkahub.ui.theme.LocalEmbeddedBackground
 import me.rerere.rikkahub.ui.components.ai.ChatInput
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
@@ -98,10 +101,16 @@ import java.io.File
 import kotlin.uuid.Uuid
 
 @Composable
-fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
+fun ChatPage(
+    id: Uuid,
+    text: String?,
+    files: List<Uri>,
+    nodeId: Uuid? = null,
+    initialWorkspaceCwd: String? = null,
+) {
     val vm: ChatVM = koinViewModel(
         parameters = {
-            parametersOf(id.toString())
+            parametersOf(id.toString(), initialWorkspaceCwd.orEmpty())
         }
     )
     val filesManager: FilesManager = koinInject()
@@ -299,10 +308,26 @@ private fun ChatPageContent(
 
     TTSAutoPlay(vm = vm, setting = setting, conversation = conversation)
 
+    val embeddedBackground = LocalEmbeddedBackground.current
+    val useEmbeddedBackground =
+        embeddedBackground != null &&
+            !assistant.useGradientBackground &&
+            assistant.background == null
+
     Surface(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
     ) {
+        if (useEmbeddedBackground) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        drawRect(embeddedBackground)
+                    }
+            )
+        }
+
         AssistantBackground(setting = setting, modifier = Modifier.hazeSource(hazeState))
         Scaffold(
             topBar = {
@@ -457,7 +482,7 @@ private fun ChatPageContent(
                 onJumpToMessage = { index ->
                     previewMode = false
                     scope.launch {
-                        chatListState.animateScrollToItem(index)
+                        chatListState.requestScrollToItem(index)
                     }
                 },
                 onToolApproval = { toolCallId, approved, reason ->

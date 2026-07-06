@@ -12,19 +12,13 @@ import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.theme.app_theme_type
 import com.xc.code.ui.theme.theme_manager
 import com.xc.code.utils.app_lifecycle_observer
-import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import me.rerere.rikkahub.RikkaHubInitializer
 import me.rerere.rikkahub.ui.theme.ColorMode
 import me.rerere.rikkahub.ui.theme.ThemeStateBridge
-import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
-import io.github.rosemoe.sora.langs.textmate.registry.GrammarRegistry
-import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
-import io.github.rosemoe.sora.langs.textmate.registry.provider.AssetsFileResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.eclipse.tm4e.core.internal.oniguruma.Oniguruma
 import java.io.File
 class xc_application : Application() {
 
@@ -32,7 +26,6 @@ class xc_application : Application() {
         lateinit var instance: xc_application
     }
 
-    private var textmate_initialized = false
     private val application_scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     var keep_alive_service_: keep_alive_service? = null
@@ -67,7 +60,7 @@ class xc_application : Application() {
             proot_tmp_dir = File(filesDir, "home/xcode/proot-tmps")
         )
 
-        init_textmate()
+        editor_theme_manager.init(this)
         start_keep_alive_service()
         app_lifecycle_observer.init(this)
         RikkaHubInitializer.init(this)
@@ -80,6 +73,8 @@ class xc_application : Application() {
     }
 
     private fun bind_rikkahub_theme_state() {
+        // XCode 负责接管 Agent 的明暗模式与应用缩放。
+        // 但编辑器侧边栏里的 Agent 背景色只通过 RouteFragment 参数做局部覆盖，避免污染独立 Agent 页面。
         ThemeStateBridge.setColorMode(theme_manager.theme.value.to_rikkahub_color_mode())
         ThemeStateBridge.setScale(theme_manager.scale.value)
         application_scope.launch {
@@ -98,70 +93,6 @@ class xc_application : Application() {
         app_theme_type.DARK -> ColorMode.DARK
         app_theme_type.LIGHT -> ColorMode.LIGHT
         app_theme_type.SYSTEM -> ColorMode.SYSTEM
-    }
-
-    private fun init_textmate() {
-        if (textmate_initialized) return
-
-        try {
-            FileProviderRegistry.getInstance().addFileProvider(AssetsFileResolver(assets))
-            configure_textmate_regex_engine()
-
-            editor_theme_manager.init(this)
-
-            ThemeRegistry.getInstance().setTheme("xcode_user")
-            GrammarRegistry.getInstance().loadGrammars("textmate/languages.json")
-
-            textmate_initialized = true
-        } catch (e: Exception) {
-            logger_manager.e("xc_application", "Failed to init TextMate: ${e.message}", e)
-        }
-    }
-
-    private fun configure_textmate_regex_engine() {
-        runCatching {
-            Oniguruma().setUseNativeOniguruma(true)
-        }.onFailure { error ->
-            logger_manager.e("xc_application", "TextMate native Oniguruma unavailable: ${error.message}", error)
-        }
-    }
-
-    fun set_textmate_theme(is_dark: Boolean) {
-        if (!textmate_initialized) return
-
-        try {
-            editor_theme_manager.set_current_theme(this)
-        } catch (e: Exception) {
-            logger_manager.e("xc_application", "Failed to set TextMate theme: ${e.message}")
-        }
-    }
-
-    fun get_language_scope_name(file_name: String): String {
-        val name = File(file_name).name
-        return when {
-            name.equals("CMakeLists.txt", ignoreCase = true) -> "source.cmake"
-            name.endsWith(".cmake", ignoreCase = true) -> "source.cmake"
-            name.endsWith(".c", ignoreCase = true) -> "source.c"
-            name.endsWith(".cpp", ignoreCase = true) -> "source.cpp"
-            name.endsWith(".cc", ignoreCase = true) -> "source.cpp"
-            name.endsWith(".cxx", ignoreCase = true) -> "source.cpp"
-            name.endsWith(".h", ignoreCase = true) -> "source.cpp"
-            name.endsWith(".hpp", ignoreCase = true) -> "source.cpp"
-            name.endsWith(".json", ignoreCase = true) -> "source.json"
-            else -> "source.cpp"
-        }
-    }
-
-    fun create_textmate_language(file_name: String): TextMateLanguage? {
-        if (!textmate_initialized) return null
-
-        val scope_name = get_language_scope_name(file_name)
-        return try {
-            TextMateLanguage.create(scope_name, false)
-        } catch (e: Exception) {
-            logger_manager.e("xc_application", "Failed to create TextMate language $scope_name: ${e.message}")
-            null
-        }
     }
 
     private fun setup_uncaught_exception_handler() {

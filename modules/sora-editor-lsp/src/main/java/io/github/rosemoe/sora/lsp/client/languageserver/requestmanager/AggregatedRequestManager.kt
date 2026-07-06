@@ -62,6 +62,9 @@ import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.ReferenceParams
 import org.eclipse.lsp4j.RegistrationParams
 import org.eclipse.lsp4j.RenameParams
+import org.eclipse.lsp4j.SemanticTokens
+import org.eclipse.lsp4j.SemanticTokensParams
+import org.eclipse.lsp4j.SemanticTokensRangeParams
 import org.eclipse.lsp4j.ServerCapabilities
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import org.eclipse.lsp4j.SignatureHelp
@@ -459,6 +462,14 @@ class AggregatedRequestManager(
     override fun foldingRange(params: FoldingRangeRequestParams): CompletableFuture<List<FoldingRange>>? {
         val futures = activeManagers.mapNotNull { it.foldingRange(params) }
         return aggregateLists(futures)
+    }
+
+    override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens>? {
+        return firstFuture { semanticTokensFull(params) }
+    }
+
+    override fun semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture<SemanticTokens>? {
+        return firstFuture { semanticTokensRange(params) }
     }
 
     override fun inlayHint(params: InlayHintParams): CompletableFuture<List<InlayHint>>? {

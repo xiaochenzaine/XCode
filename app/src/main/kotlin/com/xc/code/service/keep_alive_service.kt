@@ -1,5 +1,6 @@
 package com.xc.code.service
 
+import com.xc.code.R
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -63,7 +64,7 @@ class keep_alive_service : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("XCode")
-            .setContentText("点按通知以打开编辑器")
+            .setContentText(getString(R.string.keep_alive_open_editor))
             .setSmallIcon(android.R.drawable.sym_def_app_icon)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(pending_intent)

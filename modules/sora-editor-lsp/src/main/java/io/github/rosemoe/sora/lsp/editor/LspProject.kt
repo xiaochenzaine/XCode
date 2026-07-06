@@ -28,6 +28,7 @@ import io.github.rosemoe.sora.lsp.client.languageserver.ShutdownReason
 import io.github.rosemoe.sora.lsp.client.languageserver.serverdefinition.LanguageServerDefinition
 import io.github.rosemoe.sora.lsp.client.languageserver.wrapper.LanguageServerWrapper
 import io.github.rosemoe.sora.lsp.editor.diagnostics.DiagnosticsContainer
+import io.github.rosemoe.sora.lsp.editor.semantic.SemanticToken
 import io.github.rosemoe.sora.lsp.events.EventEmitter
 import io.github.rosemoe.sora.lsp.events.code.CodeActionEvent
 import io.github.rosemoe.sora.lsp.events.color.DocumentColorEvent
@@ -45,6 +46,7 @@ import io.github.rosemoe.sora.lsp.events.highlight.DocumentHighlightEvent
 import io.github.rosemoe.sora.lsp.events.hover.HoverEvent
 import io.github.rosemoe.sora.lsp.events.inlayhint.InlayHintEvent
 import io.github.rosemoe.sora.lsp.events.signature.SignatureHelpEvent
+import io.github.rosemoe.sora.lsp.events.semantic.SemanticTokensEvent
 import io.github.rosemoe.sora.lsp.events.workspace.WorkSpaceApplyEditEvent
 import io.github.rosemoe.sora.lsp.events.workspace.WorkSpaceExecuteCommand
 import io.github.rosemoe.sora.lsp.utils.FileUri
@@ -71,6 +73,8 @@ class LspProject(
     private val definitions = ConcurrentHashMap<ServerKey, LanguageServerDefinition>()
 
     private val editors = ConcurrentHashMap<FileUri, LspEditor>()
+
+    private val semanticTokensCache = ConcurrentHashMap<FileUri, List<SemanticToken>>()
 
     val diagnosticsContainer = DiagnosticsContainer()
 
@@ -139,6 +143,20 @@ class LspProject(
         return getEditor(path) ?: createEditor(path)
     }
 
+    fun cacheSemanticTokens(uri: FileUri, tokens: List<SemanticToken>) {
+        if (tokens.isNotEmpty()) {
+            semanticTokensCache[uri] = tokens
+        }
+    }
+
+    fun getCachedSemanticTokens(uri: FileUri): List<SemanticToken>? {
+        return semanticTokensCache[uri]
+    }
+
+    fun clearSemanticTokensCache(uri: FileUri) {
+        semanticTokensCache.remove(uri)
+    }
+
     fun closeAllEditors() {
         val editorsSnapshot = getEditors()
         editorsSnapshot.forEach {
@@ -179,6 +197,7 @@ class LspProject(
         }
         wrappers.clear()
         definitions.clear()
+        semanticTokensCache.clear()
         coroutineScope.coroutineContext.cancelChildren()
     }
 
@@ -199,7 +218,7 @@ class LspProject(
             ::DocumentOpenEvent, ::HoverEvent, ::CodeActionEvent,
             ::WorkSpaceApplyEditEvent, ::WorkSpaceExecuteCommand,
             ::InlayHintEvent, ::DocumentHighlightEvent,
-            ::DocumentColorEvent
+            ::DocumentColorEvent, ::SemanticTokensEvent
         )
 
         events.forEach {

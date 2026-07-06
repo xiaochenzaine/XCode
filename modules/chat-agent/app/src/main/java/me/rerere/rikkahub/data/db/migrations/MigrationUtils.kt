@@ -82,7 +82,7 @@ internal fun migratePartsArray(partsElement: JsonArray): JsonArray {
                 })
             }
 
-            val updatedObject = updatedPart
+            val updatedObject = updatedPart as? JsonObject ?: return@map updatedPart
             val outputElement = updatedObject["output"] as? JsonArray ?: return@map updatedPart
             val migratedOutput = migratePartsArray(outputElement)
             if (migratedOutput == outputElement) {

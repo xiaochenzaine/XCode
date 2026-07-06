@@ -2,23 +2,18 @@ package com.xc.code.editor.settings
 
 import com.xc.code.editor.model.editor_settings_state
 import com.xc.code.editor.core.is_c_family_file
-import com.xc.code.editor.core.c_cpp_completion_keywords
-
 import android.content.Context
-import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.text.ContentLine
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.SymbolPairMatch
 import io.github.rosemoe.sora.widget.component.EditorAutoCompletion
-import org.eclipse.tm4e.core.internal.grammar.tokenattrs.StandardTokenType
 import io.github.rosemoe.sora.widget.getComponent
 
 internal fun apply_editor_behavior_settings(
     context: Context,
     editor: CodeEditor,
     settings: editor_settings_state,
-    file_path: String?,
-    current_language: TextMateLanguage?
+    file_path: String?
 ) {
     val font_size = settings.font_size.coerceIn(10f, 24f)
     val tab_size = settings.tab_size.coerceIn(2, 8)
@@ -55,9 +50,6 @@ internal fun apply_editor_behavior_settings(
     editor.props.symbolPairAutoCompletion = true
     apply_editor_symbol_pairs(editor, file_path)
     editor.getComponent<EditorAutoCompletion>().setEnabled(settings.auto_completion)
-    current_language?.let { language ->
-        apply_textmate_language_settings(language, settings, file_path)
-    }
     editor.rerunAnalysis()
     editor.invalidate()
 }
@@ -76,26 +68,8 @@ private fun apply_editor_symbol_pairs(editor: CodeEditor, file_path: String?) {
     )
 }
 
-private fun is_textmate_non_code_token(editor: CodeEditor, line: Int, column: Int): Boolean {
-    val spans = runCatching { editor.getSpansForLine(line) }.getOrNull() ?: return false
-    if (spans.isEmpty()) return false
-
-    var current_extra: Any? = null
-    for (span in spans) {
-        if (span.column > column) break
-        current_extra = span.extra
-    }
-
-    val token_type = current_extra as? Int ?: return false
-    return token_type == StandardTokenType.Comment ||
-        token_type == StandardTokenType.String ||
-        token_type == StandardTokenType.RegEx
-}
-
 private fun should_complete_angle_pair(editor: CodeEditor, line: String, left_column: Int): Boolean {
     val column = left_column.coerceIn(0, line.length)
-    if (is_textmate_non_code_token(editor, editor.cursor.leftLine, (column - 1).coerceAtLeast(0))) return false
-
     val before = line.take(column)
     val trimmed_before = before.trimEnd()
     val after = line.drop(column).trimStart()
@@ -141,15 +115,3 @@ private val angle_pair_context_names = setOf(
     "span",
     "basic_string"
 )
-
-internal fun apply_textmate_language_settings(
-    language: TextMateLanguage,
-    settings: editor_settings_state,
-    file_path: String?
-) {
-    val c_family_file = is_c_family_file(file_path)
-    language.useTab(true)
-    language.setTabSize(settings.tab_size.coerceIn(2, 8))
-    language.setAutoCompleteEnabled(c_family_file)
-    language.setCompleterKeywords(if (c_family_file) c_cpp_completion_keywords else emptyArray())
-}

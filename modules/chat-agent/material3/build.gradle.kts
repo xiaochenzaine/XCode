@@ -28,7 +28,7 @@ android {
     }
     sourceSets {
         named("main") {
-            kotlin.srcDir("material-color-utilities")
+            kotlin.srcDirs("material-color-utilities")
         }
     }
 }

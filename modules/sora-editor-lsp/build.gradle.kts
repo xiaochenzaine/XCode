@@ -32,7 +32,7 @@ android {
 
 dependencies {
     compileOnly(project(":modules:sora-editor"))
-    implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0")
+    api("org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0")
     implementation(libs.kotlinx.coroutines.android)
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.truth:truth:1.4.5")

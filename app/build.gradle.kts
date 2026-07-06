@@ -33,6 +33,10 @@ android {
             useLegacyPackaging = true
         }
     }
+
+    androidResources {
+        noCompress += listOf("jar")
+    }
     
     lint {
         disable.add("ExpiredTargetSdkVersion")
@@ -41,6 +45,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     
     signingConfigs {
@@ -66,6 +71,8 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
@@ -91,8 +98,7 @@ dependencies {
     implementation(project(":modules:clangd-lsp"))
     implementation(project(":modules:chat-agent:app"))
     implementation(project(":modules:sora-editor"))
-    implementation(project(":modules:sora-language-textmate"))
-    implementation(project(":modules:sora-oniguruma-native"))
+    implementation(project(":modules:sora-language-treesitter"))
     
     implementation("com.google.code.gson:gson:2.11.0")
     

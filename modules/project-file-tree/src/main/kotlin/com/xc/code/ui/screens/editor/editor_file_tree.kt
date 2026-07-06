@@ -5,7 +5,6 @@ import com.xc.code.editor.model.editor_file_node
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -46,14 +45,15 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xc.code.project_file_tree.R
 import com.xc.code.project_file_tree.project_file_tree_colors
-import com.xc.code.ui.dialogs.editor.editor_file_tree_action_sheet
 import com.xc.code.ui.dialogs.editor.editor_file_tree_delete_sheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -102,7 +102,6 @@ fun file_tree_panel(
     val horizontal_scroll = rememberScrollState()
     val max_depth = nodes.maxOfOrNull { it.depth } ?: 0
     val tree_content_width = (520 + max_depth * 24).dp
-    var action_node by remember { mutableStateOf<editor_file_node?>(null) }
     var delete_node by remember { mutableStateOf<editor_file_node?>(null) }
     var editing_path by remember { mutableStateOf<String?>(null) }
     var editing_name by remember { mutableStateOf("") }
@@ -141,7 +140,7 @@ fun file_tree_panel(
 
     if (!project_exists) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Text("项目目录不存在", color = colors.editor_hint, fontSize = 13.sp)
+            Text(stringResource(R.string.project_file_tree_missing_project), color = colors.editor_hint, fontSize = 13.sp)
         }
         return
     }
@@ -206,7 +205,7 @@ fun file_tree_panel(
             ) {
                 if (nodes.isEmpty() && !loading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("暂无文件", color = colors.editor_hint, fontSize = 13.sp)
+                        Text(stringResource(R.string.project_file_tree_empty), color = colors.editor_hint, fontSize = 13.sp)
                     }
                 } else {
                     Box(
@@ -247,10 +246,12 @@ fun file_tree_panel(
                                             on_file_click(node.path)
                                         }
                                     },
-                                    on_long_press = {
-                                        if (node.depth > 0) {
-                                            action_node = node
-                                        }
+                                    on_request_rename = {
+                                        editing_path = node.path
+                                        editing_name = node.name
+                                    },
+                                    on_request_delete = {
+                                        delete_node = node
                                     }
                                 )
                             }
@@ -268,23 +269,6 @@ fun file_tree_panel(
                     )
                 }
             }
-        }
-
-        action_node?.let { node ->
-            editor_file_tree_action_sheet(
-                node = node,
-                colors = colors,
-                on_dismiss = { action_node = null },
-                on_rename = {
-                    editing_path = node.path
-                    editing_name = node.name
-                    action_node = null
-                },
-                on_delete = {
-                    delete_node = node
-                    action_node = null
-                }
-            )
         }
 
         delete_node?.let { node ->
@@ -314,35 +298,34 @@ private fun file_tree_search_panel(
     colors: project_file_tree_colors,
     modifier: Modifier = Modifier
 ) {
-    val input_shape = RoundedCornerShape(8.dp)
+    val input_shape = RoundedCornerShape(14.dp)
     var search_focused by remember { mutableStateOf(false) }
     val next_mode = if (mode == file_tree_search_mode.FILE) file_tree_search_mode.CONTENT else file_tree_search_mode.FILE
-    val placeholder = if (mode == file_tree_search_mode.FILE) "搜索文件..." else "搜索内容..."
+    val placeholder = if (mode == file_tree_search_mode.FILE) stringResource(R.string.project_file_tree_search_file_hint) else stringResource(R.string.project_file_tree_search_content_hint)
 
     DisposableEffect(Unit) {
         onDispose { on_search_box_bounds_change(null) }
     }
 
     Column(
-        modifier = modifier.padding(start = 10.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+        modifier = modifier.padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(34.dp)
+                .height(38.dp)
                 .onGloballyPositioned { on_search_box_bounds_change(it.boundsInRoot()) }
                 .clip(input_shape)
-                .background(colors.editor_button_bg)
-                .then(if (search_focused) Modifier.border(1.dp, colors.editor_icon, input_shape) else Modifier)
-                .padding(start = 9.dp, end = 4.dp),
+                .background(colors.editor_capsule_bg)
+                .padding(start = 12.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
                 tint = colors.editor_hint,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Box(
@@ -353,7 +336,7 @@ private fun file_tree_search_panel(
                     Text(
                         text = placeholder,
                         color = colors.editor_hint,
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -362,7 +345,7 @@ private fun file_tree_search_panel(
                     value = query,
                     onValueChange = on_query_change,
                     singleLine = true,
-                    textStyle = TextStyle(color = colors.editor_text, fontSize = 12.sp),
+                    textStyle = TextStyle(color = colors.editor_text, fontSize = 13.sp),
                     cursorBrush = SolidColor(colors.editor_icon),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -371,7 +354,7 @@ private fun file_tree_search_panel(
             }
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -382,9 +365,9 @@ private fun file_tree_search_panel(
             ) {
                 Icon(
                     imageVector = Icons.Default.SwapHoriz,
-                    contentDescription = if (mode == file_tree_search_mode.FILE) "文件搜索" else "内容搜索",
+                    contentDescription = if (mode == file_tree_search_mode.FILE) stringResource(R.string.project_file_tree_file_search) else stringResource(R.string.project_file_tree_content_search),
                     tint = if (mode == file_tree_search_mode.CONTENT) colors.editor_icon else colors.editor_hint,
-                    modifier = Modifier.size(17.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -411,8 +394,8 @@ private fun file_tree_search_results_card(
     LazyColumn(
         modifier = modifier
             .heightIn(max = 168.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(colors.editor_button_bg)
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.editor_capsule_bg)
     ) {
         itemsIndexed(results, key = { _, result -> result.path }) { index, result ->
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -626,7 +609,8 @@ private fun file_tree_row(
     on_refresh: (String) -> Unit,
     colors: project_file_tree_colors,
     on_click: () -> Unit,
-    on_long_press: () -> Unit
+    on_request_rename: () -> Unit,
+    on_request_delete: () -> Unit
 ) {
     val file_icon_res = editor_file_icon_res(node.name)
     val icon_tint = if (node.is_directory) colors.editor_icon else colors.editor_hint
@@ -634,6 +618,17 @@ private fun file_tree_row(
     val icon_gap = 8.dp
     val icon_slot_width = if (node.is_directory) 41.dp else 34.dp
     val icon_size = 18.dp
+    val node_type_name = if (node.is_directory) {
+        stringResource(R.string.project_file_tree_type_folder)
+    } else {
+        node.name
+            .substringAfterLast('.', "")
+            .takeIf { it.isNotBlank() && it != node.name }
+            ?.uppercase()
+            ?.let { stringResource(R.string.project_file_tree_type_extension, it) }
+            ?: stringResource(R.string.project_file_tree_type_file)
+    }
+    var menu_expanded by remember { mutableStateOf(false) }
     val row_click_modifier = if (editing) {
         Modifier
     } else {
@@ -641,19 +636,23 @@ private fun file_tree_row(
             interactionSource = remember { MutableInteractionSource() },
             indication = ripple(bounded = true),
             onClick = on_click,
-            onLongClick = on_long_press
+            onLongClick = {
+                if (node.depth > 0) menu_expanded = true
+            }
         )
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(38.dp)
-            .then(row_click_modifier)
-            .padding(end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxWidth()
+                .height(38.dp)
+                .then(row_click_modifier)
+                .padding(end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
         Box(
             modifier = Modifier
                 .width(indent_width + icon_gap + icon_slot_width)
@@ -743,7 +742,7 @@ private fun file_tree_row(
                 Icon(
                     painter = painterResource(if (expanded) R.drawable.ic_folder_opened else R.drawable.ic_folder),
                     contentDescription = null,
-                    tint = Color(0xFF004DEA),
+                    tint = colors.editor_file_tree_folder_icon,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .size(icon_size)
@@ -797,27 +796,94 @@ private fun file_tree_row(
                 file_tree_tool_button(on_click = { on_new_folder(node.path) }, colors = colors) {
                     Icon(
                         painter = painterResource(R.drawable.ic_new_folder),
-                        contentDescription = "在此文件夹新建文件夹",
-                        tint = Color(0xFF004DEA),
+                        contentDescription = stringResource(R.string.project_file_tree_new_folder_here),
+                        tint = colors.editor_file_tree_folder_icon,
                         modifier = Modifier.size(15.dp)
                     )
                 }
                 file_tree_tool_button(on_click = { on_new_file(node.path) }, colors = colors) {
                     Icon(
                         painter = painterResource(R.drawable.ic_new_file),
-                        contentDescription = "在此文件夹新建文件",
-                        tint = Color(0xFF8D8AA4),
+                        contentDescription = stringResource(R.string.project_file_tree_new_file_here),
+                        tint = colors.editor_hint,
                         modifier = Modifier.size(15.dp)
                     )
                 }
                 file_tree_tool_button(on_click = { on_refresh(node.path) }, colors = colors) {
                     Icon(
                         painter = painterResource(R.drawable.ic_refresh),
-                        contentDescription = "刷新此文件夹",
-                        tint = Color(0xFF8D8AA4),
+                        contentDescription = stringResource(R.string.project_file_tree_refresh_folder),
+                        tint = colors.editor_hint,
                         modifier = Modifier.size(15.dp)
                     )
                 }
+            }
+        }
+    }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = 180.dp)
+                .size(1.dp)
+        ) {
+            DropdownMenu(
+                expanded = menu_expanded,
+                onDismissRequest = { menu_expanded = false },
+                offset = DpOffset(x = 0.dp, y = 2.dp)
+            ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(min = 190.dp, max = 280.dp)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = node.name,
+                    color = colors.editor_text,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = node_type_name,
+                    color = colors.editor_hint,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.project_file_tree_rename)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.DriveFileRenameOutline,
+                        contentDescription = null,
+                        tint = colors.editor_file_tree_action_icon,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                onClick = {
+                    menu_expanded = false
+                    on_request_rename()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.project_file_tree_delete)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = colors.danger,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                onClick = {
+                    menu_expanded = false
+                    on_request_delete()
+                }
+            )
             }
         }
     }

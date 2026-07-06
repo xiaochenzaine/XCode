@@ -381,7 +381,9 @@ class SettingsStore(
             preferences[WEBDAV_CONFIG] = JsonInstant.encodeToString(settings.webDavConfig)
             preferences[S3_CONFIG] = JsonInstant.encodeToString(settings.s3Config)
             preferences[TTS_PROVIDERS] = JsonInstant.encodeToString(settings.ttsProviders)
-            preferences[SELECTED_TTS_PROVIDER] = settings.selectedTTSProviderId.toString()
+            settings.selectedTTSProviderId?.let {
+                preferences[SELECTED_TTS_PROVIDER] = it.toString()
+            } ?: preferences.remove(SELECTED_TTS_PROVIDER)
             preferences[ASR_PROVIDERS] = JsonInstant.encodeToString(settings.asrProviders)
             settings.selectedASRProviderId?.let {
                 preferences[SELECTED_ASR_PROVIDER] = it.toString()
@@ -636,7 +638,9 @@ fun Settings.getQuickMessagesOfAssistant(assistant: Assistant) =
     quickMessages.filter { it.id in assistant.quickMessageIds }
 
 fun Settings.getSelectedTTSProvider(): TTSProviderSetting? {
-    return ttsProviders.find { it.id == selectedTTSProviderId } ?: ttsProviders.firstOrNull()
+    return selectedTTSProviderId?.let { id ->
+        ttsProviders.find { it.id == id }
+    } ?: ttsProviders.firstOrNull()
 }
 
 fun Settings.getSelectedASRProvider(): ASRProviderSetting? {

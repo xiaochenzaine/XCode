@@ -1,5 +1,6 @@
 package com.xc.code.activity
 
+import com.xc.code.R
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -116,14 +117,14 @@ class install_activity : ComponentActivity() {
                             is_extracting = false
                             current_progress = event.percent / 100f
                             if (event.percent > 0) {
-                                add_log("\r下载进度: ${event.percent}% (${format_rootfs_size(event.downloaded_size)}/${format_rootfs_size(event.total_size)}, ${format_rootfs_speed(event.speed)})")
+                                add_log("\r" + getString(R.string.install_download_progress, "${event.percent}%", format_rootfs_size(event.downloaded_size), format_rootfs_size(event.total_size), format_rootfs_speed(event.speed)))
                             }
                         }
                         is rootfs_install_event.extract -> {
                             is_extracting = true
                             current_progress = event.percent / 100f
                             if (event.current_file.isNotBlank()) {
-                                add_log("\r解压: ${event.current_file}")
+                                add_log("\r" + getString(R.string.install_extract_progress, event.current_file))
                             }
                         }
                     }
@@ -138,7 +139,7 @@ class install_activity : ComponentActivity() {
     private fun configure_environment() {
         lifecycleScope.launch {
             is_configuring = true
-            add_log("开始配置 Ubuntu 环境...")
+            add_log(getString(R.string.install_configure_ubuntu))
 
             try {
                 val ubuntu_fs = ubuntu_base_dir_path
@@ -147,7 +148,7 @@ class install_activity : ComponentActivity() {
                 suspend fun run_required_command(status: String, command: String): Boolean {
                     add_log(status)
                     val success = proot_manager.execute_command(command, ::add_proot_log)
-                    if (!success) add_log("${status.removeSuffix("...")}失败")
+                    if (!success) add_log(getString(R.string.install_status_failed, status.removeSuffix("...")))
                     return success
                 }
 
@@ -158,37 +159,37 @@ class install_activity : ComponentActivity() {
                 }
 
                 if (needs_initialization) {
-                    if (!run_required_command("update...", "apt-get update -y")) return@launch
+                    if (!run_required_command(getString(R.string.install_apt_update), "apt-get update -y")) return@launch
                     
                     val required_packages = listOf("wget", "tar", "unzip", "xz-utils", "ca-certificates", "git")
                     for (package_name in required_packages) {
                         if (!run_required_command(
-                                "安装 $package_name...",
+                                getString(R.string.install_package, package_name),
                                 "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $package_name"
                             )
                         ) return@launch
                     }
 
                     run_required_command(
-                        "安装 command-not-found...",
+                        getString(R.string.install_command_not_found),
                         "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends command-not-found"
                     )
                     
-                    if (!run_required_command("刷新命令索引...", "apt-get update -qq -y")) return@launch
+                    if (!run_required_command(getString(R.string.install_refresh_command_index), "apt-get update -qq -y")) return@launch
 
                     withContext(Dispatchers.IO) {
                         installed_flag.createNewFile()
                     }
-                    add_log("环境配置完成")
+                    add_log(getString(R.string.install_environment_done))
                 } else {
-                    add_log("环境已配置，跳过初始化")
+                    add_log(getString(R.string.install_environment_already_configured))
                 }
 
-                add_log("所有安装步骤完成")
+                add_log(getString(R.string.install_all_steps_done))
                 delay(2000)
                 navigate_to_main()
             } catch (e: Exception) {
-                add_log("环境配置失败: ${e.message ?: e.javaClass.simpleName}")
+                add_log(getString(R.string.install_environment_failed, e.message ?: e.javaClass.simpleName))
                 add_log("请重试")
             } finally {
                 is_configuring = false
@@ -211,7 +212,7 @@ class install_activity : ComponentActivity() {
             file.writeText(logs.joinToString("\n"))
             app_toast.show(this, "已导出到: ${file.absolutePath}", app_toast.LENGTH_LONG)
         } catch (e: Exception) {
-            app_toast.show(this, "导出失败: ${e.message}", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.install_export_failed, e.message), app_toast.LENGTH_SHORT)
         }
     }
 }

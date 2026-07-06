@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
+import com.xc.code.ui.theme.app_colors
 import io.github.rosemoe.sora.widget.CodeEditor
 
 @Composable
@@ -249,61 +251,116 @@ fun editor_top_bar(
 ) {
 
     val colors = app_theme_provider.colors
-    TopAppBar(
-        title = {},
-        navigationIcon = {
-            IconButton(onClick = on_toggle_drawer) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+            .height(50.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = colors.editor_capsule_bg,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = on_toggle_drawer,
+                modifier = Modifier.size(38.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = stringResource(R.string.editor_sidebar),
-                    tint = colors.editor_toolbar_icon
+                    tint = colors.editor_toolbar_icon,
+                    modifier = Modifier.size(28.dp)
                 )
             }
-        },
-        actions = {
-            if (build_running) {
-                IconButton(onClick = on_build) {
-                    Icon(
-                        imageVector = Icons.Default.Stop,
-                        contentDescription = if (build_stopping) stringResource(R.string.editor_stopping) else stringResource(R.string.editor_stop),
-                        tint = Color(0xFFFF5252)
-                    )
+
+            editor_capsule_vertical_divider(colors)
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (build_running) {
+                    IconButton(
+                        onClick = on_build,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = if (build_stopping) stringResource(R.string.editor_stopping) else stringResource(R.string.editor_stop),
+                            tint = Color(0xFFFF5252),
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+                } else {
+                    IconButton(
+                        onClick = on_build,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = stringResource(R.string.editor_build),
+                            tint = colors.success,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = on_configure_cmake,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Autorenew,
+                            contentDescription = stringResource(R.string.editor_init_cmake),
+                            tint = colors.editor_toolbar_icon,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
                 }
-            } else {
-                IconButton(onClick = on_build) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = stringResource(R.string.editor_build),
-                        tint = colors.success
-                    )
-                }
-                IconButton(onClick = on_configure_cmake) {
-                    Icon(
-                        imageVector = Icons.Default.Autorenew,
-                        contentDescription = stringResource(R.string.editor_init_cmake),
-                        tint = colors.editor_toolbar_icon
-                    )
+
+                if (has_open_file) {
+                    IconButton(
+                        onClick = on_toggle_read_only,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (read_only) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = stringResource(R.string.editor_read_only),
+                            tint = if (read_only) colors.editor_icon else colors.editor_toolbar_icon,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = on_toggle_search,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = stringResource(R.string.editor_search),
+                            tint = if (search_visible) colors.editor_icon else colors.editor_toolbar_icon,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
-            if (has_open_file) {
-                IconButton(onClick = on_toggle_read_only) {
-                    Icon(
-                        imageVector = if (read_only) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = stringResource(R.string.editor_read_only),
-                        tint = if (read_only) colors.editor_icon else colors.editor_toolbar_icon
-                    )
-                }
-                IconButton(onClick = on_toggle_search) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = stringResource(R.string.editor_search),
-                        tint = if (search_visible) colors.editor_icon else colors.editor_toolbar_icon
-                    )
-                }
-            }
-        },
-        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.editor_bg)
+        }
+    }
+}
+
+@Composable
+private fun editor_capsule_vertical_divider(colors: app_colors) {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 14.dp)
+            .width(1.dp)
+            .height(18.dp)
+            .background(colors.editor_capsule_divider)
     )
 }
 

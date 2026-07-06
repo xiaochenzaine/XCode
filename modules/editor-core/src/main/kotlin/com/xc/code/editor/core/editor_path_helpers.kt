@@ -37,3 +37,41 @@ fun is_c_family_file(file_path: String?): Boolean {
         name.endsWith(".hpp", ignoreCase = true) ||
         name.endsWith(".hxx", ignoreCase = true)
 }
+
+fun is_json_file(file_path: String?): Boolean {
+    if (file_path.isNullOrBlank()) return false
+    return File(file_path).name.endsWith(".json", ignoreCase = true)
+}
+
+fun is_yaml_file(file_path: String?): Boolean {
+    if (file_path.isNullOrBlank()) return false
+    val name = File(file_path).name
+    return name.endsWith(".yaml", ignoreCase = true) || name.endsWith(".yml", ignoreCase = true)
+}
+
+fun is_cmake_file(file_path: String?): Boolean {
+    if (file_path.isNullOrBlank()) return false
+    val name = File(file_path).name
+    return name.equals("CMakeLists.txt", ignoreCase = true) || name.endsWith(".cmake", ignoreCase = true)
+}
+
+fun is_shell_file(file_path: String?): Boolean {
+    if (file_path.isNullOrBlank()) return false
+    val name = File(file_path).name
+    return name.equals(".bashrc", ignoreCase = true) ||
+        name.equals(".bash_profile", ignoreCase = true) ||
+        name.equals(".bash_login", ignoreCase = true) ||
+        name.equals(".profile", ignoreCase = true) ||
+        name.equals(".zshrc", ignoreCase = true) ||
+        name.endsWith(".sh", ignoreCase = true) ||
+        name.endsWith(".bash", ignoreCase = true) ||
+        name.endsWith(".zsh", ignoreCase = true)
+}
+
+fun is_tree_sitter_supported_file(file_path: String?): Boolean {
+    return is_c_family_file(file_path) ||
+        is_json_file(file_path) ||
+        is_yaml_file(file_path) ||
+        is_cmake_file(file_path) ||
+        is_shell_file(file_path)
+}

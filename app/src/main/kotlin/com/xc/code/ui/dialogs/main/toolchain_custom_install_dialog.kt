@@ -24,7 +24,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,7 +50,10 @@ fun toolchain_custom_install_dialog(
 ) {
     val colors = app_theme_provider.colors
     var archive_path by remember { mutableStateOf("") }
-    val sheet_state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheet_state = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
     val trimmed_path = archive_path.trim()
 
     ModalBottomSheet(

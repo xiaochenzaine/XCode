@@ -609,7 +609,7 @@ private fun create_terminal_view(
             override fun onSingleTapUp(e: MotionEvent) {
                 this@apply.requestFocus()
                 val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.showSoftInput(this@apply, InputMethodManager.SHOW_IMPLICIT)
+                imm.showSoftInput(this@apply, 0)
             }
 
             override fun onKeyDown(key_code: Int, e: KeyEvent, session: TerminalSession): Boolean {

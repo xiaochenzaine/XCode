@@ -213,6 +213,16 @@ public class TextMateColorScheme extends EditorColorScheme implements ThemeRegis
             setColor(COMPLETION_WND_ITEM_CURRENT, ColorUtils.parseRGBAToARGB(suggestSelectedBackground));
         }
 
+        String editorInlayHintForeground = (String) RawTheme.get("editorInlayHint.foreground");
+        if (editorInlayHintForeground != null) {
+            setColor(TEXT_INLAY_HINT_FOREGROUND, ColorUtils.parseRGBAToARGB(editorInlayHintForeground));
+        }
+
+        String editorInlayHintBackground = (String) RawTheme.get("editorInlayHint.background");
+        if (editorInlayHintBackground != null) {
+            setColor(TEXT_INLAY_HINT_BACKGROUND, ColorUtils.parseRGBAToARGB(editorInlayHintBackground));
+        }
+
         String editorIndentGuideBackground = (String) RawTheme.get("editorIndentGuide.background");
         int blockLineColor = ((getColor(WHOLE_BACKGROUND) + getColor(TEXT_NORMAL)) / 2) & 0x00FFFFFF | 0x88000000;
         int blockLineColorCur = (blockLineColor) | 0xFF000000;
@@ -245,6 +255,26 @@ public class TextMateColorScheme extends EditorColorScheme implements ThemeRegis
         if (findMatchBackground != null) {
             setColor(MATCHED_TEXT_BACKGROUND, ColorUtils.parseRGBAToARGB(findMatchBackground));
         }
+
+        applySemanticTokenColor(RawTheme, "semantic.namespace", 300);
+        applySemanticTokenColor(RawTheme, "semantic.type", 301);
+        applySemanticTokenColor(RawTheme, "semantic.function", 302);
+        applySemanticTokenColor(RawTheme, "semantic.parameter", 303);
+        applySemanticTokenColor(RawTheme, "semantic.variable", 304);
+        applySemanticTokenColor(RawTheme, "semantic.property", 305);
+        applySemanticTokenColor(RawTheme, "semantic.macro", 306);
+        applySemanticTokenColor(RawTheme, "semantic.enumMember", 307);
+        applySemanticTokenColor(RawTheme, "semantic.method", 308);
+        applySemanticTokenColor(RawTheme, "semantic.keyword", 309);
+        applySemanticTokenColor(RawTheme, "semantic.operator", 310);
+        applySemanticTokenColor(RawTheme, "semantic.comment", 311);
+        applySemanticTokenColor(RawTheme, "semantic.string", 312);
+        applySemanticTokenColor(RawTheme, "semantic.number", 313);
+        applySemanticTokenColor(RawTheme, "semantic.modifier", 314);
+        applySemanticTokenColor(RawTheme, "semantic.typeParameter", 315);
+        applySemanticTokenColor(RawTheme, "semantic.class", 316);
+        applySemanticTokenColor(RawTheme, "semantic.enum", 317);
+        applySemanticTokenColor(RawTheme, "semantic.punctuation", 318);
     }
 
     @Override
@@ -257,6 +287,14 @@ public class TextMateColorScheme extends EditorColorScheme implements ThemeRegis
             return currentTheme.isDark();
         }
         return false;
+    }
+
+
+    private void applySemanticTokenColor(RawTheme rawTheme, String key, int colorId) {
+        String color = (String) rawTheme.get(key);
+        if (color != null) {
+            setColor(colorId, ColorUtils.parseRGBAToARGB(color));
+        }
     }
 
     private void applyTMTheme(RawTheme RawTheme) {

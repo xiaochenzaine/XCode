@@ -52,6 +52,12 @@ android {
         buildConfig = true
     }
 
+    lint {
+        // AGP/Kotlin FIR lint 在 RikkaHubInitializer.kt 上偶发内部崩溃，不能让 lintVital 阻断发布构建。
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
+
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")

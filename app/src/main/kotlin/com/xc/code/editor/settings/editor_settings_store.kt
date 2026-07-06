@@ -32,6 +32,7 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
         clangd_document_highlight = prefs.getBoolean("clangd_document_highlight", defaults.clangd_document_highlight),
         clangd_formatting = prefs.getBoolean("clangd_formatting", defaults.clangd_formatting),
         clangd_hover = prefs.getBoolean("clangd_hover", defaults.clangd_hover),
+        clangd_semantic_tokens = prefs.getBoolean("clangd_semantic_tokens", defaults.clangd_semantic_tokens),
         font_ligatures = prefs.getBoolean("font_ligatures", defaults.font_ligatures),
         font_size = prefs.getFloat("font_size", defaults.font_size).coerceIn(10f, 24f),
         tab_size = prefs.getInt("tab_size", defaults.tab_size).coerceIn(2, 8),
@@ -65,6 +66,7 @@ internal fun save_editor_settings(context: Context, settings: editor_settings_st
         .putBoolean("clangd_document_highlight", settings.clangd_document_highlight)
         .putBoolean("clangd_formatting", settings.clangd_formatting)
         .putBoolean("clangd_hover", settings.clangd_hover)
+        .putBoolean("clangd_semantic_tokens", settings.clangd_semantic_tokens)
         .putBoolean("font_ligatures", settings.font_ligatures)
         .putFloat("font_size", settings.font_size)
         .putInt("tab_size", settings.tab_size)

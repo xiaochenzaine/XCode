@@ -30,7 +30,7 @@ object project_manager {
         IndentWidth: 4
         TabWidth: 4
         UseTab: Never
-        ColumnLimit: 0
+        ColumnLimit: 1000
         AccessModifierOffset: -4
         ConstructorInitializerIndentWidth: 4
         ContinuationIndentWidth: 4
@@ -39,8 +39,13 @@ object project_manager {
         AllowShortFunctionsOnASingleLine: Empty
         AllowShortIfStatementsOnASingleLine: WithoutElse
         AllowShortLoopsOnASingleLine: false
-        BinPackArguments: true
-        BinPackParameters: BinPack
+        AllowShortNamespacesOnASingleLine: false
+        CompactNamespaces: false
+        NamespaceIndentation: All
+        BinPackArguments: false
+        BinPackParameters: OnePerLine
+        AllowAllArgumentsOnNextLine: false
+        AlignAfterOpenBracket: BlockIndent
         PointerAlignment: Right
         DerivePointerAlignment: false
         SpaceBeforeParens: ControlStatements

@@ -180,17 +180,12 @@ abstract class RequestManager : LanguageClient, TextDocumentService, WorkspaceSe
     abstract override fun colorPresentation(params: ColorPresentationParams): CompletableFuture<List<ColorPresentation>>?
     abstract override fun foldingRange(params: FoldingRangeRequestParams): CompletableFuture<List<FoldingRange>>?
 
-    // TODO: waiting sora support style patch
-    override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> {
-        return super.semanticTokensFull(params)
+    abstract override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens>?
+
+    override fun semanticTokensFullDelta(params: SemanticTokensDeltaParams): CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>>? {
+        return null
     }
 
-    override fun semanticTokensFullDelta(params: SemanticTokensDeltaParams): CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>> {
-        return super.semanticTokensFullDelta(params)
-    }
-
-    override fun semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture<SemanticTokens> {
-        return super.semanticTokensRange(params)
-    }
+    abstract override fun semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture<SemanticTokens>?
 }
 

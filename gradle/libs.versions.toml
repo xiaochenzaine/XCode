@@ -49,6 +49,7 @@ room = "2.8.4"
 workmanager = "2.11.2"
 barcodeScanning = "17.3.0"
 coil = "3.4.0"
+desugarJdkLibs = "2.1.5"
 diffutils = "4.17"
 firebase-bom = "34.15.0"
 haze = "2.0.0-alpha03"
@@ -67,6 +68,7 @@ retrofit = "3.0.0"
 sonner = "0.3.9"
 sqlite-android = "-SNAPSHOT"
 termux = "0.118.0"
+tree-sitter = "4.3.2"
 ucrop = "2.2.11-native"
 zxing = "3.5.4"
 ksp = "2.3.4"
@@ -118,6 +120,7 @@ okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor",
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commonsText" }
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 floatingx-compose = { group = "io.github.petterpx", name = "floatingx-compose", version.ref = "floatingx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
@@ -186,5 +189,6 @@ retrofit-serialization-json = { group = "com.squareup.retrofit2", name = "conver
 sonner = { module = "io.github.dokar3:sonner", version.ref = "sonner" }
 sqlite-android = { module = "com.github.rikkahub:sqlite-android", version.ref = "sqlite-android" }
 termux-terminal-view = { module = "com.termux.termux-app:terminal-view", version.ref = "termux" }
+androidide-ts = { module = "com.itsaky.androidide.treesitter:android-tree-sitter", version.ref = "tree-sitter" }
 ucrop = { group = "com.github.yalantis", name = "ucrop", version.ref = "ucrop" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }

@@ -30,6 +30,7 @@ import io.github.rosemoe.sora.event.Unsubscribe
 import io.github.rosemoe.sora.lsp.editor.LspEditor
 import io.github.rosemoe.sora.lsp.editor.requestDocumentColor
 import io.github.rosemoe.sora.lsp.editor.requestInlayHint
+import io.github.rosemoe.sora.lsp.events.semantic.semanticTokens
 import io.github.rosemoe.sora.lsp.events.EventType
 import io.github.rosemoe.sora.lsp.events.diagnostics.queryDocumentDiagnostics
 import io.github.rosemoe.sora.lsp.events.document.documentChange
@@ -72,6 +73,7 @@ class LspEditorContentChangeEvent(private val editor: LspEditor) :
             // request inlay hint
             editor.requestInlayHint(event.changeStart)
             editor.requestDocumentColor()
+            editor.eventManager.emitAsync(EventType.semanticTokens)
 
             val diagnostics =
                 editor.eventManager.emitAsync(EventType.queryDocumentDiagnostics)

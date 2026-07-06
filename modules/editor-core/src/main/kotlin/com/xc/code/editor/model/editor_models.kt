@@ -27,6 +27,7 @@ data class editor_settings_state(
     val clangd_document_highlight: Boolean = true,
     val clangd_formatting: Boolean = true,
     val clangd_hover: Boolean = false,
+    val clangd_semantic_tokens: Boolean = false,
     val font_ligatures: Boolean = true,
     val font_size: Float = 14f,
     val tab_size: Int = 4,

@@ -227,27 +227,37 @@ fun DiagnosticSeverity.toEditorLevel(): Short {
     }
 }
 
-private fun getVersion(fileUri: FileUri): Int {
-    val notNullLock = lock ?: ReentrantReadWriteLock()
-    if (lock == null) {
-        lock = notNullLock
+private fun versionLock(): ReentrantReadWriteLock {
+    val existingLock = lock
+    if (existingLock != null) {
+        return existingLock
     }
+    return synchronized(versionMap) {
+        lock ?: ReentrantReadWriteLock().also { lock = it }
+    }
+}
 
-    val readLock = notNullLock.readLock()
-    readLock.lock()
-    var version = versionMap.getOrDefault(fileUri, 0)
-    version++
-    readLock.unlock()
-    val writeLock = notNullLock.writeLock()
+private fun getVersion(fileUri: FileUri): Int {
+    val writeLock = versionLock().writeLock()
     writeLock.lock()
-    versionMap[fileUri] = version
-    writeLock.unlock()
-    return version
+    return try {
+        val version = versionMap.getOrDefault(fileUri, 0) + 1
+        versionMap[fileUri] = version
+        version
+    } finally {
+        writeLock.unlock()
+    }
 }
 
 fun clearVersions(func: (FileUri) -> Boolean) {
-    val keysToDelete = versionMap.keys.filter(func)
-    keysToDelete.forEach { versionMap.remove(it) }
+    val writeLock = versionLock().writeLock()
+    writeLock.lock()
+    try {
+        val keysToDelete = versionMap.keys.filter(func)
+        keysToDelete.forEach { versionMap.remove(it) }
+    } finally {
+        writeLock.unlock()
+    }
 }
 
 fun blendARGB(

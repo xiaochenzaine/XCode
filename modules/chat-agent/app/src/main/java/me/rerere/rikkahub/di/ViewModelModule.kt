@@ -28,6 +28,7 @@ val viewModelModule = module {
     viewModel<ChatVM> { params ->
         ChatVM(
             id = params.get(),
+            initialWorkspaceCwd = params.get(),
             context = get(),
             settingsStore = get(),
             conversationRepo = get(),

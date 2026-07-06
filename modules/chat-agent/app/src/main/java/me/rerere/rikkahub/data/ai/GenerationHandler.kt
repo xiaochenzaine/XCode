@@ -94,7 +94,7 @@ class GenerationHandler(
 
             val toolsInternal = buildList {
                 Log.i(TAG, "generateInternal: build tools($assistant)")
-                if (assistant.enableMemory) {
+                if (assistant?.enableMemory == true) {
                     val memoryAssistantId = if (assistant.useGlobalMemory) {
                         MemoryRepository.GLOBAL_MEMORY_ID
                     } else {
@@ -374,7 +374,7 @@ class GenerationHandler(
                 }
 
                 // 记忆
-                if (assistant.enableMemory) {
+                if (assistant?.enableMemory == true) {
                     appendLine()
                     append(buildMemoryPrompt(memories = memories))
                 }

@@ -83,6 +83,9 @@ import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.ReferenceParams
 import org.eclipse.lsp4j.RegistrationParams
 import org.eclipse.lsp4j.RenameParams
+import org.eclipse.lsp4j.SemanticTokens
+import org.eclipse.lsp4j.SemanticTokensParams
+import org.eclipse.lsp4j.SemanticTokensRangeParams
 import org.eclipse.lsp4j.ServerCapabilities
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import org.eclipse.lsp4j.SignatureHelp
@@ -727,6 +730,38 @@ class DefaultRequestManager(
                 if (serverCapabilities.foldingRangeProvider?.left == true || serverCapabilities.foldingRangeProvider?.right != null) textDocumentService.foldingRange(
                     params
                 ) else null
+            } catch (e: Exception) {
+                crashed(e)
+                null
+            }
+        } else null
+    }
+
+    override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens>? {
+        if (LspFeature.SemanticTokens in disabledFeatures) return null
+        return if (checkStatus()) {
+            try {
+                if (serverCapabilities.semanticTokensProvider != null) {
+                    textDocumentService.semanticTokensFull(params)
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                crashed(e)
+                null
+            }
+        } else null
+    }
+
+    override fun semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture<SemanticTokens>? {
+        if (LspFeature.SemanticTokens in disabledFeatures) return null
+        return if (checkStatus()) {
+            try {
+                if (serverCapabilities.semanticTokensProvider != null) {
+                    textDocumentService.semanticTokensRange(params)
+                } else {
+                    null
+                }
             } catch (e: Exception) {
                 crashed(e)
                 null

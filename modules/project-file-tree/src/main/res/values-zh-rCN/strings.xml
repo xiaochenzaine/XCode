@@ -1,0 +1,19 @@
+<resources>
+    <string name="project_file_tree_missing_project">项目目录不存在</string>
+    <string name="project_file_tree_empty">暂无文件</string>
+    <string name="project_file_tree_search_file_hint">搜索文件...</string>
+    <string name="project_file_tree_search_content_hint">搜索内容...</string>
+    <string name="project_file_tree_file_search">文件搜索</string>
+    <string name="project_file_tree_content_search">内容搜索</string>
+    <string name="project_file_tree_new_folder_here">在此文件夹新建文件夹</string>
+    <string name="project_file_tree_new_file_here">在此文件夹新建文件</string>
+    <string name="project_file_tree_refresh_folder">刷新此文件夹</string>
+    <string name="project_file_tree_type_folder">文件夹</string>
+    <string name="project_file_tree_type_file">文件</string>
+    <string name="project_file_tree_type_extension">%1$s 文件</string>
+    <string name="project_file_tree_rename">重命名</string>
+    <string name="project_file_tree_delete">删除</string>
+    <string name="project_file_tree_delete_title">删除 %1$s</string>
+    <string name="project_file_tree_delete_message">此操作会删除这个%1$s。</string>
+    <string name="project_file_tree_cancel">取消</string>
+</resources>

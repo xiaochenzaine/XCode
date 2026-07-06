@@ -23,6 +23,7 @@ private suspend fun wait_for_sora_code_blocks(editor: CodeEditor): List<CodeBloc
 
 private data class block_end_hint_candidate(
     val block: CodeBlock,
+    val hint_line: Int,
     val label: String
 )
 
@@ -32,13 +33,14 @@ private fun build_block_end_hints_from_sora_blocks(
 ): InlayHintsContainer {
     val candidates = blocks
         .mapNotNull { block -> block.to_block_end_hint_candidate(lines) }
-        .filter_outer_block_end_hints()
+        .filter_inner_block_end_hints()
+        .filter_single_block_end_hint_per_line()
 
     return InlayHintsContainer().also { hints ->
         candidates.forEach { candidate ->
-            val hint_line = candidate.block.endLine + 1
+            val hint_line = candidate.hint_line
             if (hint_line in lines.indices) {
-                hints.add(TextInlayHint(hint_line, lines[hint_line].length, " ${candidate.label}"))
+                hints.add(TextInlayHint(hint_line, lines[hint_line].length, candidate.label))
             }
         }
     }
@@ -46,20 +48,50 @@ private fun build_block_end_hints_from_sora_blocks(
 
 private fun CodeBlock.to_block_end_hint_candidate(lines: List<String>): block_end_hint_candidate? {
     if (startLine !in lines.indices || endLine !in lines.indices) return null
+    val hint_line = block_end_hint_line(lines, endLine) ?: return null
+    if (hint_line - startLine < min_block_end_hint_line_span) return null
 
     val header_end_column = block_end_hint_header_end_column(lines[startLine], startColumn)
     if (is_c_comment_position(lines, startLine, header_end_column)) return null
 
     val label = block_end_hint_label(lines, startLine, header_end_column)
-    return label.takeIf { it.isNotBlank() }?.let { block_end_hint_candidate(this, it) }
+    return label.takeIf { it.isNotBlank() }?.let { block_end_hint_candidate(this, hint_line, it) }
 }
 
-private fun List<block_end_hint_candidate>.filter_outer_block_end_hints(): List<block_end_hint_candidate> {
+private fun block_end_hint_line(lines: List<String>, block_end_line: Int): Int? {
+    // TextMate folding 的 endLine 指向折叠内容最后一行，实际右花括号通常在下一行。
+    val next_line = block_end_line + 1
+    if (next_line in lines.indices && lines[next_line].substringBefore("//").trimStart().startsWith("}")) {
+        return next_line
+    }
+    if (block_end_line in lines.indices && lines[block_end_line].substringBefore("//").trimStart().startsWith("}")) {
+        return block_end_line
+    }
+    return null
+}
+
+private fun List<block_end_hint_candidate>.filter_inner_block_end_hints(): List<block_end_hint_candidate> {
     return filter { candidate ->
         none { outer_candidate ->
             outer_candidate !== candidate && outer_candidate.block.contains_code_block(candidate.block)
         }
     }
+}
+
+private fun List<block_end_hint_candidate>.filter_single_block_end_hint_per_line(): List<block_end_hint_candidate> {
+    return groupBy { candidate -> candidate.hint_line }
+        .values
+        .mapNotNull { same_line_candidates ->
+            same_line_candidates.minWithOrNull(
+                compareBy<block_end_hint_candidate> { candidate -> candidate.block.startLine }
+                    .thenBy { candidate -> candidate.block.startColumn }
+                    .thenByDescending { candidate -> candidate.block.endColumn }
+            )
+        }
+        .sortedWith(
+            compareBy<block_end_hint_candidate> { candidate -> candidate.hint_line }
+                .thenBy { candidate -> candidate.block.endColumn }
+        )
 }
 
 private fun CodeBlock.contains_code_block(block: CodeBlock): Boolean {
@@ -122,19 +154,39 @@ private fun block_end_hint_label(lines: List<String>, line_index: Int, header_en
 private fun block_end_hint_header(lines: List<String>, line_index: Int, header_end_column: Int): String {
     val current_line = lines[line_index].substringBefore("//")
     val current_header = current_line.take(header_end_column.coerceIn(0, current_line.length)).trim()
-    if (current_header.isNotBlank()) {
+    if (current_header.isNotBlank() && !current_header.is_block_end_hint_continuation_only()) {
         return normalize_block_end_hint_header(current_header)
     }
 
     val header_lines = mutableListOf<String>()
+    if (current_header.isNotBlank()) {
+        header_lines.add(current_header)
+    }
+    var bracket_balance = current_header.count_block_end_hint_open_brackets() - current_header.count_block_end_hint_close_brackets()
     val first_header_line = (line_index - max_block_end_hint_header_lookback_lines).coerceAtLeast(0)
     for (index in line_index - 1 downTo first_header_line) {
         val header_line = lines[index].substringBefore("//").trim()
         if (header_line.isBlank() || header_line.startsWith("#")) break
         header_lines.add(0, header_line)
+        bracket_balance += header_line.count_block_end_hint_open_brackets()
+        bracket_balance -= header_line.count_block_end_hint_close_brackets()
         if (header_line.endsWith(";") || header_line.endsWith("}")) break
+        if (bracket_balance <= 0 && header_line.contains('(')) break
     }
     return normalize_block_end_hint_header(header_lines.joinToString(" "))
+}
+
+private fun String.is_block_end_hint_continuation_only(): Boolean {
+    val text = trim()
+    return text.isEmpty() || text.all { char -> char == ')' || char == '(' || char == '[' || char == ']' || char == '{' }
+}
+
+private fun String.count_block_end_hint_open_brackets(): Int {
+    return count { char -> char == '(' || char == '[' }
+}
+
+private fun String.count_block_end_hint_close_brackets(): Int {
+    return count { char -> char == ')' || char == ']' }
 }
 
 private fun normalize_block_end_hint_header(header: String): String {
@@ -142,6 +194,7 @@ private fun normalize_block_end_hint_header(header: String): String {
     return statement.replace(Regex("\\s+"), " ").trim()
 }
 
-private const val block_end_hint_sora_block_wait_delay_ms = 50L
-private const val block_end_hint_sora_block_wait_attempts = 40
-private const val max_block_end_hint_header_lookback_lines = 6
+private const val block_end_hint_sora_block_wait_delay_ms = 16L
+private const val block_end_hint_sora_block_wait_attempts = 30
+private const val max_block_end_hint_header_lookback_lines = 20
+private const val min_block_end_hint_line_span = 2

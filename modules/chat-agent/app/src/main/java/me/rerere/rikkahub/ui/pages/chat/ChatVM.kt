@@ -46,6 +46,7 @@ private const val TAG = "ChatVM"
 
 class ChatVM(
     id: String,
+    private val initialWorkspaceCwd: String,
     private val context: Application,
     private val settingsStore: SettingsStore,
     private val conversationRepo: ConversationRepository,
@@ -82,6 +83,7 @@ class ChatVM(
         // 初始化对话
         viewModelScope.launch {
             chatService.initializeConversation(_conversationId)
+            applyInitialWorkspaceCwd()
         }
 
         // 记住对话ID, 方便下次启动恢复
@@ -92,6 +94,13 @@ class ChatVM(
         super.onCleared()
         // 移除对话引用
         chatService.removeConversationReference(_conversationId)
+    }
+
+    private fun applyInitialWorkspaceCwd() {
+        val cwd = initialWorkspaceCwd.takeIf { it.isNotBlank() } ?: return
+        chatService.updateConversationState(_conversationId) { current ->
+            if (current.workspaceCwd == cwd) current else current.copy(workspaceCwd = cwd)
+        }
     }
 
     // 用户设置

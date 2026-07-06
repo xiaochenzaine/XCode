@@ -149,6 +149,12 @@ internal fun editor_settings_switch_groups(settings: editor_settings_state): Lis
                     description_res = R.string.editor_hover_desc,
                     checked = settings.clangd_hover,
                     update = { value -> settings.copy(clangd_hover = value) }
+                ),
+                editor_settings_switch_item(
+                    title_res = R.string.editor_semantic_tokens,
+                    description_res = R.string.editor_semantic_tokens_desc,
+                    checked = settings.clangd_semantic_tokens,
+                    update = { value -> settings.copy(clangd_semantic_tokens = value) }
                 )
             )
         )

@@ -1,7 +1,9 @@
 package com.xc.code.activity
 
+import com.xc.code.R
 import com.xc.code.editor.session.editor_activity_state
 import com.xc.code.editor.session.editor_open_tab
+import com.xc.code.editor.session.editor_tab_lifecycle
 import com.xc.code.editor.session.editor_pending_action
 import com.xc.code.editor.tabs.find_dirty_closable_tab_index
 import com.xc.code.editor.tabs.find_dirty_tab_index
@@ -38,13 +40,15 @@ import com.xc.code.project.project_manager
 import com.xc.code.lsp.clangd.clangd_lsp_config
 import com.xc.code.lsp.clangd.clangd_lsp_project
 import com.xc.code.editor.theme.editor_theme_manager
+import com.xc.code.editor.treesitter.editor_tree_sitter_language_factory
 import com.xc.code.ui.dialogs.editor.editor_exit_confirm_dialog
 import com.xc.code.ui.dialogs.editor.editor_unsaved_file_dialog
 import com.xc.code.ui.screens.editor.*
 import com.xc.code.ui.theme.app_theme_provider
 import com.xc.code.xc_application
+import io.github.rosemoe.sora.lang.Language
 import io.github.rosemoe.sora.text.Content
-import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
+import io.github.rosemoe.sora.lang.EmptyLanguage
 import io.github.rosemoe.sora.lsp.client.languageserver.LspFeature
 import io.github.rosemoe.sora.lsp.editor.LspLanguage
 import io.github.rosemoe.sora.lsp.editor.LspEditorStatus
@@ -68,15 +72,15 @@ class editor_activity : FragmentActivity() {
     private val output_panel_state = editor_output_panel_state()
     private lateinit var detected_project_info: detected_project
     private var applying_editor_content = false
-    private var current_textmate_scope: String? = null
     private var block_hint_job: Job? = null
     private var cmake_configure_job: Job? = null
     private var cmake_build_job: Job? = null
     private var file_tree_job: Job? = null
-    private var textmate_prewarm_started = false
     private var clangd_project: clangd_lsp_project? = null
     private var clangd_connect_job: Job? = null
     private val clangd_skipped_files = mutableSetOf<String>()
+    private val tree_sitter_logged_errors = mutableSetOf<String>()
+    private val tree_sitter_logged_fallbacks = mutableSetOf<String>()
     private val file_tree_children_cache = mutableMapOf<String, List<editor_file_node>>()
     private lateinit var search_controller: editor_search_controller
     private lateinit var tab_lifecycle: editor_tab_lifecycle
@@ -91,10 +95,10 @@ class editor_activity : FragmentActivity() {
 
         val project_path = intent.getStringExtra("project_path") ?: ""
         val project_name = intent.getStringExtra("project_name")
-            ?: File(project_path).name.ifBlank { "项目" }
+            ?: File(project_path).name.ifBlank { getString(R.string.editor_default_project_name) }
 
         project_dir = File(project_path)
-        state.project_name = project_name.ifBlank { project_dir.name.ifBlank { "项目" } }
+        state.project_name = project_name.ifBlank { project_dir.name.ifBlank { getString(R.string.editor_default_project_name) } }
         state.expanded_paths = setOf(project_dir.absolutePath)
         state.project_exists = project_dir.exists() && project_dir.isDirectory
         detected_project_info = project_detector.detect_project(project_dir.absolutePath)
@@ -102,7 +106,6 @@ class editor_activity : FragmentActivity() {
         state.editor_settings = load_editor_settings(this)
         tab_lifecycle = create_tab_lifecycle()
         editor = create_code_editor()
-        prewarm_textmate_languages()
         search_controller = editor_search_controller(
             editor = editor,
             can_search = { state.current_file_path != null },
@@ -149,7 +152,7 @@ class editor_activity : FragmentActivity() {
                 }
             }
             project_kind.UNKNOWN -> {
-                output_panel_state.append_log("未识别到 CMake 项目", editor_output_line_level.WARNING)
+                output_panel_state.append_log(getString(R.string.editor_cmake_not_detected), editor_output_line_level.WARNING)
             }
         }
     }
@@ -272,7 +275,7 @@ class editor_activity : FragmentActivity() {
         return editor_tab_lifecycle(
             context = this,
             settings = { state.editor_settings },
-            create_textmate_language = { file_path -> create_configured_textmate_language(file_path) },
+            create_language = { file_path -> create_configured_language(file_path) },
             with_applying_content = { action -> with_applying_editor_content(action) },
             on_content_changed = { handle_editor_content_changed() },
             on_selection_changed = { changed_editor -> handle_editor_selection_changed(changed_editor) },
@@ -328,7 +331,8 @@ class editor_activity : FragmentActivity() {
             state.editor_settings.clangd_signature_help != settings.clangd_signature_help ||
             state.editor_settings.clangd_document_highlight != settings.clangd_document_highlight ||
             state.editor_settings.clangd_formatting != settings.clangd_formatting ||
-            state.editor_settings.clangd_hover != settings.clangd_hover
+            state.editor_settings.clangd_hover != settings.clangd_hover ||
+            state.editor_settings.clangd_semantic_tokens != settings.clangd_semantic_tokens
         state.editor_settings = settings
         save_editor_settings(this, settings)
         if (clangd_settings_changed) {
@@ -339,8 +343,7 @@ class editor_activity : FragmentActivity() {
                 context = this,
                 editor = tab_editor,
                 settings = settings,
-                file_path = state.open_tabs.firstOrNull { tab -> tab.editor == tab_editor }?.file_path ?: state.current_file_path,
-                current_language = current_textmate_language(tab_editor)
+                file_path = state.open_tabs.firstOrNull { tab -> tab.editor == tab_editor }?.file_path ?: state.current_file_path
             )
             tab_editor.invalidate()
         }
@@ -364,8 +367,7 @@ class editor_activity : FragmentActivity() {
             context = this,
             editor = target,
             settings = settings,
-            file_path = state.current_file_path,
-            current_language = current_textmate_language(target)
+            file_path = state.current_file_path
         )
     }
 
@@ -377,11 +379,11 @@ class editor_activity : FragmentActivity() {
         project_manager.save_project_ide_config(project_dir.absolutePath, config)
             .onSuccess {
                 on_saved()
-                app_toast.show(this, "项目配置已应用", app_toast.LENGTH_SHORT)
+                app_toast.show(this, getString(R.string.editor_project_config_applied), app_toast.LENGTH_SHORT)
                 configure_cmake_project(show_toast = true)
             }
             .onFailure { error ->
-                app_toast.show(this, "项目配置保存失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this, getString(R.string.editor_project_config_save_failed, error.message), app_toast.LENGTH_LONG)
             }
     }
 
@@ -389,28 +391,12 @@ class editor_activity : FragmentActivity() {
         reload_file_tree {
             lifecycleScope.launch {
                 if (!state.project_exists) {
-                    state.status_text = "项目不存在"
+                    state.status_text = getString(R.string.editor_project_missing)
                     return@launch
                 }
 
-                prewarm_textmate_languages()
                 restore_pinned_tabs()
                 configure_cmake_project_if_needed()
-            }
-        }
-    }
-
-    private fun prewarm_textmate_languages() {
-        if (textmate_prewarm_started) return
-        textmate_prewarm_started = true
-        lifecycleScope.launch(Dispatchers.Default) {
-            listOf("prewarm.c", "prewarm.cpp").forEach { file_name ->
-                runCatching {
-                    xc_application.instance.create_textmate_language(file_name)?.let { language ->
-                        language.setCompleterKeywords(c_cpp_completion_keywords)
-                        language.destroy()
-                    }
-                }
             }
         }
     }
@@ -429,7 +415,7 @@ class editor_activity : FragmentActivity() {
                     )
                 )
             }.onFailure { error ->
-                app_toast.show(this@editor_activity, "字体导入失败: ${error.message.orEmpty()}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_font_import_failed, error.message.orEmpty()), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -526,17 +512,35 @@ class editor_activity : FragmentActivity() {
         val file_path = state.current_file_path ?: return
         if (state.read_only) return
         if (is_c_family_file(file_path) && !state.editor_settings.clangd_formatting) {
-            app_toast.show(this, "clangd 格式化已关闭", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.editor_clangd_format_disabled), app_toast.LENGTH_SHORT)
             return
         }
+
+        // Sora 的格式化流程会复制当前文档，并在格式化完成后替换整份文本。
+        // 大文件全量格式化容易造成主线程长时间卡顿，因此大文件只允许选区格式化。
+        val max_full_format_chars = 200_000
+        val max_range_format_chars = 80_000
         val cursor = editor.cursor
+        val text_length = editor.text.length
+        if (!cursor.isSelected && text_length > max_full_format_chars) {
+            app_toast.show(this, getString(R.string.editor_file_too_large_format_selection), app_toast.LENGTH_LONG)
+            return
+        }
+        if (cursor.isSelected) {
+            val selected_length = cursor.right().index - cursor.left().index
+            if (selected_length > max_range_format_chars) {
+                app_toast.show(this, getString(R.string.editor_selection_too_large_format), app_toast.LENGTH_LONG)
+                return
+            }
+        }
+
         val accepted = if (cursor.isSelected) {
             editor.formatCodeAsync(cursor.left(), cursor.right())
         } else {
             editor.formatCodeAsync()
         }
         if (!accepted) {
-            app_toast.show(this, "当前语言暂不支持格式化", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.editor_language_format_unsupported), app_toast.LENGTH_SHORT)
         }
     }
 
@@ -544,7 +548,7 @@ class editor_activity : FragmentActivity() {
         if (output_panel_state.task_running) {
             if (!output_panel_state.task_stopping) {
                 output_panel_state.task_stopping = true
-                output_panel_state.task_subtitle = "正在停止任务"
+                output_panel_state.task_subtitle = getString(R.string.editor_stopping_task)
                 cmake_configure_job?.cancel()
                 cmake_build_job?.cancel()
             }
@@ -555,11 +559,11 @@ class editor_activity : FragmentActivity() {
 
     private fun build_cmake_project() {
         if (detected_project_info.kind != project_kind.CMAKE) {
-            app_toast.show(this, "当前项目不是 CMake 项目", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.editor_not_cmake_project), app_toast.LENGTH_SHORT)
             return
         }
         if (cmake_configure_job?.isActive == true || cmake_build_job?.isActive == true) {
-            app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.editor_task_running), app_toast.LENGTH_SHORT)
             return
         }
 
@@ -574,25 +578,25 @@ class editor_activity : FragmentActivity() {
         val ndk = project_environment.ndk
         val cmake_toolchain_file = ndk?.cmake_toolchain_file
         if (ndk == null || cmake_toolchain_file.isNullOrBlank()) {
-            app_toast.show(this, "项目未配置可用 NDK", app_toast.LENGTH_LONG)
-            output_panel_state.append_output("错误: 项目未配置可用 NDK", editor_output_line_level.ERROR)
+            app_toast.show(this, getString(R.string.editor_no_available_ndk), app_toast.LENGTH_LONG)
+            output_panel_state.append_output(getString(R.string.editor_error_no_available_ndk), editor_output_line_level.ERROR)
             return
         }
 
         cmake_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
-            output_panel_state.task_title = "构建输出"
-            output_panel_state.task_subtitle = "正在保存文件"
+            output_panel_state.task_title = getString(R.string.editor_build_output)
+            output_panel_state.task_subtitle = getString(R.string.editor_saving_files)
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
             if (!save_dirty_open_files(show_toast = false)) {
-                output_panel_state.append_output("构建取消，文件保存失败", editor_output_line_level.ERROR)
+                output_panel_state.append_output(getString(R.string.editor_build_cancel_save_failed), editor_output_line_level.ERROR)
                 output_panel_state.task_running = false
                 output_panel_state.task_stopping = false
                 return@launch
             }
-            output_panel_state.task_subtitle = "正在构建项目"
+            output_panel_state.task_subtitle = getString(R.string.editor_building_project)
 
             val success = try {
                 val android_config = project_cmake_config(project_dir)
@@ -622,7 +626,7 @@ class editor_activity : FragmentActivity() {
                         )
                     }
             } catch (_: CancellationException) {
-                output_panel_state.append_output("构建已停止", editor_output_line_level.WARNING)
+                output_panel_state.append_output(getString(R.string.editor_build_stopped), editor_output_line_level.WARNING)
                 return@launch
             } finally {
                 output_panel_state.task_running = false
@@ -631,11 +635,11 @@ class editor_activity : FragmentActivity() {
 
             if (success) {
                 detected_project_info = project_detector.detect_project(project_dir.absolutePath)
-                output_panel_state.append_output("构建完成", editor_output_line_level.SUCCESS)
-                app_toast.show(this@editor_activity, "构建完成", app_toast.LENGTH_SHORT)
+                output_panel_state.append_output(getString(R.string.editor_build_done), editor_output_line_level.SUCCESS)
+                app_toast.show(this@editor_activity, getString(R.string.editor_build_done), app_toast.LENGTH_SHORT)
             } else {
-                output_panel_state.append_output("构建失败", editor_output_line_level.ERROR)
-                app_toast.show(this@editor_activity, "构建失败", app_toast.LENGTH_LONG)
+                output_panel_state.append_output(getString(R.string.editor_build_failed), editor_output_line_level.ERROR)
+                app_toast.show(this@editor_activity, getString(R.string.editor_build_failed), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -650,7 +654,7 @@ class editor_activity : FragmentActivity() {
 
     private fun configure_cmake_project(show_toast: Boolean, on_success: (() -> Unit)? = null) {
         if (detected_project_info.kind != project_kind.CMAKE) {
-            if (show_toast) app_toast.show(this, "当前项目不是 CMake 项目", app_toast.LENGTH_SHORT)
+            if (show_toast) app_toast.show(this, getString(R.string.editor_not_cmake_project), app_toast.LENGTH_SHORT)
             return
         }
 
@@ -667,30 +671,30 @@ class editor_activity : FragmentActivity() {
         val ndk = project_environment.ndk
         val cmake_toolchain_file = ndk?.cmake_toolchain_file
         if (ndk == null || cmake_toolchain_file.isNullOrBlank()) {
-            if (show_toast) app_toast.show(this, "项目未配置可用 NDK", app_toast.LENGTH_LONG)
-            output_panel_state.append_output("错误: 项目未配置可用 NDK", editor_output_line_level.ERROR)
+            if (show_toast) app_toast.show(this, getString(R.string.editor_no_available_ndk), app_toast.LENGTH_LONG)
+            output_panel_state.append_output(getString(R.string.editor_error_no_available_ndk), editor_output_line_level.ERROR)
             return
         }
 
         if (cmake_configure_job?.isActive == true) {
-            if (show_toast) app_toast.show(this, "CMake 正在配置中", app_toast.LENGTH_SHORT)
+            if (show_toast) app_toast.show(this, getString(R.string.editor_cmake_configuring_busy), app_toast.LENGTH_SHORT)
             return
         }
 
         cmake_configure_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
-            output_panel_state.task_title = "构建输出"
-            output_panel_state.task_subtitle = "正在保存文件"
+            output_panel_state.task_title = getString(R.string.editor_build_output)
+            output_panel_state.task_subtitle = getString(R.string.editor_saving_files)
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
             if (!save_dirty_open_files(show_toast = false)) {
-                output_panel_state.append_output("CMake 初始化取消，文件保存失败", editor_output_line_level.ERROR)
+                output_panel_state.append_output(getString(R.string.editor_cmake_init_cancel_save_failed), editor_output_line_level.ERROR)
                 output_panel_state.task_running = false
                 output_panel_state.task_stopping = false
                 return@launch
             }
-            output_panel_state.task_subtitle = if (show_toast) "正在配置 CMake" else "正在初始化 CMake"
+            output_panel_state.task_subtitle = if (show_toast) getString(R.string.editor_configuring_cmake) else getString(R.string.editor_initializing_cmake)
             val android_config = project_cmake_config(project_dir)
 
             val command = create_cmake_configure_command(
@@ -708,7 +712,7 @@ class editor_activity : FragmentActivity() {
                     on_log = { line -> output_panel_state.append_output(line, output_level_for_cmake_line(line)) }
                 )
             } catch (_: CancellationException) {
-                output_panel_state.append_output("CMake 初始化已暂停", editor_output_line_level.WARNING)
+                output_panel_state.append_output(getString(R.string.editor_cmake_init_paused), editor_output_line_level.WARNING)
                 return@launch
             } finally {
                 output_panel_state.task_running = false
@@ -717,12 +721,12 @@ class editor_activity : FragmentActivity() {
 
             if (success && File(compile_commands_path).isFile) {
                 detected_project_info = project_detector.detect_project(project_dir.absolutePath)
-                output_panel_state.append_output("CMake 配置完成", editor_output_line_level.SUCCESS)
-                if (show_toast) app_toast.show(this@editor_activity, "CMake 配置完成", app_toast.LENGTH_SHORT)
+                output_panel_state.append_output(getString(R.string.editor_cmake_config_done), editor_output_line_level.SUCCESS)
+                if (show_toast) app_toast.show(this@editor_activity, getString(R.string.editor_cmake_config_done), app_toast.LENGTH_SHORT)
                 on_success?.invoke()
             } else {
-                output_panel_state.append_output("CMake 配置失败，未生成 compile_commands.json", editor_output_line_level.ERROR)
-                if (show_toast) app_toast.show(this@editor_activity, "CMake 配置失败", app_toast.LENGTH_LONG)
+                output_panel_state.append_output(getString(R.string.editor_cmake_config_failed_no_compile_commands), editor_output_line_level.ERROR)
+                if (show_toast) app_toast.show(this@editor_activity, getString(R.string.editor_cmake_config_failed), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -896,7 +900,7 @@ class editor_activity : FragmentActivity() {
             result.onSuccess { loaded_file ->
                 open_loaded_file_tab(loaded_file)
             }.onFailure { error ->
-                app_toast.show(this@editor_activity, "打开失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_open_failed, error.message), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -920,7 +924,7 @@ class editor_activity : FragmentActivity() {
                 open_loaded_file_tab(loaded_file)
                 move_cursor_to(line, column)
             }.onFailure { error ->
-                app_toast.show(this@editor_activity, "打开失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_open_failed, error.message), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -1007,7 +1011,7 @@ class editor_activity : FragmentActivity() {
                 tab.has_changes = false
                 tab.status_text = relative_project_path(project_dir, File(tab.file_path))
             }.onFailure { error ->
-                app_toast.show(this, "保存失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this, getString(R.string.editor_save_failed, error.message), app_toast.LENGTH_LONG)
                 return false
             }
         }
@@ -1022,7 +1026,7 @@ class editor_activity : FragmentActivity() {
         update_history_state()
         refresh_file_tree()
         if (show_toast) {
-            app_toast.show(this, "已保存所有文件", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.editor_all_files_saved), app_toast.LENGTH_SHORT)
         }
         return true
     }
@@ -1030,7 +1034,7 @@ class editor_activity : FragmentActivity() {
     private suspend fun save_current_file(show_toast: Boolean): Boolean {
         val file_path = state.current_file_path
         if (file_path == null) {
-            app_toast.show(this, "没有打开文件", app_toast.LENGTH_SHORT)
+            app_toast.show(this, getString(R.string.editor_no_open_files), app_toast.LENGTH_SHORT)
             return false
         }
 
@@ -1047,15 +1051,15 @@ class editor_activity : FragmentActivity() {
             }
             state.content = content
             state.has_changes = false
-            state.status_text = "已保存 ${File(file_path).name}"
+            state.status_text = getString(R.string.editor_saved_file, File(file_path).name)
             update_history_state()
             refresh_file_tree()
             if (show_toast) {
-                app_toast.show(this, "已保存", app_toast.LENGTH_SHORT)
+                app_toast.show(this, getString(R.string.editor_saved), app_toast.LENGTH_SHORT)
             }
             configure_cmake_after_cmakelists_save(file_path)
         }.onFailure { error ->
-            app_toast.show(this, "保存失败: ${error.message}", app_toast.LENGTH_LONG)
+            app_toast.show(this, getString(R.string.editor_save_failed, error.message), app_toast.LENGTH_LONG)
         }
 
         return result.isSuccess
@@ -1068,7 +1072,7 @@ class editor_activity : FragmentActivity() {
         if (detected_project_info.kind != project_kind.CMAKE) return
         if (cmake_configure_job?.isActive == true || cmake_build_job?.isActive == true) return
 
-        output_panel_state.append_log("CMakeLists.txt 已保存，自动初始化 CMake")
+        output_panel_state.append_log(getString(R.string.editor_cmake_saved_auto_init))
         configure_cmake_project(show_toast = false) {
             reset_clangd_project()
         }
@@ -1182,6 +1186,7 @@ class editor_activity : FragmentActivity() {
             if (!settings.clangd_document_highlight) add(LspFeature.DocumentHighlight)
             if (!settings.clangd_formatting) add(LspFeature.Formatting)
             if (!settings.clangd_hover) add(LspFeature.Hover)
+            if (!settings.clangd_semantic_tokens) add(LspFeature.SemanticTokens)
         }
     }
 
@@ -1210,19 +1215,20 @@ class editor_activity : FragmentActivity() {
         val build_dir = File(detected_project_info.build_dir ?: File(project_dir, "build").absolutePath)
         val compile_commands = File(build_dir, "compile_commands.json")
         if (!compile_commands.isFile) {
-            log_clangd_skip_once(file, "缺少 compile_commands.json，请先执行 CMake 初始化")
+            log_clangd_skip_once(file, getString(R.string.editor_clangd_missing_compile_commands))
             return
         }
 
         val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
         val ndk = project_environment.ndk ?: run {
-            log_clangd_skip_once(file, "项目未配置可用 NDK")
+            log_clangd_skip_once(file, getString(R.string.editor_no_available_ndk))
             return
         }
         val disabled_features = disabled_clangd_features(state.editor_settings)
         val lsp_project = clangd_project ?: clangd_lsp_project(
             project_dir = project_dir,
             disabled_features = disabled_features,
+            language_factory = { path -> create_configured_language(path) },
             config_factory = {
                 clangd_lsp_config(
                     runtime_paths = toolchain_runtime_provider.paths(),
@@ -1250,10 +1256,10 @@ class editor_activity : FragmentActivity() {
                 }
             }
             if (!lsp_editor.isConnected) {
-                output_panel_state.append_log("clangd: 正在连接 ${file.name}")
+                output_panel_state.append_log(getString(R.string.editor_clangd_connecting, file.name))
                 val connected = lsp_project.connect(file, editor)
                 if (!connected) {
-                    output_panel_state.append_log("clangd: 连接失败 ${file.name}", editor_output_line_level.ERROR)
+                    output_panel_state.append_log(getString(R.string.editor_clangd_connect_failed, file.name), editor_output_line_level.ERROR)
                 }
             }
         }
@@ -1274,14 +1280,14 @@ class editor_activity : FragmentActivity() {
 
     private fun log_clangd_skip_once(file: File, reason: String) {
         if (clangd_skipped_files.add("${file.absolutePath}:$reason")) {
-            output_panel_state.append_log("clangd: 跳过 ${file.name}，$reason", editor_output_line_level.WARNING)
+            output_panel_state.append_log(getString(R.string.editor_clangd_skipped, file.name, reason), editor_output_line_level.WARNING)
         }
     }
 
     private fun log_clangd_status(file: File, status: LspEditorStatus) {
         val message = when (status) {
-            LspEditorStatus.CONNECTED -> "clangd: 已连接 ${file.name}"
-            LspEditorStatus.DISCONNECTED -> "clangd: 已断开 ${file.name}"
+            LspEditorStatus.CONNECTED -> getString(R.string.editor_clangd_connected, file.name)
+            LspEditorStatus.DISCONNECTED -> getString(R.string.editor_clangd_disconnected, file.name)
             else -> return
         }
         lifecycleScope.launch(Dispatchers.Main) { output_panel_state.append_log(message) }
@@ -1301,8 +1307,7 @@ class editor_activity : FragmentActivity() {
         state.toolbar_visible = true
         state.selected_tab_index = -1
         state.current_file_path = null
-        current_textmate_scope = null
-        state.current_file_name = "未打开文件"
+        state.current_file_name = getString(R.string.editor_no_file_opened)
         state.content = ""
         state.cursor_line = 1
         state.cursor_column = 1
@@ -1311,7 +1316,7 @@ class editor_activity : FragmentActivity() {
         state.can_redo = false
         state.has_changes = false
         state.loading = false
-        state.status_text = "请选择左侧文件"
+        state.status_text = getString(R.string.editor_select_file_left)
         editor = create_code_editor()
         search_controller.set_editor(editor)
         clear_search()
@@ -1369,7 +1374,7 @@ class editor_activity : FragmentActivity() {
             }.onFailure { error ->
                 state.project_exists = false
                 state.file_nodes = emptyList()
-                app_toast.show(this@editor_activity, "刷新文件失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_refresh_file_failed, error.message), app_toast.LENGTH_LONG)
             }
             on_complete?.invoke()
         }
@@ -1416,7 +1421,7 @@ class editor_activity : FragmentActivity() {
                 file_tree_children_cache[path] = children
                 state.file_nodes = build_lazy_visible_file_nodes(project_dir, state.expanded_paths, file_tree_children_cache)
             }.onFailure { error ->
-                app_toast.show(this@editor_activity, "刷新文件失败: ${error.message}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_refresh_file_failed, error.message), app_toast.LENGTH_LONG)
                 state.expanded_paths = state.expanded_paths - path
             }
         }
@@ -1447,12 +1452,12 @@ class editor_activity : FragmentActivity() {
                 if (directory) {
                     state.expanded_paths = state.expanded_paths + target.absolutePath
                 } else {
-                    app_toast.show(this@editor_activity, "已创建文件", app_toast.LENGTH_SHORT)
+                    app_toast.show(this@editor_activity, getString(R.string.editor_file_created), app_toast.LENGTH_SHORT)
                     request_open_file(target.absolutePath)
                 }
                 refresh_file_tree(parent_path)
             }.onFailure { error ->
-                app_toast.show(this@editor_activity, "创建失败: ${error.message.orEmpty()}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_create_failed, error.message.orEmpty()), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -1474,7 +1479,7 @@ class editor_activity : FragmentActivity() {
                 save_pinned_tabs()
                 refresh_file_tree(File(new_path).parentFile?.absolutePath)
             }.onFailure { error ->
-                app_toast.show(this@editor_activity, "重命名失败: ${error.message.orEmpty()}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_rename_failed, error.message.orEmpty()), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -1482,7 +1487,7 @@ class editor_activity : FragmentActivity() {
     private fun delete_project_entry(path: String) {
         lifecycleScope.launch {
             val source = project_manager.resolve_project_entry_for_delete(project_dir.absolutePath, path).getOrElse { error ->
-                app_toast.show(this@editor_activity, "删除失败: ${error.message.orEmpty()}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_delete_failed, error.message.orEmpty()), app_toast.LENGTH_LONG)
                 return@launch
             }
             val source_path = source.absolutePath
@@ -1490,7 +1495,7 @@ class editor_activity : FragmentActivity() {
                 is_same_or_child_path(tab.file_path, source_path) && tab.has_changes
             }
             if (dirty_tab != null) {
-                app_toast.show(this@editor_activity, "请先保存或关闭未保存文件: ${dirty_tab.file_name}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_save_or_close_dirty_file, dirty_tab.file_name), app_toast.LENGTH_LONG)
                 return@launch
             }
 
@@ -1504,7 +1509,7 @@ class editor_activity : FragmentActivity() {
                 save_pinned_tabs()
                 refresh_file_tree(parent_path)
             }.onFailure { error ->
-                app_toast.show(this@editor_activity, "删除失败: ${error.message.orEmpty()}", app_toast.LENGTH_LONG)
+                app_toast.show(this@editor_activity, getString(R.string.editor_delete_failed, error.message.orEmpty()), app_toast.LENGTH_LONG)
             }
         }
     }
@@ -1540,7 +1545,7 @@ class editor_activity : FragmentActivity() {
             state.current_file_name = File(updated_path).name
             state.status_text = relative_project_path(project_dir, File(updated_path))
             state.selected_tab_index = find_tab_index(updated_path)
-            apply_textmate_language(updated_path)
+            apply_editor_language(updated_path)
         }
     }
 
@@ -1667,36 +1672,51 @@ class editor_activity : FragmentActivity() {
         }
     }
 
-    private fun apply_textmate_language(file_path: String) {
-        val scope_name = xc_application.instance.get_language_scope_name(file_path)
-        val current_textmate_language = current_textmate_language()
-
-        if (current_textmate_scope == scope_name && current_textmate_language != null) {
-            apply_textmate_language_settings(current_textmate_language, state.editor_settings, file_path)
-            editor.setEditorLanguage(current_textmate_language)
-            apply_current_editor_behavior_settings(editor, state.editor_settings)
-            return
-        }
-
-        val language = create_configured_textmate_language(file_path)
+    private fun apply_editor_language(file_path: String) {
+        val language = create_configured_language(file_path)
         editor.setEditorLanguage(language)
-
-        current_textmate_scope = scope_name
         apply_current_editor_behavior_settings(editor, state.editor_settings)
     }
 
-    private fun current_textmate_language(target: CodeEditor = editor): TextMateLanguage? {
-        return when (val language = target.editorLanguage) {
-            is TextMateLanguage -> language
-            is LspLanguage -> language.wrapperLanguage as? TextMateLanguage
-            else -> null
+    private fun create_configured_language(file_path: String): Language {
+        val tree_sitter_language = editor_tree_sitter_language_factory.create(
+            context = this,
+            file_path = file_path,
+            on_error = { error -> log_tree_sitter_error(file_path, error) }
+        )
+        if (tree_sitter_language != null) return tree_sitter_language
+
+        if (editor_tree_sitter_language_factory.supports(file_path)) {
+            log_tree_sitter_fallback(file_path)
         }
+        return EmptyLanguage()
     }
 
-    private fun create_configured_textmate_language(file_path: String): TextMateLanguage {
-        return (xc_application.instance.create_textmate_language(file_path)
-            ?: TextMateLanguage.create("source.cpp", false)).also { language ->
-            apply_textmate_language_settings(language, state.editor_settings, file_path)
+    private fun log_tree_sitter_fallback(file_path: String) {
+        if (!tree_sitter_logged_fallbacks.add(file_path)) return
+        output_panel_state.append_log(
+            getString(R.string.editor_treesitter_init_failed_plain, File(file_path).name),
+            editor_output_line_level.WARNING
+        )
+    }
+
+    private fun log_tree_sitter_error(file_path: String, error: Throwable) {
+        val message = error.stackTraceToString()
+            .lineSequence()
+            .take(8)
+            .joinToString(" | ")
+        val key = "$file_path:${error.javaClass.name}:$message"
+        if (!tree_sitter_logged_errors.add(key)) return
+        val log_action = {
+            output_panel_state.append_log(
+                getString(R.string.editor_treesitter_error, File(file_path).name, error.javaClass.simpleName, message),
+                editor_output_line_level.ERROR
+            )
+        }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            log_action()
+        } else {
+            lifecycleScope.launch(Dispatchers.Main) { log_action() }
         }
     }
 
@@ -1712,7 +1732,7 @@ class editor_activity : FragmentActivity() {
     }
 
     private companion object {
-        private const val block_end_hint_update_delay_ms = 180L
+        private const val block_end_hint_update_delay_ms = 60L
         private const val initial_editor_styles_timeout_ms = 800L
     }
 

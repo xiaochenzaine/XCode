@@ -3,14 +3,15 @@ package com.xc.code.ui.screens.editor
 import android.content.Context
 import android.content.Intent
 import android.view.ViewGroup
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -71,11 +72,13 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.Dp
@@ -114,7 +117,8 @@ internal data class editor_output_line(
     val level: editor_output_line_level = editor_output_line_level.NORMAL
 )
 
-private const val editor_output_max_lines = 1000
+private const val editor_output_max_lines = 5000
+private const val editor_output_refresh_delay_ms = 80L
 private val editor_log_time_formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
 
 internal class editor_output_panel_state {
@@ -343,7 +347,7 @@ private fun editor_output_dock_panel(
     val context = LocalContext.current
     Box(
         modifier = modifier
-            .background(colors.editor_bg.copy(alpha = 0.98f))
+            .background(colors.editor_output_panel_bg)
     ) {
         Column(
             modifier = Modifier
@@ -357,7 +361,7 @@ private fun editor_output_dock_panel(
             val content_modifier = Modifier
                 .fillMaxSize()
                 .clipToBounds()
-                .background(colors.editor_bg.copy(alpha = 0.98f))
+                .background(colors.editor_output_panel_bg)
                 .then(
                     if (state.selected_tab == editor_output_tab.Terminal) {
                         Modifier
@@ -427,32 +431,15 @@ private fun editor_output_status_card(
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
-    val shape = RoundedCornerShape(23.dp)
-    val card_scale = 1f - sheet_progress * 0.04f
-    val card_alpha = 1f - sheet_progress * 0.10f
-    val border_transition = rememberInfiniteTransition(label = "editor_output_running_border")
-    val border_rotation by border_transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "editor_output_running_border_rotation"
-    )
+    val shape = RoundedCornerShape(18.dp)
+    val card_alpha = 0.95f
     Surface(
         modifier = modifier
-            .height(46.dp)
+            .fillMaxWidth()
+            .height(44.dp)
             .graphicsLayer {
-                scaleX = card_scale
-                scaleY = card_scale
                 alpha = card_alpha
             }
-            .editor_running_border(
-                running = running,
-                color = colors.editor_icon,
-                rotation = border_rotation
-            )
             .clip(shape)
             .pointerInput(Unit) {
                 detectDragGestures(
@@ -466,38 +453,143 @@ private fun editor_output_status_card(
             }
             .clickable(onClick = on_click),
         shape = shape,
-        color = colors.card_bg.copy(alpha = 0.72f)
+        color = colors.editor_output_capsule_bg
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            editor_output_status_indicator(
+                running = running,
+                modifier = Modifier.size(30.dp)
+            )
+
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(colors.card_bg.copy(alpha = 0.38f))
+                    .padding(horizontal = 8.dp)
+                    .width(1.dp)
+                    .height(20.dp)
+                    .background(colors.editor_capsule_divider)
             )
+
             Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
                     text = title,
-                    color = colors.editor_text,
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp,
+                    color = colors.editor_capsule_icon,
+                    fontSize = 13.sp,
+                    lineHeight = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = subtitle,
                     color = colors.editor_hint,
-                    fontSize = 8.5.sp,
-                    lineHeight = 11.sp,
+                    fontSize = 10.sp,
+                    lineHeight = 12.sp,
                     fontFamily = FontFamily.Monospace,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
     }
+}
+
+@Composable
+private fun editor_output_status_indicator(
+    running: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val colors = app_theme_provider.colors
+    val transition = rememberInfiniteTransition(label = "editor_output_build_indicator")
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "editor_output_build_progress"
+    )
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        if (running) {
+            Canvas(modifier = Modifier.size(24.dp)) {
+                val stroke_width = 2.5.dp.toPx()
+                val inset = stroke_width / 2f
+                val arc_size = Size(
+                    width = size.width - stroke_width,
+                    height = size.height - stroke_width
+                )
+                val grow_end = 0.56f
+                val release_end = 0.83f
+                val min_sweep = 54f
+                val max_sweep = 330f
+                val sweep: Float
+                val tail_offset: Float
+
+                if (progress < grow_end) {
+                    val t = progress / grow_end
+                    val eased = editor_output_smoothstep(t)
+                    sweep = min_sweep + (max_sweep - min_sweep) * eased
+                    tail_offset = 0f
+                } else if (progress < release_end) {
+                    val t = (progress - grow_end) / (release_end - grow_end)
+                    val eased = editor_output_smoothstep(t)
+                    sweep = max_sweep - (max_sweep - min_sweep) * eased
+                    tail_offset = eased * 240f
+                } else {
+                    val t = (progress - release_end) / (1f - release_end)
+                    val eased = editor_output_smoothstep(t)
+                    sweep = min_sweep
+                    tail_offset = 240f + eased * 120f
+                }
+
+                val start_angle = progress * 360f - 90f + tail_offset
+
+                drawArc(
+                    color = colors.editor_icon,
+                    startAngle = start_angle,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = arc_size,
+                    style = Stroke(width = stroke_width, cap = StrokeCap.Round)
+                )
+            }
+        } else {
+            Surface(
+                modifier = Modifier.size(26.dp),
+                shape = CircleShape,
+                color = colors.editor_hint.copy(alpha = 0.16f),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_code_tag),
+                        contentDescription = null,
+                        tint = colors.editor_capsule_icon,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun editor_output_smoothstep(t: Float): Float {
+    val x = t.coerceIn(0f, 1f)
+    return x * x * (3f - 2f * x)
 }
 
 @Composable
@@ -506,84 +598,58 @@ private fun editor_output_tabs(
     on_select: (editor_output_tab) -> Unit
 ) {
     val colors = app_theme_provider.colors
-    val density = LocalDensity.current
-    val tab_bounds = remember { mutableStateMapOf<editor_output_tab, Pair<Int, Int>>() }
-    val selected_bounds = tab_bounds[selected_tab]
-    val indicator_offset by animateDpAsState(
-        targetValue = with(density) { (selected_bounds?.first ?: 0).toDp() },
-        animationSpec = tween(180),
-        label = "editor_output_tab_indicator_offset"
-    )
-    val indicator_width by animateDpAsState(
-        targetValue = with(density) { (selected_bounds?.second ?: 0).toDp() },
-        animationSpec = tween(180),
-        label = "editor_output_tab_indicator_width"
-    )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(34.dp)
-            .background(colors.editor_tab_unselected_bg)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {})
-            }
+            .height(56.dp)
+            .background(colors.editor_output_panel_bg)
+            .padding(horizontal = 18.dp, vertical = 6.dp)
     ) {
-        Row(
+        Surface(
             modifier = Modifier
-                .fillMaxHeight()
-                .horizontalScroll(rememberScrollState()),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .height(44.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = colors.editor_output_capsule_bg,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
         ) {
-            editor_output_tab.entries.forEachIndexed { index, tab ->
-                val selected = tab == selected_tab
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .background(if (selected) colors.editor_tab_selected_bg else colors.editor_tab_unselected_bg)
-                        .onGloballyPositioned { coordinates ->
-                            tab_bounds[tab] = coordinates.positionInParent().x.roundToInt() to coordinates.size.width
-                        }
-                        .drawWithContent {
-                            drawContent()
-                            if (!selected && index < editor_output_tab.entries.lastIndex) {
-                                val stroke_width = 1.dp.toPx()
-                                val separator_height = 16.dp.toPx()
-                                val x = size.width - stroke_width / 2f
-                                val y = (size.height - separator_height) / 2f
-                                drawLine(
-                                    color = colors.editor_tab_separator,
-                                    start = Offset(x, y),
-                                    end = Offset(x, y + separator_height),
-                                    strokeWidth = stroke_width
-                                )
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                editor_output_tab.entries.forEach { tab ->
+                    val selected = tab == selected_tab
+                    Box(
+                        modifier = Modifier
+                            .height(34.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (selected) colors.editor_sidebar_selected_bg
+                                else Color.Transparent
+                            )
+                            .clickable {
+                                if (!selected) on_select(tab)
                             }
-                        }
-                        .clickable {
-                            if (!selected) on_select(tab)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(tab.title_res),
-                        color = if (selected) colors.editor_tab_selected_text else colors.editor_tab_unselected_content,
-                        fontSize = 12.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 12.dp)
-                    )
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(tab.title_res),
+                            color = if (selected) colors.editor_icon else colors.editor_hint,
+                            fontSize = 14.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
-
-        Box(
-            modifier = Modifier
-                .offset(x = indicator_offset)
-                .width(indicator_width)
-                .height(2.dp)
-                .background(colors.editor_tab_selected_icon)
-                .align(Alignment.TopStart)
-        )
     }
 }
 
@@ -636,6 +702,7 @@ private fun editor_output_line_list(
     editor_settings: com.xc.code.editor.model.editor_settings_state? = null
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val colors = app_theme_provider.colors
     val settings = editor_settings ?: com.xc.code.editor.model.editor_settings_state()
     var rendered_line_count by remember { mutableStateOf(0) }
@@ -692,10 +759,14 @@ private fun editor_output_line_list(
             rendered_source = lines
         }
         if (rendered_revision == revision && rendered_line_count == lines.size) return@LaunchedEffect
+        val follow_tail_threshold = with(density) { 56.dp.toPx() }.toInt()
+        val should_follow_tail = rendered_line_count == 0 ||
+            output_editor.getScrollMaxY() - output_editor.offsetY <= follow_tail_threshold
         if (lines.size < rendered_line_count || rendered_revision < 0) {
             output_editor.setText("")
             rendered_line_count = 0
         }
+        delay(editor_output_refresh_delay_ms)
         if (lines.size > rendered_line_count) {
             val append_text = lines.drop(rendered_line_count)
                 .joinToString("\n", postfix = "\n") { line -> line.text }
@@ -704,16 +775,23 @@ private fun editor_output_line_list(
             } else {
                 val last_line = output_editor.text.lineCount.coerceAtLeast(1) - 1
                 val last_column = output_editor.text.getColumnCount(last_line)
-                output_editor.text.insert(last_line, last_column, append_text)
+                runCatching {
+                    output_editor.text.insert(last_line, last_column, append_text)
+                }.onFailure {
+                    val full_text = lines.joinToString("\n", postfix = "\n") { line -> line.text }
+                    output_editor.setText(full_text)
+                }
             }
             rendered_line_count = lines.size
         }
         rendered_revision = revision
-        val last_line = output_editor.text.lineCount.coerceAtLeast(1) - 1
-        val last_column = output_editor.text.getColumnCount(last_line)
-        delay(16)
-        output_editor.post {
-            output_editor.setSelection(last_line, last_column, true)
+        if (should_follow_tail) {
+            val last_line = output_editor.text.lineCount.coerceAtLeast(1) - 1
+            val last_column = output_editor.text.getColumnCount(last_line)
+            delay(16)
+            output_editor.post {
+                output_editor.setSelection(last_line, last_column, true)
+            }
         }
     }
 
@@ -763,7 +841,7 @@ private fun editor_output_empty_state(
             imageVector = icon,
             contentDescription = null,
             tint = colors.editor_icon,
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier.size(48.dp)
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(

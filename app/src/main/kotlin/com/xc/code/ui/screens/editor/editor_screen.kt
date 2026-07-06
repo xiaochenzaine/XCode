@@ -18,6 +18,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
@@ -122,6 +123,7 @@ internal fun editor_screen(
     val drawer_progress_value = drawer_progress.value
     val editor_offset_px = (drawer_width_px * drawer_progress_value).roundToInt()
     val sidebar_offset_px = (-(drawer_width_px * (1f - drawer_progress_value))).roundToInt()
+    val agent_conversation_id = rememberSaveable(project_root_path) { java.util.UUID.randomUUID().toString() }
     val ime_visible = WindowInsets.ime.getBottom(density) > 0
     val show_symbol_bar = has_open_file && editor_focused && ime_visible
 
@@ -332,7 +334,13 @@ internal fun editor_screen(
                     } else {
                         empty_editor_placeholder(
                             text = if (loading) stringResource(R.string.editor_loading) else stringResource(R.string.editor_no_open_file),
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            on_browse_files = if (loading) null else {
+                                {
+                                    selected_tool = 0
+                                    drawer_open = true
+                                }
+                            }
                         )
                     }
                 }
@@ -345,6 +353,7 @@ internal fun editor_screen(
                 drawer_width = drawer_width,
             drawer_offset_px = sidebar_offset_px,
             selected_tool = selected_tool,
+            agent_conversation_id = agent_conversation_id,
             project_root_path = project_root_path,
             file_nodes = file_nodes,
             expanded_paths = expanded_paths,
@@ -379,7 +388,8 @@ internal fun editor_screen(
             },
             on_drag = { drag_amount ->
                 drawer_width = (drawer_width.value + drag_amount.x).coerceIn(300f, 480f).dp
-            }
+            },
+            on_close = { drawer_open = false }
         )
         }
 

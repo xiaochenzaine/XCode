@@ -35,6 +35,7 @@ import io.github.rosemoe.sora.lsp.events.diagnostics.publishDiagnostics
 import io.github.rosemoe.sora.lsp.events.document.documentClose
 import io.github.rosemoe.sora.lsp.events.document.documentOpen
 import io.github.rosemoe.sora.lsp.events.document.documentSave
+import io.github.rosemoe.sora.lsp.events.semantic.semanticTokens
 import io.github.rosemoe.sora.lsp.requests.Timeout
 import io.github.rosemoe.sora.lsp.requests.Timeouts
 import io.github.rosemoe.sora.lsp.utils.FileUri
@@ -44,6 +45,7 @@ import io.github.rosemoe.sora.widget.CodeEditor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.eclipse.lsp4j.CodeAction
@@ -55,6 +57,7 @@ import org.eclipse.lsp4j.Hover
 import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.SignatureHelp
 import org.eclipse.lsp4j.TextDocumentSyncKind
+import io.github.rosemoe.sora.lsp.editor.semantic.SemanticToken
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeoutException
@@ -98,8 +101,17 @@ class LspEditor(
             uiDelegate.detachEditor()
             _currentEditor = WeakReference(currentEditor)
 
-            currentEditor.setEditorLanguage(currentLanguage)
+            // 避免把同一个 LspLanguage 实例重复设置给编辑器。
+            // CodeEditor.setEditorLanguage() 会先销毁旧 language；如果旧对象就是 currentLanguage，
+            // 会导致 LspLanguage 以及 wrapperLanguage 被销毁后又被复用，表现为无高亮。
+            if (currentEditor.editorLanguage !== currentLanguage) {
+                currentEditor.setEditorLanguage(currentLanguage)
+            }
             uiDelegate.attachEditor(currentEditor)
+            applyCachedSemanticTokens()
+            if (isConnected) {
+                requestSemanticTokensWithRetry()
+            }
         }
         get() {
             return _currentEditor.get()
@@ -227,8 +239,11 @@ class LspEditor(
                 requestInlayHint(CharPosition(0, 0))
             }
             requestDocumentColor()
-
             status = LspEditorStatus.CONNECTED
+            applyCachedSemanticTokens()
+            if (capabilities.semanticTokensProvider != null) {
+                requestSemanticTokensWithRetry()
+            }
         }.onFailure {
             if (throwException) {
                 status = LspEditorStatus.DISCONNECTED
@@ -364,6 +379,36 @@ class LspEditor(
 
     internal fun showDocumentColors(documentColors: List<ColorInformation>?) {
         uiDelegate.showDocumentColors(documentColors)
+    }
+
+    internal fun showSemanticTokens(tokens: List<SemanticToken>) {
+        if (tokens.isNotEmpty()) {
+            project.cacheSemanticTokens(uri, tokens)
+        }
+        currentLanguage?.updateSemanticTokens(tokens)
+    }
+
+    private fun applyCachedSemanticTokens() {
+        project.getCachedSemanticTokens(uri)?.let { cachedTokens ->
+            currentLanguage?.updateSemanticTokens(cachedTokens)
+        }
+    }
+
+    suspend fun requestSemanticTokens() {
+        eventManager.emitAsync(EventType.semanticTokens)
+    }
+
+    internal fun requestSemanticTokensWithRetry() {
+        // clangd 刚 didOpen 后可能还没完成预处理/索引，第一次 full tokens 可能为空或来得太早。
+        // 主动做几次轻量延迟刷新，避免用户必须手动刷新 clangd 才出现语义颜色。
+listOf(0L, 300L, 1000L, 2500L).forEach { delayMillis ->
+            coroutineScope.launch {
+                if (delayMillis > 0L) delay(delayMillis)
+                if (isConnected && requestManager.capabilities?.semanticTokensProvider != null) {
+                    requestSemanticTokens()
+                }
+            }
+        }
     }
 
     fun getAllColorOccurrences(): List<ColorInformation> {

@@ -57,7 +57,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xc.code.editor.theme.editor_theme_color_item
-import com.xc.code.editor.theme.editor_theme_token_color_item
 import com.xc.code.editor.theme.editor_theme_preview_palette
 import com.xc.code.editor.theme.editor_theme_manager
 import com.xc.code.ui.dialogs.editor.editor_theme_color_dialog
@@ -152,16 +151,13 @@ internal fun editor_theme_color_section(
     val context = LocalContext.current
     val colors = app_theme_provider.colors
     var color_items by remember { mutableStateOf(editor_theme_manager.load_color_items(context)) }
-    var token_color_items by remember { mutableStateOf(editor_theme_manager.load_token_color_items(context)) }
     var preview_palette by remember { mutableStateOf(editor_theme_manager.load_preview_palette(context)) }
     var editing_color_item by remember { mutableStateOf<editor_theme_color_item?>(null) }
-    var editing_token_item by remember { mutableStateOf<editor_theme_token_color_item?>(null) }
     var reset_requested by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         editor_theme_manager.version.collect {
             color_items = editor_theme_manager.load_color_items(context)
-            token_color_items = editor_theme_manager.load_token_color_items(context)
             preview_palette = editor_theme_manager.load_preview_palette(context)
         }
     }
@@ -171,16 +167,9 @@ internal fun editor_theme_color_section(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 4.dp, top = if (compact) 8.dp else 0.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = stringResource(R.string.editor_theme_colors),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.title_highlight,
-                modifier = Modifier.weight(1f)
-            )
-
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
@@ -211,54 +200,34 @@ internal fun editor_theme_color_section(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        editor_theme_subtitle(stringResource(R.string.editor_interface_colors))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-        ) {
-            color_items.forEachIndexed { index, item ->
-                editor_theme_color_card(
-                    title = item.title,
-                    description = item.description,
-                    value = item.value,
-                    shape = editor_theme_group_shape(
-                        is_top = index == 0,
-                        is_bottom = index == color_items.lastIndex
-                    ),
-                    on_click = { editing_color_item = item }
-                )
-                if (index < color_items.lastIndex) {
-                    Spacer(modifier = Modifier.height(1.dp))
+        editor_theme_color_groups(color_items).forEachIndexed { group_index, group ->
+            if (group_index > 0) {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            editor_theme_subtitle(group.title)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+            ) {
+                group.items.forEachIndexed { index, item ->
+                    editor_theme_color_card(
+                        title = item.title,
+                        description = item.description,
+                        value = item.value,
+                        shape = editor_theme_group_shape(
+                            is_top = index == 0,
+                            is_bottom = index == group.items.lastIndex
+                        ),
+                        on_click = { editing_color_item = item }
+                    )
+                    if (index < group.items.lastIndex) {
+                        Spacer(modifier = Modifier.height(1.dp))
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        editor_theme_subtitle(stringResource(R.string.editor_syntax_colors))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-        ) {
-            token_color_items.forEachIndexed { index, item ->
-                editor_theme_color_card(
-                    title = item.title,
-                    description = item.scope,
-                    value = item.value,
-                    shape = editor_theme_group_shape(
-                        is_top = index == 0,
-                        is_bottom = index == token_color_items.lastIndex
-                    ),
-                    on_click = { editing_token_item = item }
-                )
-                if (index < token_color_items.lastIndex) {
-                    Spacer(modifier = Modifier.height(1.dp))
-                }
-            }
-        }
     }
 
     editing_color_item?.let { item ->
@@ -271,29 +240,8 @@ internal fun editor_theme_color_section(
                 val saved = editor_theme_manager.update_color(context, item.key, value)
                 if (saved) {
                     color_items = editor_theme_manager.load_color_items(context)
-                    token_color_items = editor_theme_manager.load_token_color_items(context)
                     preview_palette = editor_theme_manager.load_preview_palette(context)
                     editing_color_item = null
-                    app_toast.show(context, context.getString(R.string.editor_color_saved), app_toast.LENGTH_SHORT)
-                } else {
-                    app_toast.show(context, context.getString(R.string.editor_color_invalid), app_toast.LENGTH_SHORT)
-                }
-            }
-        )
-    }
-
-    editing_token_item?.let { item ->
-        editor_theme_color_dialog(
-            title = item.title,
-            key = item.scope,
-            value = item.value,
-            on_dismiss = { editing_token_item = null },
-            on_save = { value ->
-                val saved = editor_theme_manager.update_token_color(context, item.index, value)
-                if (saved) {
-                    token_color_items = editor_theme_manager.load_token_color_items(context)
-                    preview_palette = editor_theme_manager.load_preview_palette(context)
-                    editing_token_item = null
                     app_toast.show(context, context.getString(R.string.editor_color_saved), app_toast.LENGTH_SHORT)
                 } else {
                     app_toast.show(context, context.getString(R.string.editor_color_invalid), app_toast.LENGTH_SHORT)
@@ -310,7 +258,6 @@ internal fun editor_theme_color_section(
                 val reset = editor_theme_manager.reset_to_default(context)
                 if (reset) {
                     color_items = editor_theme_manager.load_color_items(context)
-                    token_color_items = editor_theme_manager.load_token_color_items(context)
                     preview_palette = editor_theme_manager.load_preview_palette(context)
                     app_toast.show(context, context.getString(R.string.editor_colors_reset), app_toast.LENGTH_SHORT)
                 } else {
@@ -318,6 +265,160 @@ internal fun editor_theme_color_section(
                 }
             }
         )
+    }
+}
+
+
+private data class editor_theme_color_group(
+    val title: String,
+    val items: List<editor_theme_color_item>
+)
+
+private fun editor_theme_color_groups(items: List<editor_theme_color_item>): List<editor_theme_color_group> {
+    val item_map = items.associateBy { item -> item.key }
+
+    fun group(title: String, keys: List<String>): editor_theme_color_group? {
+        val group_items = keys.mapNotNull { key -> item_map[key] }
+        return group_items.takeIf { it.isNotEmpty() }?.let { editor_theme_color_group(title, it) }
+    }
+
+    val used_keys = mutableSetOf<String>()
+    val groups = listOfNotNull(
+        group(
+            title = "基础",
+            keys = listOf(
+                "editor.background",
+                "editor.foreground",
+                "editorCursor.foreground",
+                "editor.selectionBackground",
+                "editor.selectionForeground",
+                "editor.selectionBorder",
+                "editor.selectionHandle",
+                "editor.lineHighlightBackground",
+                "editor.lineHighlightBorder"
+            )
+        ),
+        group(
+            title = "行号与缩进",
+            keys = listOf(
+                "editorLineNumber.foreground",
+                "editorLineNumber.activeForeground",
+                "editorLineNumber.panelBackground",
+                "editorLineNumber.panelForeground",
+                "editorIndentGuide.background",
+                "editorIndentGuide.activeBackground",
+                "editorSideBlockLine.foreground",
+                "editorWhitespace.foreground"
+            )
+        ),
+        group(
+            title = "括号、搜索与高亮",
+            keys = listOf(
+                "highlightedDelimitersForeground",
+                "highlightedDelimitersBackground",
+                "highlightedDelimitersBorder",
+                "highlightedDelimitersUnderline",
+                "editor.findMatchBackground",
+                "editor.findMatchBorder",
+                "editor.findMatchHighlightBackground",
+                "editor.wordHighlightBackground",
+                "editor.wordHighlightBorder",
+                "editor.wordHighlightStrongBackground",
+                "editor.wordHighlightStrongBorder"
+            )
+        ),
+        group(
+            title = "代码语义颜色",
+            keys = listOf(
+                "keyword",
+                "modifier",
+                "operator",
+                "punctuation",
+                "comment",
+                "string",
+                "number",
+                "enumMember",
+                "namespace",
+                "type",
+                "class",
+                "enum",
+                "typeParameter",
+                "function",
+                "method",
+                "macro",
+                "variable",
+                "parameter",
+                "property"
+            )
+        ),
+        group(
+            title = "诊断与提示",
+            keys = listOf(
+                "editorError.foreground",
+                "editorWarning.foreground",
+                "editorInfo.foreground",
+                "editorInlayHint.foreground",
+                "editorInlayHint.background",
+                "tooltipBackground",
+                "tooltipBriefMessageColor",
+                "tooltipDetailedMessageColor",
+                "tooltipActionColor"
+            )
+        ),
+        group(
+            title = "补全与悬浮",
+            keys = listOf(
+                "editorSuggestWidget.background",
+                "editorSuggestWidget.foreground",
+                "editorSuggestWidget.highlightForeground",
+                "editorSuggestWidget.selectedBackground",
+                "editorSuggestWidget.secondaryForeground",
+                "editorSuggestWidget.corner",
+                "editorHoverWidget.background",
+                "editorHoverWidget.foreground",
+                "editorHoverWidget.highlightForeground",
+                "editorHoverWidget.border"
+            )
+        ),
+        group(
+            title = "滚动条与小地图",
+            keys = listOf(
+                "scrollbarSlider.background",
+                "scrollbarSlider.activeBackground",
+                "scrollbarSlider.track",
+                "editorMinimap.background",
+                "editorMinimap.viewportBackground",
+                "editorMinimap.viewportBorder"
+            )
+        ),
+        group(
+            title = "参数提示与编辑辅助",
+            keys = listOf(
+                "signatureHelp.background",
+                "signatureHelp.border",
+                "signatureHelp.foreground",
+                "signatureHelp.activeParameterForeground",
+                "editorTextAction.background",
+                "editorTextAction.iconForeground",
+                "editorHardWrapMarker.foreground",
+                "editorSnippet.activeBackground",
+                "editorSnippet.relatedBackground",
+                "editorSnippet.inactiveBackground",
+                "editorUnderline.foreground",
+                "editorStrikethrough.foreground",
+                "editorLineDivider.foreground",
+                "editorStaticSpan.background",
+                "editorStaticSpan.foreground",
+                "editorFunctionChar.border"
+            )
+        )
+    ).onEach { group -> used_keys += group.items.map { item -> item.key } }
+
+    val other_items = items.filterNot { item -> item.key in used_keys }
+    return if (other_items.isEmpty()) {
+        groups
+    } else {
+        groups + editor_theme_color_group("其他", other_items)
     }
 }
 
@@ -352,12 +453,6 @@ private fun editor_theme_preview_card(preview_palette: editor_theme_preview_pale
                     color = foreground,
                     modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = stringResource(R.string.editor_theme_preview_hint),
-                    fontSize = 9.sp,
-                    color = foreground.copy(alpha = 0.62f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
                         .size(width = 42.dp, height = 5.dp)
@@ -371,8 +466,7 @@ private fun editor_theme_preview_card(preview_palette: editor_theme_preview_pale
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val page_width = this.maxWidth
                 Row(
-                    modifier = Modifier
-                        .horizontalScroll(scroll_state)
+                    modifier = Modifier.horizontalScroll(scroll_state)
                 ) {
                     editor_theme_cpp_preview_page(
                         preview_palette = preview_palette,
@@ -389,23 +483,109 @@ private fun editor_theme_preview_card(preview_palette: editor_theme_preview_pale
 }
 
 @Composable
+private fun editor_theme_markdown_preview_page(
+    preview_palette: editor_theme_preview_palette,
+    modifier: Modifier = Modifier
+) {
+    editor_theme_preview_code_page(
+        title = "Markdown",
+        preview_palette = preview_palette,
+        modifier = modifier
+    ) { line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor ->
+        editor_theme_preview_line("1", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("##", preview_palette.punctuation)
+            append_plain(" CMake", preview_palette.type)
+        }
+        editor_theme_preview_line("2", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("```", preview_palette.punctuation)
+            append_token("cmake", preview_palette.property)
+        }
+        editor_theme_preview_line("3", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("project", preview_palette.function)
+            append_token("(", preview_palette.punctuation)
+            append_token("XCode", preview_palette.string)
+            append_plain(" ", preview_palette.foreground)
+            append_token("LANGUAGES", preview_palette.keyword)
+            append_plain(" ", preview_palette.foreground)
+            append_token("C", preview_palette.constant)
+            append_plain(" ", preview_palette.foreground)
+            append_token("CXX", preview_palette.constant)
+            append_token(")", preview_palette.punctuation)
+        }
+        editor_theme_preview_line("4", true, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("target_link_libraries", preview_palette.function)
+            append_token("(", preview_palette.punctuation)
+            append_token("app", preview_palette.string)
+            append_plain(" ", preview_palette.foreground)
+            append_token("PRIVATE", preview_palette.keyword)
+            append_plain(" ", preview_palette.foreground)
+            append_token("log", preview_palette.string)
+            append_token(")", preview_palette.punctuation)
+        }
+        editor_theme_preview_line("5", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("```", preview_palette.punctuation)
+            append_plain("  ", preview_palette.foreground)
+            append_token("##", preview_palette.punctuation)
+            append_plain(" C++", preview_palette.type)
+        }
+        editor_theme_preview_line("6", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("```", preview_palette.punctuation)
+            append_token("cpp", preview_palette.property)
+        }
+        editor_theme_preview_line("7", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("class", preview_palette.keyword)
+            append_plain(" ", preview_palette.foreground)
+            append_token("Painter", preview_palette.type)
+            append_plain(" { ", preview_palette.punctuation)
+            append_token("void", preview_palette.type_builtin)
+            append_plain(" ", preview_palette.foreground)
+            append_token("draw", preview_palette.function)
+            append_token("(", preview_palette.punctuation)
+            append_token("int", preview_palette.type_builtin)
+            append_plain(" count", preview_palette.foreground)
+            append_token(");", preview_palette.punctuation)
+            append_plain(" };", preview_palette.punctuation)
+        }
+        editor_theme_preview_line("8", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("```", preview_palette.punctuation)
+            append_plain("  ", preview_palette.foreground)
+            append_token("##", preview_palette.punctuation)
+            append_plain(" C", preview_palette.type)
+        }
+        editor_theme_preview_line("9", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("```", preview_palette.punctuation)
+            append_token("c", preview_palette.property)
+            append_plain(" int ", preview_palette.type_builtin)
+            append_token("main", preview_palette.function)
+            append_token("()", preview_palette.punctuation)
+            append_plain(" { ", preview_palette.punctuation)
+            append_token("return", preview_palette.keyword)
+            append_plain(" ", preview_palette.foreground)
+            append_token("0", preview_palette.number)
+            append_token(";", preview_palette.punctuation)
+            append_plain(" } ", preview_palette.punctuation)
+            append_token("```", preview_palette.punctuation)
+        }
+    }
+}
+
+@Composable
 private fun editor_theme_cpp_preview_page(
     preview_palette: editor_theme_preview_palette,
     modifier: Modifier = Modifier
 ) {
     editor_theme_preview_code_page(
-        title = "C++",
+        title = "C/C++",
         preview_palette = preview_palette,
         modifier = modifier
     ) { line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor ->
         editor_theme_preview_line("1", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
-            append_token("#include", preview_palette.keyword)
-            append_token(" <", preview_palette.punctuation)
-            append_token("vector", preview_palette.type)
-            append_token(">", preview_palette.punctuation)
+            append_token("#include", preview_palette.keyword_directive)
+            append_plain(" ", preview_palette.foreground)
+            append_token("\"graphics_manager.h\"", preview_palette.string_special)
         }
         editor_theme_preview_line("2", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
-            append_token("#define", preview_palette.keyword)
+            append_token("#define", preview_palette.keyword_directive)
             append_plain(" ", preview_palette.foreground)
             append_token("MAX_COUNT", preview_palette.constant)
             append_plain(" ", preview_palette.foreground)
@@ -414,7 +594,7 @@ private fun editor_theme_cpp_preview_page(
         editor_theme_preview_line("3", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
             append_token("namespace", preview_palette.keyword)
             append_plain(" ", preview_palette.foreground)
-            append_token("demo", preview_palette.type)
+            append_token("demo", preview_palette.namespace)
             append_plain(" ", preview_palette.foreground)
             append_token("{", preview_palette.punctuation)
         }
@@ -433,15 +613,16 @@ private fun editor_theme_cpp_preview_page(
             append_token("(", preview_palette.punctuation)
             append_token("const", preview_palette.keyword)
             append_plain(" ", preview_palette.foreground)
-            append_token("std", preview_palette.type)
+            append_token("std", preview_palette.namespace)
             append_token("::", preview_palette.operator)
-            append_token("string", preview_palette.type)
-            append_token("& path", preview_palette.foreground)
+            append_token("string", preview_palette.type_builtin)
+            append_token("& ", preview_palette.operator)
+            append_token("path", preview_palette.foreground)
             append_token(")", preview_palette.punctuation)
         }
         editor_theme_preview_line("6", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
             append_plain("  ", preview_palette.foreground)
-            append_token("auto", preview_palette.keyword)
+            append_token("auto", preview_palette.type_builtin)
             append_plain(" count ", preview_palette.foreground)
             append_token("=", preview_palette.operator)
             append_plain(" ", preview_palette.foreground)
@@ -454,7 +635,30 @@ private fun editor_theme_cpp_preview_page(
         }
         editor_theme_preview_line("7", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
             append_plain("  ", preview_palette.foreground)
-            append_token("// Load texture file", preview_palette.comment)
+            append_token("custom", preview_palette.namespace)
+            append_token("::", preview_palette.operator)
+            append_token("Separator_line", preview_palette.function)
+            append_token("();", preview_palette.punctuation)
+        }
+        editor_theme_preview_line("8", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_plain("  ", preview_palette.foreground)
+            append_token("ImGui", preview_palette.namespace)
+            append_token("::", preview_palette.operator)
+            append_token("Bullet", preview_palette.function)
+            append_token("();", preview_palette.punctuation)
+        }
+        editor_theme_preview_line("9", false, line_number_color, active_line_number_color, line_highlight, selection, block_line, indent_line, cursor) {
+            append_token("int", preview_palette.type_builtin)
+            append_plain(" ", preview_palette.foreground)
+            append_token("main", preview_palette.function)
+            append_token("()", preview_palette.punctuation)
+            append_plain(" { ", preview_palette.punctuation)
+            append_token("return", preview_palette.keyword)
+            append_plain(" ", preview_palette.foreground)
+            append_token("0", preview_palette.number)
+            append_token(";", preview_palette.punctuation)
+            append_plain(" } ", preview_palette.punctuation)
+            append_token("// C", preview_palette.comment)
         }
     }
 }
@@ -627,7 +831,7 @@ private fun editor_theme_subtitle(title: String) {
         text = title,
         fontSize = 10.sp,
         fontWeight = FontWeight.SemiBold,
-        color = colors.card_text_subtitle,
+        color = colors.title_highlight,
         modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
     )
 }

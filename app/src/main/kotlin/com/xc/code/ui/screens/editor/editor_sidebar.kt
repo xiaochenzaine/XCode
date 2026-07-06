@@ -27,6 +27,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
@@ -38,6 +39,7 @@ import androidx.fragment.app.FragmentActivity
 import com.xc.code.project_file_tree.project_file_tree_colors
 import com.xc.code.R
 import com.xc.code.ui.theme.app_theme_provider
+import com.xc.code.ui.theme.app_colors
 import me.rerere.rikkahub.RouteFragment
 
 private data class editor_tool_item(
@@ -51,6 +53,7 @@ fun editor_sidebar(
     drawer_offset_px: Int,
     selected_tool: Int,
     project_root_path: String,
+    agent_conversation_id: String,
     file_nodes: List<editor_file_node>,
     expanded_paths: Set<String>,
     file_tree_loading: Boolean,
@@ -69,7 +72,8 @@ fun editor_sidebar(
     on_directory_click: (String) -> Unit,
     on_file_click: (String) -> Unit,
     on_file_position_click: (String, Int, Int) -> Unit,
-    on_drag: (Offset) -> Unit
+    on_drag: (Offset) -> Unit,
+    on_close: () -> Unit
 ) {
 
     val colors = app_theme_provider.colors
@@ -91,48 +95,13 @@ fun editor_sidebar(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-                Row(
+                sidebar_capsule_tool_bar(
+                    tools = tools,
+                    selected_tool = selected_tool,
+                    colors = colors,
+                    on_tool_selected = on_tool_selected,
+                    on_close = on_close,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 40.dp)
-                        .heightIn(min = 48.dp)
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    tools.forEachIndexed { index, tool ->
-                        val selected = selected_tool == index
-                        Box(
-                            modifier = Modifier
-                                .size(width = 48.dp, height = 38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (selected) colors.editor_sidebar_selected_bg else Color.Transparent)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple(bounded = true),
-                                    onClick = {
-                                        if (!selected) on_tool_selected(index)
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = tool.icon,
-                                contentDescription = tool.label,
-                                tint = if (selected) colors.editor_icon else colors.editor_hint,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 16.dp),
-                    color = colors.editor_divider,
-                    thickness = 0.5.dp
                 )
 
                 when (selected_tool) {
@@ -153,9 +122,12 @@ fun editor_sidebar(
                         colors = project_file_tree_colors(
                             dialog_bg = colors.dialog_bg,
                             editor_button_bg = colors.editor_button_bg,
+                            editor_capsule_bg = colors.editor_capsule_bg,
                             editor_divider = colors.editor_divider,
                             editor_hint = colors.editor_hint,
                             editor_icon = colors.editor_icon,
+                            editor_file_tree_folder_icon = colors.editor_file_tree_folder_icon,
+                            editor_file_tree_action_icon = colors.editor_file_tree_action_icon,
                             editor_text = colors.editor_text,
                             danger = colors.danger,
                             danger_bg = colors.danger_bg
@@ -167,7 +139,11 @@ fun editor_sidebar(
                         on_apply = on_project_config_apply,
                         modifier = Modifier.fillMaxSize()
                     )
-                    2 -> editor_agent_panel(modifier = Modifier.fillMaxSize())
+                    2 -> editor_agent_panel(
+                        project_root_path = project_root_path,
+                        conversation_id = agent_conversation_id,
+                        modifier = Modifier.fillMaxSize()
+                    )
                     3 -> editor_settings_panel(
                         settings = editor_settings,
                         on_settings_change = on_editor_settings_change,
@@ -201,7 +177,118 @@ fun editor_sidebar(
 
 
 @Composable
-private fun editor_agent_panel(modifier: Modifier = Modifier) {
+private fun sidebar_capsule_tool_bar(
+    tools: List<editor_tool_item>,
+    selected_tool: Int,
+    colors: app_colors,
+    on_tool_selected: (Int) -> Unit,
+    on_close: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+            .height(50.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = colors.editor_capsule_bg,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            IconButton(
+                onClick = {},
+                enabled = false,
+                modifier = Modifier.size(30.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = null,
+                    tint = colors.editor_capsule_icon,
+                    modifier = Modifier.size(21.dp)
+                )
+            }
+
+            sidebar_capsule_vertical_divider(colors)
+
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                tools.forEachIndexed { index, tool ->
+                    val selected = selected_tool == index
+                    Box(
+                        modifier = Modifier
+                            .size(width = 44.dp, height = 36.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                if (selected) colors.editor_sidebar_selected_bg
+                                else Color.Transparent
+                            )
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(bounded = true),
+                                onClick = {
+                                    if (!selected) on_tool_selected(index)
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = tool.icon,
+                            contentDescription = tool.label,
+                            tint = if (selected) {
+                                colors.editor_icon
+                            } else {
+                                colors.editor_hint.copy(alpha = 0.72f)
+                            },
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+
+            sidebar_capsule_vertical_divider(colors)
+
+            IconButton(
+                onClick = on_close,
+                modifier = Modifier.size(30.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = colors.editor_capsule_icon,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun sidebar_capsule_vertical_divider(colors: app_colors) {
+    Box(
+        modifier = Modifier
+            .width(1.dp)
+            .height(18.dp)
+            .background(colors.editor_capsule_divider)
+    )
+}
+
+
+@Composable
+private fun editor_agent_panel(project_root_path: String, conversation_id: String, modifier: Modifier = Modifier) {
+    val embedded_background_color = app_theme_provider.colors.editor_bg.toArgb()
+
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -219,9 +306,17 @@ private fun editor_agent_panel(modifier: Modifier = Modifier) {
                 view.post {
                     if (activity.isFinishing || activity.isDestroyed) return@post
                     if (activity.supportFragmentManager.findFragmentById(view.id) != null) return@post
+                    val fragment = RouteFragment().apply {
+                        arguments = android.os.Bundle().apply {
+                            putString("host_project_root_path", project_root_path)
+                            putString("host_initial_workspace_cwd", "/workspace/XCodeProjects/${java.io.File(project_root_path).name}")
+                            putString("host_conversation_id", conversation_id)
+                            putInt("host_embedded_background_color", embedded_background_color)
+                        }
+                    }
                     activity.supportFragmentManager
                         .beginTransaction()
-                        .replace(view.id, RouteFragment())
+                        .replace(view.id, fragment)
                         .commitAllowingStateLoss()
                 }
             }

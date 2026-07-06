@@ -28,6 +28,7 @@ import android.util.Log
 import androidx.annotation.WorkerThread
 import io.github.rosemoe.sora.lsp.client.DefaultLanguageClient
 import io.github.rosemoe.sora.lsp.client.ServerWrapperBaseClientContext
+import io.github.rosemoe.sora.lsp.client.languageserver.LspFeature
 import io.github.rosemoe.sora.lsp.client.languageserver.ServerStatus
 import io.github.rosemoe.sora.lsp.client.languageserver.ShutdownReason
 import io.github.rosemoe.sora.lsp.client.languageserver.requestmanager.DefaultRequestManager
@@ -369,6 +370,17 @@ class LanguageServerWrapper(
             synchronization =
                 SynchronizationCapabilities(true, true, true)
             publishDiagnostics = PublishDiagnosticsCapabilities(true)
+            // clangd 的精确语义高亮需要客户端声明 semanticTokens 能力。
+            // 空 capability 对 clangd 不够完整：需要声明 full/range、tokenTypes、tokenModifiers 和 relative 格式。
+            // 这里仍用反射，避免不同 lsp4j 小版本构造函数/类名差异导致源码不兼容。
+            if (LspFeature.SemanticTokens !in serverDefinition.disabledFeatures) {
+                runCatching {
+                    javaClass.methods.firstOrNull { it.name == "setSemanticTokens" }
+                        ?.invoke(this, createSemanticTokensCapability())
+                }.onFailure {
+                    Log.w(TAG, "Failed to create semanticTokens client capability", it)
+                }
+            }
         }
 
         initParams.apply {
@@ -382,6 +394,61 @@ class LanguageServerWrapper(
                 serverDefinition.getInitializationOptions(URI.create(initParams.rootUri))
         }
         return initParams
+    }
+
+
+    private fun createSemanticTokensCapability(): Any {
+        val capability = newInstance(
+            "org.eclipse.lsp4j.SemanticTokensCapabilities",
+            "org.eclipse.lsp4j.SemanticTokensClientCapabilities"
+        )
+
+        newInstanceOrNull("org.eclipse.lsp4j.SemanticTokensClientCapabilitiesRequests")?.let { requests ->
+            setByName(requests, "setFull", true)
+            setByName(requests, "setRange", true)
+            setByName(capability, "setRequests", requests)
+        }
+
+        setByName(
+            capability,
+            "setTokenTypes",
+            listOf(
+                "namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter",
+                "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword",
+                "modifier", "comment", "string", "number", "regexp", "operator", "decorator"
+            )
+        )
+        setByName(
+            capability,
+            "setTokenModifiers",
+            listOf(
+                "declaration", "definition", "readonly", "static", "deprecated", "abstract", "async",
+                "modification", "documentation", "defaultLibrary"
+            )
+        )
+        setByName(capability, "setFormats", listOf("relative"))
+        setByName(capability, "setMultilineTokenSupport", true)
+        setByName(capability, "setOverlappingTokenSupport", true)
+        setByName(capability, "setServerCancelSupport", true)
+        setByName(capability, "setAugmentsSyntaxTokens", true)
+        return capability
+    }
+
+    private fun newInstance(vararg classNames: String): Any {
+        return classNames.firstNotNullOfOrNull { name ->
+            newInstanceOrNull(name)
+        } ?: throw ClassNotFoundException(classNames.joinToString())
+    }
+
+    private fun newInstanceOrNull(className: String): Any? {
+        return runCatching {
+            Class.forName(className).getDeclaredConstructor().newInstance()
+        }.getOrNull()
+    }
+
+    private fun setByName(target: Any, methodName: String, value: Any) {
+        target.javaClass.methods.firstOrNull { it.name == methodName && it.parameterTypes.size == 1 }
+            ?.invoke(target, value)
     }
 
     fun crashed(e: Exception) {

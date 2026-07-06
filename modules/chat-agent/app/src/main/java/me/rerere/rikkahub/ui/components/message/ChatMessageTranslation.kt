@@ -69,7 +69,7 @@ fun LanguageSelectionDialog(
             Locale.KOREAN,
             Locale.FRENCH,
             Locale.GERMAN,
-            Locale.forLanguageTag("es-ES"),
+            Locale("es", "ES"),
             Locale.ITALIAN,
         )
     }
@@ -86,7 +86,7 @@ fun LanguageSelectionDialog(
             Locale.FRENCH -> stringResource(R.string.language_french)
             Locale.GERMAN -> stringResource(R.string.language_german)
             Locale.ITALIAN -> stringResource(R.string.language_italian)
-            Locale.forLanguageTag("es-ES") -> stringResource(R.string.language_spanish)
+            Locale("es", "ES") -> stringResource(R.string.language_spanish)
             else -> locale.getDisplayLanguage(Locale.getDefault())
         }
     }

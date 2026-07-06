@@ -29,4 +29,5 @@ enum class LspFeature {
     InlayHint, CodeAction, Formatting, DocumentHighlight,
     Folding, Rename, DocumentSymbol, DocumentLink, DocumentColor,
     Definition, TypeDefinition, Implementation, References, CodeLens,
+    SemanticTokens,
 }

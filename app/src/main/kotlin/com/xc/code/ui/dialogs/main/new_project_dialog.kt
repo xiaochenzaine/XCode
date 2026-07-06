@@ -63,8 +63,9 @@ fun new_project_dialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val colors = app_theme_provider.colors
-    val sheet_state = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
+    val sheet_state = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
     )
     var current_step by remember { mutableIntStateOf(0) }
     var selected_template by remember { mutableStateOf("executable") }
