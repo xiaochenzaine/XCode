@@ -3,10 +3,9 @@ package com.xc.code.ui.screens.editor
 import com.xc.code.editor.model.editor_file_node
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -42,6 +41,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
@@ -593,7 +593,6 @@ private fun file_tree_tool_button(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun file_tree_row(
     node: editor_file_node,
@@ -613,11 +612,11 @@ private fun file_tree_row(
     on_request_delete: () -> Unit
 ) {
     val file_icon_res = editor_file_icon_res(node.name)
-    val icon_tint = if (node.is_directory) colors.editor_icon else colors.editor_hint
     val indent_width = if (node.depth > 0) (node.depth * 24).dp else 8.dp
     val icon_gap = 8.dp
     val icon_slot_width = if (node.is_directory) 41.dp else 34.dp
     val icon_size = 18.dp
+    val density = LocalDensity.current
     val node_type_name = if (node.is_directory) {
         stringResource(R.string.project_file_tree_type_folder)
     } else {
@@ -629,17 +628,26 @@ private fun file_tree_row(
             ?: stringResource(R.string.project_file_tree_type_file)
     }
     var menu_expanded by remember { mutableStateOf(false) }
+    var menu_anchor_offset by remember { mutableStateOf(DpOffset(180.dp, 20.dp)) }
     val row_click_modifier = if (editing) {
         Modifier
     } else {
-        Modifier.combinedClickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = ripple(bounded = true),
-            onClick = on_click,
-            onLongClick = {
-                if (node.depth > 0) menu_expanded = true
-            }
-        )
+        Modifier.pointerInput(node.path, node.depth) {
+            detectTapGestures(
+                onTap = { on_click() },
+                onLongPress = { position ->
+                    if (node.depth > 0) {
+                        menu_anchor_offset = with(density) {
+                            DpOffset(
+                                x = position.x.toDp(),
+                                y = position.y.toDp()
+                            )
+                        }
+                        menu_expanded = true
+                    }
+                }
+            )
+        }
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -653,178 +661,178 @@ private fun file_tree_row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-        Box(
-            modifier = Modifier
-                .width(indent_width + icon_gap + icon_slot_width)
-                .fillMaxHeight()
-        ) {
-            if (node.depth > 0) {
-                Canvas(modifier = Modifier.matchParentSize()) {
-                    val stroke = 1.dp.toPx()
-                    val row_center_y = size.height / 2f
-                    val line_step = 28.dp.toPx()
-                    val half_step = 12.dp.toPx()
-                    val curve = 8.dp.toPx()
-                    val file_icon_start_x = indent_width.toPx() + icon_gap.toPx() + icon_slot_width.toPx() - icon_size.toPx()
-                    val connector_end_x = if (node.is_directory) {
-                        node.depth * line_step
-                    } else {
-                        file_icon_start_x
-                    }
+            Box(
+                modifier = Modifier
+                    .width(indent_width + icon_gap + icon_slot_width)
+                    .fillMaxHeight()
+            ) {
+                if (node.depth > 0) {
+                    Canvas(modifier = Modifier.matchParentSize()) {
+                        val stroke = 1.dp.toPx()
+                        val row_center_y = size.height / 2f
+                        val line_step = 28.dp.toPx()
+                        val half_step = 12.dp.toPx()
+                        val curve = 8.dp.toPx()
+                        val file_icon_start_x = indent_width.toPx() + icon_gap.toPx() + icon_slot_width.toPx() - icon_size.toPx()
+                        val connector_end_x = if (node.is_directory) {
+                            node.depth * line_step
+                        } else {
+                            file_icon_start_x
+                        }
 
-                    node.tree_guides.forEachIndexed { level, has_more_siblings ->
-                        val center_x = level * line_step + half_step
-                        val is_current_level = level == node.tree_guides.lastIndex
-                        if (is_current_level) {
-                            if (has_more_siblings) {
+                        node.tree_guides.forEachIndexed { level, has_more_siblings ->
+                            val center_x = level * line_step + half_step
+                            val is_current_level = level == node.tree_guides.lastIndex
+                            if (is_current_level) {
+                                if (has_more_siblings) {
+                                    drawLine(
+                                        color = colors.editor_divider,
+                                        start = Offset(center_x, 0f),
+                                        end = Offset(center_x, size.height),
+                                        strokeWidth = stroke
+                                    )
+                                    drawLine(
+                                        color = colors.editor_divider,
+                                        start = Offset(center_x, row_center_y),
+                                        end = Offset(connector_end_x, row_center_y),
+                                        strokeWidth = stroke
+                                    )
+                                } else {
+                                    val curve_start_y = (row_center_y - curve).coerceAtLeast(0f)
+                                    drawLine(
+                                        color = colors.editor_divider,
+                                        start = Offset(center_x, 0f),
+                                        end = Offset(center_x, curve_start_y),
+                                        strokeWidth = stroke
+                                    )
+                                    val path = Path().apply {
+                                        moveTo(center_x, curve_start_y)
+                                        quadraticTo(
+                                            center_x,
+                                            row_center_y,
+                                            center_x + curve,
+                                            row_center_y
+                                        )
+                                        lineTo(connector_end_x, row_center_y)
+                                    }
+                                    drawPath(
+                                        path = path,
+                                        color = colors.editor_divider,
+                                        style = Stroke(
+                                            width = stroke,
+                                            cap = StrokeCap.Round,
+                                            join = StrokeJoin.Round
+                                        )
+                                    )
+                                }
+                            } else if (has_more_siblings) {
                                 drawLine(
                                     color = colors.editor_divider,
                                     start = Offset(center_x, 0f),
                                     end = Offset(center_x, size.height),
                                     strokeWidth = stroke
                                 )
-                                drawLine(
-                                    color = colors.editor_divider,
-                                    start = Offset(center_x, row_center_y),
-                                    end = Offset(connector_end_x, row_center_y),
-                                    strokeWidth = stroke
-                                )
-                            } else {
-                                val curve_start_y = (row_center_y - curve).coerceAtLeast(0f)
-                                drawLine(
-                                    color = colors.editor_divider,
-                                    start = Offset(center_x, 0f),
-                                    end = Offset(center_x, curve_start_y),
-                                    strokeWidth = stroke
-                                )
-                                val path = Path().apply {
-                                    moveTo(center_x, curve_start_y)
-                                    quadraticTo(
-                                        center_x,
-                                        row_center_y,
-                                        center_x + curve,
-                                        row_center_y
-                                    )
-                                    lineTo(connector_end_x, row_center_y)
-                                }
-                                drawPath(
-                                    path = path,
-                                    color = colors.editor_divider,
-                                    style = Stroke(
-                                        width = stroke,
-                                        cap = StrokeCap.Round,
-                                        join = StrokeJoin.Round
-                                    )
-                                )
                             }
-                        } else if (has_more_siblings) {
-                            drawLine(
-                                color = colors.editor_divider,
-                                start = Offset(center_x, 0f),
-                                end = Offset(center_x, size.height),
-                                strokeWidth = stroke
-                            )
                         }
                     }
                 }
-            }
 
-            if (node.is_directory) {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = colors.editor_hint,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = indent_width + icon_gap)
-                        .size(16.dp)
-                )
-                Icon(
-                    painter = painterResource(if (expanded) R.drawable.ic_folder_opened else R.drawable.ic_folder),
-                    contentDescription = null,
-                    tint = colors.editor_file_tree_folder_icon,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .size(icon_size)
-                )
-            } else {
-                Icon(
-                    painter = painterResource(file_icon_res),
-                    contentDescription = null,
-                    tint = Color.Unspecified,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .size(icon_size)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        if (editing) {
-            file_tree_inline_rename_field(
-                value = editing_name,
-                on_value_change = on_editing_name_change,
-                on_done = on_confirm_rename,
-                on_cancel = on_cancel_rename,
-                on_bounds_change = on_rename_field_bounds_change,
-                colors = colors
-            )
-        } else {
-            Text(
-                text = node.name,
-                color = colors.editor_text,
-                fontSize = 13.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 180.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            if (node.is_directory) {
-                file_tree_child_count(count = node.child_count, colors = colors)
-            } else {
-                file_tree_file_meta(size = node.file_size, colors = colors)
-            }
-        }
-
-        if (node.is_directory && expanded) {
-            Spacer(modifier = Modifier.width(22.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                file_tree_tool_button(on_click = { on_new_folder(node.path) }, colors = colors) {
+                if (node.is_directory) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_new_folder),
-                        contentDescription = stringResource(R.string.project_file_tree_new_folder_here),
+                        imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = colors.editor_hint,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .offset(x = indent_width + icon_gap)
+                            .size(16.dp)
+                    )
+                    Icon(
+                        painter = painterResource(if (expanded) R.drawable.ic_folder_opened else R.drawable.ic_folder),
+                        contentDescription = null,
                         tint = colors.editor_file_tree_folder_icon,
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(icon_size)
                     )
-                }
-                file_tree_tool_button(on_click = { on_new_file(node.path) }, colors = colors) {
+                } else {
                     Icon(
-                        painter = painterResource(R.drawable.ic_new_file),
-                        contentDescription = stringResource(R.string.project_file_tree_new_file_here),
-                        tint = colors.editor_hint,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-                file_tree_tool_button(on_click = { on_refresh(node.path) }, colors = colors) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_refresh),
-                        contentDescription = stringResource(R.string.project_file_tree_refresh_folder),
-                        tint = colors.editor_hint,
-                        modifier = Modifier.size(15.dp)
+                        painter = painterResource(file_icon_res),
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(icon_size)
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            if (editing) {
+                file_tree_inline_rename_field(
+                    value = editing_name,
+                    on_value_change = on_editing_name_change,
+                    on_done = on_confirm_rename,
+                    on_cancel = on_cancel_rename,
+                    on_bounds_change = on_rename_field_bounds_change,
+                    colors = colors
+                )
+            } else {
+                Text(
+                    text = node.name,
+                    color = colors.editor_text,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 180.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                if (node.is_directory) {
+                    file_tree_child_count(count = node.child_count, colors = colors)
+                } else {
+                    file_tree_file_meta(size = node.file_size, colors = colors)
+                }
+            }
+
+            if (node.is_directory && expanded) {
+                Spacer(modifier = Modifier.width(22.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    file_tree_tool_button(on_click = { on_new_folder(node.path) }, colors = colors) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_new_folder),
+                            contentDescription = stringResource(R.string.project_file_tree_new_folder_here),
+                            tint = colors.editor_file_tree_folder_icon,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                    file_tree_tool_button(on_click = { on_new_file(node.path) }, colors = colors) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_new_file),
+                            contentDescription = stringResource(R.string.project_file_tree_new_file_here),
+                            tint = colors.editor_hint,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                    file_tree_tool_button(on_click = { on_refresh(node.path) }, colors = colors) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_refresh),
+                            contentDescription = stringResource(R.string.project_file_tree_refresh_folder),
+                            tint = colors.editor_hint,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
+            }
         }
-    }
 
         Box(
             modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset(x = 180.dp)
+                .align(Alignment.TopStart)
+                .offset(x = menu_anchor_offset.x, y = menu_anchor_offset.y)
                 .size(1.dp)
         ) {
             DropdownMenu(
@@ -832,58 +840,58 @@ private fun file_tree_row(
                 onDismissRequest = { menu_expanded = false },
                 offset = DpOffset(x = 0.dp, y = 2.dp)
             ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(min = 190.dp, max = 280.dp)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(
-                    text = node.name,
-                    color = colors.editor_text,
-                    fontSize = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = node_type_name,
-                    color = colors.editor_hint,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.project_file_tree_rename)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.DriveFileRenameOutline,
-                        contentDescription = null,
-                        tint = colors.editor_file_tree_action_icon,
-                        modifier = Modifier.size(18.dp)
+                Column(
+                    modifier = Modifier
+                        .widthIn(min = 190.dp, max = 280.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        text = node.name,
+                        color = colors.editor_text,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                },
-                onClick = {
-                    menu_expanded = false
-                    on_request_rename()
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.project_file_tree_delete)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = null,
-                        tint = colors.danger,
-                        modifier = Modifier.size(18.dp)
+                    Text(
+                        text = node_type_name,
+                        color = colors.editor_hint,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                },
-                onClick = {
-                    menu_expanded = false
-                    on_request_delete()
                 }
-            )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.project_file_tree_rename)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.DriveFileRenameOutline,
+                            contentDescription = null,
+                            tint = colors.editor_file_tree_action_icon,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    onClick = {
+                        menu_expanded = false
+                        on_request_rename()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.project_file_tree_delete)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = colors.danger,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    onClick = {
+                        menu_expanded = false
+                        on_request_delete()
+                    }
+                )
             }
         }
     }

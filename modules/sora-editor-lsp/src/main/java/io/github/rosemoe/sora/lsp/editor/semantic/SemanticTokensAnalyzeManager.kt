@@ -17,7 +17,7 @@ import java.lang.ref.WeakReference
 import java.util.TreeSet
 
 /**
- * 在 TextMate 结果之上叠加 clangd semantic tokens。
+ * 在基础高亮结果之上叠加 clangd semantic tokens。
  */
 class SemanticTokensAnalyzeManager(
     private val base: AnalyzeManager,

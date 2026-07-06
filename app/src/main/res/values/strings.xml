@@ -314,7 +314,7 @@
     <string name="editor_quick_palette">快捷色板</string>
     <string name="editor_alpha">透明度</string>
     <string name="editor_reset_colors">恢复默认颜色</string>
-    <string name="editor_reset_colors_desc">会把编辑器颜色恢复为 assets/textmate/themes/xcode.json 的默认值。</string>
+    <string name="editor_reset_colors_desc">会把编辑器颜色恢复为内置默认主题。</string>
     <string name="common_restore">恢复</string>
     <string name="editor_theme_color_settings">颜色设置</string>
     <string name="editor_theme_colors">编辑器颜色</string>

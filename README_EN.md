@@ -10,7 +10,7 @@ XCode is an Android C/C++ IDE focused on local development on mobile devices. It
 - CMake and Ninja project configure/build workflow
 - PRoot-based Linux toolchain runtime integration
 - clangd language server support for completion, signature help, symbol highlight, diagnostics, hover, and formatting
-- Tree-sitter based syntax highlighting, replacing legacy TextMate assets with semantic highlighting overlay support
+- Tree-sitter based syntax highlighting with semantic highlighting overlay support
 - Sora-based code editor with tabs, file tree, search, editor settings, and shortcut symbol bar
 - Unified capsule-style editor top bar, sidebar toolbar, file search box, and output panel
 - Output panel for configure/build/toolchain logs with a custom build status animation
@@ -42,8 +42,6 @@ XCode/
 ├── modules/clangd-lsp/          clangd language server bridge
 ├── modules/sora-editor/         Sora editor module
 ├── modules/sora-editor-lsp/     Sora LSP integration
-├── modules/sora-language-textmate/
-├── modules/sora-oniguruma-native/
 └── modules/terminal-*/          XCode native terminal modules
 ```
 

@@ -92,12 +92,12 @@ class LspLanguage(var editor: LspEditor) : Language {
             editorProvider = { editor.editor },
             onBaseStylesReady = {
                 // 用户现在通过“编辑一下内容”才能触发 clangd 语义颜色，根因是 didOpen 后请求太早。
-                // 等 TextMate 首次基础高亮真正进入编辑器后，再主动请求 clangd semantic tokens。
+                // 等基础高亮首次真正进入编辑器后，再主动请求 clangd semantic tokens。
                 editor.requestSemanticTokensWithRetry()
             }
         ).also { manager ->
             semanticAnalyzeManager = manager
-            // semanticTokens 可能比 TextMate AnalyzeManager 更早返回。
+            // semanticTokens 可能比基础高亮 AnalyzeManager 更早返回。
             // 这里把之前收到的 token 补给新 manager，避免必须手动刷新 clangd 才有语义颜色。
             if (pendingSemanticTokens.isNotEmpty()) {
                 manager.updateSemanticTokens(pendingSemanticTokens)

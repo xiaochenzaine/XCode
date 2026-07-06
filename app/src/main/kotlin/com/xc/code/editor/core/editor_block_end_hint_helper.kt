@@ -59,7 +59,7 @@ private fun CodeBlock.to_block_end_hint_candidate(lines: List<String>): block_en
 }
 
 private fun block_end_hint_line(lines: List<String>, block_end_line: Int): Int? {
-    // TextMate folding 的 endLine 指向折叠内容最后一行，实际右花括号通常在下一行。
+    // 基础 folding 的 endLine 可能指向折叠内容最后一行，实际右花括号通常在下一行。
     val next_line = block_end_line + 1
     if (next_line in lines.indices && lines[next_line].substringBefore("//").trimStart().startsWith("}")) {
         return next_line

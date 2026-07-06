@@ -314,7 +314,7 @@
     <string name="editor_quick_palette">Quick palette</string>
     <string name="editor_alpha">Alpha</string>
     <string name="editor_reset_colors">Reset colors</string>
-    <string name="editor_reset_colors_desc">Reset editor colors to defaults from assets/textmate/themes/xcode.json.</string>
+    <string name="editor_reset_colors_desc">Reset editor colors to the built-in default theme.</string>
     <string name="common_restore">Restore</string>
     <string name="editor_theme_color_settings">Color Settings</string>
     <string name="editor_theme_colors">Editor Colors</string>
