@@ -25,11 +25,6 @@ object SettingsJsonMigrator {
         return runCatching {
             val root = JsonInstant.parseToJsonElement(settingsJson).jsonObject.toMutableMap()
 
-            // V1: 修复 mcpServers 中全限定类名的 type 字段
-            root["mcpServers"]?.let { element ->
-                val migrated = migrateMcpServersJson(JsonInstant.encodeToString(element))
-                root["mcpServers"] = JsonInstant.parseToJsonElement(migrated)
-            }
 
             // V2: 修复 assistants 中 UIMessagePart 的 type 字段
             root["assistants"]?.let { element ->

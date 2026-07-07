@@ -71,24 +71,18 @@ import me.rerere.rikkahub.data.db.DatabaseMigrationTracker
 import me.rerere.rikkahub.data.db.MigrationState
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.ui.components.ui.TTSController
-import me.rerere.rikkahub.ui.context.LocalASRState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalSharedTransitionScope
-import me.rerere.rikkahub.ui.context.LocalTTSState
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.rikkahub.ui.hooks.readStringPreference
-import me.rerere.rikkahub.ui.hooks.rememberCustomAsrState
-import me.rerere.rikkahub.ui.hooks.rememberCustomTtsState
 import me.rerere.rikkahub.ui.pages.assistant.AssistantPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantBasicPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantExtensionsPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantLocalToolPage
-import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantMcpPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantMemoryPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantRequestPage
@@ -105,13 +99,11 @@ import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspacePage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceTerminalPage
 import me.rerere.rikkahub.ui.pages.favorite.FavoritePage
 import me.rerere.rikkahub.ui.pages.history.HistoryPage
-import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
 import me.rerere.rikkahub.ui.pages.log.LogPage
 import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
-import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
 import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
@@ -122,10 +114,8 @@ import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchPage
-import me.rerere.rikkahub.ui.pages.setting.SettingSpeechPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.stats.StatsPage
-import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.ui.theme.LocalEmbeddedBackground
@@ -230,6 +220,12 @@ class RouteFragment : Fragment() {
             ?.takeIf { it.isNotBlank() }
     }
 
+    private fun chatInputDraftKey(conversationId: String): String? {
+        val projectRootPath = arguments?.getString("host_project_root_path")?.takeIf { it.isNotBlank() }
+            ?: return null
+        return "editor_agent:$projectRootPath:$conversationId"
+    }
+
     private fun embeddedStateKey(): String? {
         return arguments?.getString("host_conversation_id")
             ?: arguments?.getString("host_project_root_path")
@@ -270,15 +266,11 @@ class RouteFragment : Fragment() {
     fun AppRoutes() {
         val toastState = rememberToasterState()
         val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle()
-        val tts = rememberCustomTtsState()
-        val asr = rememberCustomAsrState()
         val eventBus = koinInject<AppEventBus>()
-        LaunchedEffect(tts) {
+        LaunchedEffect(Unit) {
             eventBus.events.collect { event ->
                 when (event) {
-                    is AppEvent.Speak -> tts.speak(event.text)
                     is AppEvent.OpenUsageAccessSettings -> requireContext().openUsageAccessSettings()
-                    is AppEvent.McpOAuthCallback -> Unit // 由 McpManager 消费
                 }
             }
         }
@@ -325,8 +317,6 @@ class RouteFragment : Fragment() {
                 LocalSettings provides settings,
                 LocalHighlighter provides highlighter,
                 LocalToaster provides toastState,
-                LocalTTSState provides tts,
-                LocalASRState provides asr,
                 LocalEmbeddedBackground provides embeddedBackground,
             ) {
                 Toaster(
@@ -336,7 +326,6 @@ class RouteFragment : Fragment() {
                     alignment = Alignment.TopCenter,
                     showCloseButton = true,
                 )
-                TTSController()
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -377,6 +366,7 @@ class RouteFragment : Fragment() {
                                     files = key.files.map { it.toUri() },
                                     nodeId = key.nodeId?.let { Uuid.parse(it) },
                                     initialWorkspaceCwd = hostedWorkspaceCwd,
+                                    inputDraftKey = chatInputDraftKey(key.id),
                                 )
                             }
 
@@ -419,9 +409,6 @@ class RouteFragment : Fragment() {
                                 AssistantRequestPage(key.id)
                             }
 
-                            entry<Screen.AssistantMcp> { key ->
-                                AssistantMcpPage(key.id)
-                            }
 
                             entry<Screen.AssistantLocalTool> { key ->
                                 AssistantLocalToolPage(key.id)
@@ -431,9 +418,6 @@ class RouteFragment : Fragment() {
                                 AssistantExtensionsPage(key.id)
                             }
 
-                            entry<Screen.Translator> {
-                                TranslatorPage()
-                            }
 
                             entry<Screen.Setting> {
                                 SettingPage()
@@ -443,9 +427,6 @@ class RouteFragment : Fragment() {
                                 BackupPage()
                             }
 
-                            entry<Screen.ImageGen> {
-                                ImageGenPage()
-                            }
 
                             entry<Screen.WebView> { key ->
                                 WebViewPage(key.url, key.content)
@@ -493,13 +474,6 @@ class RouteFragment : Fragment() {
                                 SettingSearchDetailPage(id)
                             }
 
-                            entry<Screen.SettingSpeech> {
-                                SettingSpeechPage()
-                            }
-
-                            entry<Screen.SettingMcp> {
-                                SettingMcpPage()
-                            }
 
                             entry<Screen.SettingDonate> {
                                 SettingDonatePage()
@@ -642,8 +616,6 @@ sealed interface Screen : NavKey {
     @Serializable
     data class AssistantRequest(val id: String) : Screen
 
-    @Serializable
-    data class AssistantMcp(val id: String) : Screen
 
     @Serializable
     data class AssistantLocalTool(val id: String) : Screen
@@ -651,8 +623,6 @@ sealed interface Screen : NavKey {
     @Serializable
     data class AssistantInjections(val id: String) : Screen
 
-    @Serializable
-    data object Translator : Screen
 
     @Serializable
     data object Setting : Screen
@@ -660,8 +630,6 @@ sealed interface Screen : NavKey {
     @Serializable
     data object Backup : Screen
 
-    @Serializable
-    data object ImageGen : Screen
 
     @Serializable
     data class WebView(val url: String = "", val content: String = "") : Screen
@@ -696,11 +664,6 @@ sealed interface Screen : NavKey {
     @Serializable
     data class SettingSearchDetail(val serviceId: String) : Screen
 
-    @Serializable
-    data object SettingSpeech : Screen
-
-    @Serializable
-    data object SettingMcp : Screen
 
     @Serializable
     data object SettingDonate : Screen

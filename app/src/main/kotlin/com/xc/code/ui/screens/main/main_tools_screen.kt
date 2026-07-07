@@ -71,18 +71,6 @@ private val cmake_download_items = listOf(
         install_key = "4.3.0",
         url = "https://github.com/Kitware/CMake/releases/download/v4.3.0/cmake-4.3.0-linux-aarch64.tar.gz",
         sha256 = "26fe3011f497eb9398115dcabcc094685e634b1841f7c01dc01c5a89b8b0ea0d"
-    ),
-    main_tool_download_item(
-        version = "CMake 4.2.1",
-        install_key = "4.2.1",
-        url = "https://github.com/Kitware/CMake/releases/download/v4.2.1/cmake-4.2.1-linux-aarch64.tar.gz",
-        sha256 = "3e178207a2c42af4cd4883127f8800b6faf99f3f5187dccc68bfb2cc7808f5f7"
-    ),
-    main_tool_download_item(
-        version = "CMake 3.31.10",
-        install_key = "3.31.10",
-        url = "https://github.com/Kitware/CMake/releases/download/v3.31.10/cmake-3.31.10-linux-aarch64.tar.gz",
-        sha256 = "a343c6294f770742904e6a6792e0956b5ff8212abfb63cac99237de2e210fa0f"
     )
 )
 

@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,7 +48,6 @@ fun main_screen(
     on_plugins: () -> Unit = {},
     on_settings: () -> Unit = {},
     on_terminal: () -> Unit = {},
-    on_agent: () -> Unit = {},
     recent_projects: List<recent_project> = emptyList(),
     on_project_click: (recent_project) -> Unit = {},
     on_project_remove: (recent_project) -> Unit = {}
@@ -87,7 +85,6 @@ fun main_screen(
             
             top_bar(
                 colors = colors,
-                on_agent_click = on_agent,
                 on_terminal_click = on_terminal,
                 on_settings_click = on_settings
             )
@@ -301,7 +298,6 @@ fun main_screen(
 @Composable
 fun top_bar(
     colors: app_colors,
-    on_agent_click: () -> Unit = {},
     on_terminal_click: () -> Unit = {},
     on_settings_click: () -> Unit = {}
 ) {
@@ -320,14 +316,6 @@ fun top_bar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            top_bar_icon_button(
-                icon = Icons.Outlined.AutoAwesome,
-                description = stringResource(R.string.main_agent_desc),
-                bg = colors.top_button_bg,
-                tint = colors.top_button_icon,
-                onClick = on_agent_click
-            )
-            
             top_bar_icon_button(
                 icon = Icons.Default.Terminal,
                 description = "terminal",

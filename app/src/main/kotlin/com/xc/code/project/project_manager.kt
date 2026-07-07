@@ -342,7 +342,7 @@ object project_manager {
         name: String,
         template_id: String
     ) {
-        val cmake_ver = "3.28.3"
+        val cmake_ver = "4.3.0"
         val content = when (template_id) {
             "executable" -> """
             cmake_minimum_required(VERSION $cmake_ver)

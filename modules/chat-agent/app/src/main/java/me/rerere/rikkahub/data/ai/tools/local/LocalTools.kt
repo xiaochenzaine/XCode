@@ -11,8 +11,6 @@ class LocalTools(private val context: Context, private val eventBus: AppEventBus
 
     val clipboardTool by lazy { buildClipboardTool(context) }
 
-    val ttsTool by lazy { buildTextToSpeechTool(eventBus) }
-
     val askUserTool by lazy { buildAskUserTool() }
 
     val screenTimeTool by lazy { buildScreenTimeTool(context, eventBus) }
@@ -31,9 +29,6 @@ class LocalTools(private val context: Context, private val eventBus: AppEventBus
         }
         if (options.contains(LocalToolOption.Clipboard)) {
             tools.add(clipboardTool)
-        }
-        if (options.contains(LocalToolOption.Tts)) {
-            tools.add(ttsTool)
         }
         if (options.contains(LocalToolOption.AskUser)) {
             tools.add(askUserTool)

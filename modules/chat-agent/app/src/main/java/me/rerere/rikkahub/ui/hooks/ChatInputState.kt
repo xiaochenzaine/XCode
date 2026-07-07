@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.data.repository.ChatInputDraft
 import kotlin.uuid.Uuid
 
 class ChatInputState {
@@ -22,6 +23,22 @@ class ChatInputState {
         editingMessage = null
         editingParts = null
         editingAttachmentUrls = emptySet()
+    }
+
+    fun snapshot(): ChatInputDraft = ChatInputDraft(
+        text = textContent.text.toString(),
+        messageContent = messageContent,
+        editingMessage = editingMessage,
+        editingParts = editingParts,
+        editingAttachmentUrls = editingAttachmentUrls,
+    )
+
+    fun restore(draft: ChatInputDraft) {
+        textContent.setTextAndPlaceCursorAtEnd(draft.text)
+        messageContent = draft.messageContent
+        editingMessage = draft.editingMessage
+        editingParts = draft.editingParts
+        editingAttachmentUrls = draft.editingAttachmentUrls
     }
 
     fun isEditing() = editingMessage != null

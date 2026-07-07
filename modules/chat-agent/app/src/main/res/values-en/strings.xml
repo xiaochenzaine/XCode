@@ -12,7 +12,6 @@
   <string name="assistant_detail_basic_desc">Configure name, avatar, model, and parameters</string>
   <string name="assistant_detail_extensions_desc">Manage quick messages, prompt injections, lorebooks and skills</string>
   <string name="assistant_detail_local_tools_desc">Enable local tools like JavaScript engine</string>
-  <string name="assistant_detail_mcp_desc">Configure MCP server tools for the assistant</string>
   <string name="assistant_detail_memory_desc">Manage assistant memory and recent chat references</string>
   <string name="assistant_detail_prompt_desc">Set system prompts, message templates, and regex rules</string>
   <string name="assistant_detail_request_desc">Configure custom request headers and body parameters</string>
@@ -90,8 +89,6 @@
   <string name="assistant_page_local_tools_javascript_engine_title">JavaScript Engine</string>
   <string name="assistant_page_local_tools_time_info_desc">Get current date, weekday, time, and timezone info from the device</string>
   <string name="assistant_page_local_tools_time_info_title">Time Info</string>
-  <string name="assistant_page_local_tools_tts_desc">Let the AI speak text aloud to you using the device TTS engine</string>
-  <string name="assistant_page_local_tools_tts_title">Text to Speech</string>
   <string name="assistant_page_manage_memory_title">Manage Memory</string>
   <string name="assistant_page_max_tokens">Max Tokens</string>
   <string name="assistant_page_max_tokens_desc">Maximum number of tokens to generate. Leave empty for no limit.</string>
@@ -132,7 +129,6 @@
   <string name="assistant_page_tab_basic">Basic Settings</string>
   <string name="assistant_page_tab_extensions">Extensions</string>
   <string name="assistant_page_tab_local_tools">Local Tools</string>
-  <string name="assistant_page_tab_mcp">MCP</string>
   <string name="assistant_page_tab_memory">Memory</string>
   <string name="assistant_page_tab_prompt">Prompts</string>
   <string name="assistant_page_tab_request">Custom Request</string>
@@ -289,8 +285,6 @@
   <string name="chat_page_export_share_via">Share via</string>
   <string name="chat_page_export_success">Exported to %1$s</string>
   <string name="chat_page_history">Chat History</string>
-  <string name="chat_page_menu_ai_translator">AI Translator</string>
-  <string name="chat_page_menu_image_generation">Image Generation</string>
   <string name="chat_page_message_count">%d messages</string>
   <string name="chat_page_move_to_assistant">Move to Assistant</string>
   <string name="chat_page_new_chat">New Chat</string>
@@ -655,8 +649,6 @@
   <string name="setting_display_page_amoled_dark_mode_title">AMOLED Dark Mode</string>
   <string name="setting_display_page_auto_collapse_thinking_desc">Automatically collapse thinking content after thinking is complete</string>
   <string name="setting_display_page_auto_collapse_thinking_title">Auto Collapse Thinking</string>
-  <string name="setting_display_page_auto_play_tts_desc">Automatically play TTS after assistant message generation completes</string>
-  <string name="setting_display_page_auto_play_tts_title">Auto-play TTS After Generation</string>
   <string name="setting_display_page_chat_font_family_default">Default</string>
   <string name="setting_display_page_chat_font_family_custom">Custom</string>
   <string name="setting_display_page_chat_font_family_monospace">Monospace</string>
@@ -716,8 +708,6 @@
   <string name="setting_display_page_skip_crop_image_desc">Skip crop interface after importing images or taking photos</string>
   <string name="setting_display_page_skip_crop_image_title">Skip Image Editing</string>
   <string name="setting_display_page_title">Display Settings</string>
-  <string name="setting_display_page_tts_only_read_quoted_desc">When enabled, TTS will only read content within quotation marks</string>
-  <string name="setting_display_page_tts_only_read_quoted_title">TTS Read Quoted Content Only</string>
   <string name="setting_display_page_use_app_icon_style_loading_indicator_desc">Use the animated app icon instead of the default circular loading indicator</string>
   <string name="setting_display_page_use_app_icon_style_loading_indicator_title">Use App Icon-Style Loading Indicator</string>
   <string name="setting_display_page_volume_key_scroll_desc">Scroll pages with volume keys, ideal for e-ink screens</string>
@@ -745,7 +735,6 @@
   <string name="setting_mcp_page_header_value">Header Value</string>
   <string name="setting_mcp_page_header_value_placeholder">e.g.: Bearer token123</string>
   <string name="setting_mcp_page_import_confirm">Import</string>
-  <string name="setting_mcp_page_import_desc">Paste MCP Server JSON config, supports standard mcpServers format</string>
   <string name="setting_mcp_page_import_no_valid_config">No valid MCP Server configuration found</string>
   <string name="setting_mcp_page_import_parse_error">JSON parse failed: %1$s</string>
   <string name="setting_mcp_page_import_title">Import MCP Server</string>
@@ -785,17 +774,12 @@
   <string name="setting_model_page_title">Model Settings</string>
   <string name="setting_model_page_title_model">Title Summary Model</string>
   <string name="setting_model_page_title_model_desc">Model used to summarize conversation titles. If not set, uses the fast model</string>
-  <string name="setting_model_page_translate_model">Translation Model</string>
-  <string name="setting_model_page_translate_model_desc">The model used for translation features</string>
-  <string name="setting_model_page_translate_prompt_vars">Variables: Source text: {source_text}, Target language: {target_lang}</string>
   <string name="setting_page_about">About</string>
   <string name="setting_page_about_desc">About this app</string>
   <string name="setting_page_assistant">Assistant</string>
   <string name="setting_page_assistant_desc">Set up personalized assistants (agents)</string>
   <string name="setting_page_built_in_tools">Built-in Tools</string>
   <string name="setting_page_built_in_tools_desc">Select built-in tools supported by the model. These tools are directly provided by the API without requiring app support. Currently, this feature is only supported by the official Gemini API.</string>
-  <string name="setting_page_built_in_tools_image_generation">Image Generation</string>
-  <string name="setting_page_built_in_tools_image_generation_desc">Enable image generation capability</string>
   <string name="setting_page_built_in_tools_search">Search</string>
   <string name="setting_page_built_in_tools_search_desc">Enable Google Search integration</string>
   <string name="setting_page_built_in_tools_url_context">URL Context</string>
@@ -831,8 +815,6 @@
   <string name="setting_page_extensions_desc">Manage prompt injections, skills and more</string>
   <string name="setting_page_general_settings">General Settings</string>
   <string name="setting_page_interaction_notification_settings">Interaction &amp;amp; Notifications</string>
-  <string name="setting_page_mcp">MCP</string>
-  <string name="setting_page_mcp_desc">Configure MCP Servers</string>
   <string name="setting_page_message_display_settings">Message Display</string>
   <string name="setting_page_model_and_services">Models &amp; Services</string>
   <string name="setting_page_no_share_app">No sharing app found</string>
@@ -876,9 +858,6 @@
   <string name="setting_theme_page_export_success">Theme JSON copied to clipboard</string>
   <string name="setting_theme_page_import_success">Theme imported successfully</string>
   <string name="setting_theme_page_dynamic_color_hint">Dynamic color is enabled. Disable it in Preferences &gt; Theme to use custom themes.</string>
-  <string name="setting_page_tts_service">Speech Services</string>
-  <string name="setting_page_tts_service_desc">Configure text-to-speech and speech recognition providers</string>
-  <string name="setting_page_tts_settings">TTS Settings</string>
   <string name="setting_provider_page_abilities">Abilities</string>
   <string name="setting_provider_page_add">Add</string>
   <string name="setting_provider_page_add_model">Add Model</string>
@@ -1082,11 +1061,6 @@
   <string name="translation_clear">Clear Translation</string>
   <string name="translation_language_selection_title">Select Translation Language</string>
   <string name="translation_text">Translation</string>
-  <string name="translator_page_cancel">Cancel</string>
-  <string name="translator_page_input_placeholder">Enter text to translate...</string>
-  <string name="translator_page_result_placeholder">Translation result will be shown here</string>
-  <string name="translator_page_title">Translator</string>
-  <string name="translator_page_translate">Translate</string>
   <string name="tts">TTS</string>
   <string name="unpin_chat">Unpin the Chat</string>
   <string name="update_card_check_failed">Check update failed</string>
@@ -1106,7 +1080,6 @@
   <string name="skills_page_add_manually">Add manually</string>
   <string name="setting_model_page_tab_model">Model</string>
   <string name="setting_model_page_tab_prompt">Prompts</string>
-  <string name="setting_model_page_prompt_translation">Translation</string>
   <string name="setting_model_page_prompt_title">Title Generation</string>
   <string name="setting_model_page_prompt_suggestion">Chat Reply Suggestions</string>
   <string name="setting_model_page_prompt_ocr">OCR Recognition</string>
@@ -1202,8 +1175,6 @@
   <string name="tool_ui_shell_default">Shell</string>
   <string name="tool_ui_shell_timeout">timeout</string>
   <string name="tool_ui_shell_exit">exit %s</string>
-  <string name="tool_ui_speaking">Speaking: %s</string>
-  <string name="tool_ui_replay">Replay</string>
   <string name="tool_ui_delete_memory">Delete memory</string>
   <string name="tool_ui_file">file</string>
   <string name="workspace_page_name_duplicate">Name already exists</string>

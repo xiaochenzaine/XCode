@@ -63,8 +63,6 @@ import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.hugeicons.stroke.Time02
 import me.rerere.hugeicons.stroke.VolumeHigh
 import me.rerere.rikkahub.R
-import me.rerere.rikkahub.data.event.AppEvent
-import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.ui.Favicon
@@ -285,57 +283,6 @@ object ClipboardToolUI : ToolUIRenderer {
 
 /**
  * 文本转语音: 摘要显示朗读文本与重播按钮
- */
-object TextToSpeechToolUI : ToolUIRenderer {
-    override val toolName: String = "text_to_speech"
-
-    override fun icon(context: ToolUIContext): ImageVector = HugeIcons.VolumeHigh
-
-    @Composable
-    override fun title(context: ToolUIContext): String {
-        val preview = context.arguments.getStringContent("text")?.let { text ->
-            if (text.length > 24) text.take(24) + "…" else text
-        } ?: ""
-        return stringResource(R.string.tool_ui_speaking, preview)
-    }
-
-    override fun hasSummary(context: ToolUIContext): Boolean =
-        context.arguments.getStringContent("text") != null
-
-    @Composable
-    override fun Summary(context: ToolUIContext) {
-        val eventBus: AppEventBus = koinInject()
-        val scope = rememberCoroutineScope()
-        val text = context.arguments.getStringContent("text") ?: ""
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            FilledTonalIconButton(
-                onClick = { scope.launch { eventBus.emit(AppEvent.Speak(text)) } },
-                modifier = Modifier.size(28.dp),
-            ) {
-                Icon(
-                    imageVector = HugeIcons.Refresh01,
-                    contentDescription = stringResource(R.string.tool_ui_replay),
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-        }
-    }
-}
-
-/**
- * 技能调用: 标题显示技能名与路径
  */
 object UseSkillToolUI : ToolUIRenderer {
     override val toolName: String = "use_skill"

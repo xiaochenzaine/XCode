@@ -36,7 +36,6 @@ include(
     ":modules:chat-agent:highlight",
     ":modules:chat-agent:material3",
     ":modules:chat-agent:search",
-    ":modules:chat-agent:speech",
     ":modules:chat-agent:workspace",
     ":modules:chat-agent:app",
 )

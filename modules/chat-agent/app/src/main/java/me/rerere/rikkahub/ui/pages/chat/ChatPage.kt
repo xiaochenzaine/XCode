@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -88,6 +89,7 @@ import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
+import me.rerere.rikkahub.data.repository.ChatInputDraftStore
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
@@ -107,6 +109,7 @@ fun ChatPage(
     files: List<Uri>,
     nodeId: Uuid? = null,
     initialWorkspaceCwd: String? = null,
+    inputDraftKey: String? = null,
 ) {
     val vm: ChatVM = koinViewModel(
         parameters = {
@@ -155,6 +158,20 @@ fun ChatPage(
     }
 
     val inputState = vm.inputState
+
+    // 只在编辑器侧边栏 Agent 中启用输入草稿。
+    // 独立聊天页面不再承担代码 Agent 入口，避免引入额外状态行为。
+    LaunchedEffect(inputDraftKey, inputState) {
+        val draftKey = inputDraftKey ?: return@LaunchedEffect
+        ChatInputDraftStore.restore(draftKey)?.let { draft ->
+            inputState.restore(draft)
+        }
+        snapshotFlow {
+            inputState.snapshot()
+        }.collect { draft ->
+            ChatInputDraftStore.save(draftKey, draft)
+        }
+    }
 
     // 初始化输入状态（处理传入的 files 和 text 参数）
     LaunchedEffect(files, text) {
@@ -212,6 +229,7 @@ fun ChatPage(
                 }
             ) {
                 ChatPageContent(
+                    inputDraftKey = inputDraftKey,
                     inputState = inputState,
                     loadingJob = loadingJob,
                     processingStatus = processingStatus,
@@ -244,6 +262,7 @@ fun ChatPage(
                 }
             ) {
                 ChatPageContent(
+                    inputDraftKey = inputDraftKey,
                     inputState = inputState,
                     loadingJob = loadingJob,
                     processingStatus = processingStatus,
@@ -270,6 +289,7 @@ fun ChatPage(
 
 @Composable
 private fun ChatPageContent(
+    inputDraftKey: String?,
     inputState: ChatInputState,
     loadingJob: Job?,
     processingStatus: String? = null,
@@ -306,7 +326,6 @@ private fun ChatPageContent(
         }.orEmpty()
     }
 
-    TTSAutoPlay(vm = vm, setting = setting, conversation = conversation)
 
     val embeddedBackground = LocalEmbeddedBackground.current
     val useEmbeddedBackground =
@@ -379,6 +398,7 @@ private fun ChatPageContent(
                             }
                         }
                         inputState.clearInput()
+                        inputDraftKey?.let(ChatInputDraftStore::clear)
                     },
                     onLongSendClick = {
                         if (inputState.isEditing()) {
@@ -393,6 +413,7 @@ private fun ChatPageContent(
                             }
                         }
                         inputState.clearInput()
+                        inputDraftKey?.let(ChatInputDraftStore::clear)
                     },
                     onUpdateChatModel = {
                         vm.setChatModel(assistant = setting.getCurrentAssistant(), model = it)
@@ -472,12 +493,6 @@ private fun ChatPageContent(
                 onClickSuggestion = { suggestion ->
                     inputState.editingMessage = null
                     inputState.setMessageText(suggestion)
-                },
-                onTranslate = { message, locale ->
-                    vm.translateMessage(message, locale)
-                },
-                onClearTranslation = { message ->
-                    vm.clearTranslationField(message.id)
                 },
                 onJumpToMessage = { index ->
                     previewMode = false
@@ -678,7 +693,6 @@ private fun ChatFilesPickerSheet(
             conversation = conversation,
             state = inputState,
             assistant = assistant,
-            mcpManager = vm.mcpManager,
             onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
                 vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
             },

@@ -11,7 +11,6 @@ import me.rerere.rikkahub.utils.EmojiUtils
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.SoundEffectPlayer
 import me.rerere.rikkahub.utils.RikkaHubAnalytics
-import me.rerere.tts.provider.TTSManager
 import org.koin.dsl.module
 
 val appModule = module {
@@ -37,9 +36,6 @@ val appModule = module {
         EmojiUtils.loadEmoji(get())
     }
 
-    single {
-        TTSManager(get())
-    }
 
     single {
         RikkaHubAnalytics()
@@ -60,7 +56,6 @@ val appModule = module {
             templateTransformer = get(),
             providerManager = get(),
             localTools = get(),
-            mcpManager = get(),
             filesManager = get(),
             skillManager = get(),
             workspaceRepository = get(),

@@ -42,6 +42,7 @@ class SemanticTokensEvent : AsyncEventListener() {
                 onBufferOverflow = BufferOverflow.DROP_OLDEST
             ).also { created ->
                 editor.coroutineScope.launch(Dispatchers.Main) {
+                    @OptIn(kotlinx.coroutines.FlowPreview::class)
                     created.debounce(120).collect { requestEditor ->
                         processRequest(requestEditor, context)
                     }

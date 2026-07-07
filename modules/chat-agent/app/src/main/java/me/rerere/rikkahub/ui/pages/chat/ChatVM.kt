@@ -39,7 +39,6 @@ import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.RikkaHubAnalytics
-import java.util.Locale
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatVM"
@@ -126,9 +125,6 @@ class ChatVM(
 
     // 生成完成
     val generationDoneFlow: SharedFlow<Uuid> = chatService.generationDoneFlow
-
-    // MCP管理器
-    val mcpManager = chatService.mcpManager
 
     // 更新设置
     fun updateSettings(newSettings: Settings) {
@@ -295,10 +291,6 @@ class ChatVM(
         }
     }
 
-    fun translateMessage(message: UIMessage, targetLanguage: Locale) {
-        chatService.translateMessage(_conversationId, message, targetLanguage)
-    }
-
     fun generateTitle(conversation: Conversation, force: Boolean = false) {
         viewModelScope.launch {
             val conversationFull = conversationRepo.getConversationById(conversation.id) ?: return@launch
@@ -310,10 +302,6 @@ class ChatVM(
         viewModelScope.launch {
             chatService.generateSuggestion(_conversationId, conversation)
         }
-    }
-
-    fun clearTranslationField(messageId: Uuid) {
-        chatService.clearTranslationField(_conversationId, messageId)
     }
 
     fun updateConversation(newConversation: Conversation) {

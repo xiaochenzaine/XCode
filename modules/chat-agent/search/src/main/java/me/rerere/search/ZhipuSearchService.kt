@@ -1,5 +1,6 @@
 package me.rerere.search
 
+import me.rerere.search.R
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -72,7 +73,7 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
 
             val response = httpClient.newCall(request).execute()
             if (response.isSuccessful) {
-                val bodyRaw = response.body?.string() ?: error("Failed to get response body")
+                val bodyRaw = response.body.string() ?: error("Failed to get response body")
                 val response = runCatching {
                     json.decodeFromString<ZhipuDto>(bodyRaw)
                 }.onFailure {
@@ -92,7 +93,7 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
                         }
                     ))
             } else {
-                println(response.body?.string())
+                println(response.body.string())
                 error("response failed #${response.code}")
             }
         }

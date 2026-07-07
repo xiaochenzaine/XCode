@@ -12,7 +12,6 @@
   <string name="assistant_detail_basic_desc">配置名称、头像、模型和参数</string>
   <string name="assistant_detail_extensions_desc">管理提示词注入、世界书和技能等扩展</string>
   <string name="assistant_detail_local_tools_desc">启用本地工具（如 JavaScript 引擎）</string>
-  <string name="assistant_detail_mcp_desc">为助手配置 MCP 服务器工具</string>
   <string name="assistant_detail_memory_desc">管理助手记忆和最近的聊天引用</string>
   <string name="assistant_detail_prompt_desc">设置系统提示、消息模板和正则规则</string>
   <string name="assistant_detail_request_desc">配置自定义请求头和正文参数</string>
@@ -90,8 +89,6 @@
   <string name="assistant_page_local_tools_javascript_engine_title">JavaScript 引擎</string>
   <string name="assistant_page_local_tools_time_info_desc">从设备获取当前日期、星期、时间和时区信息</string>
   <string name="assistant_page_local_tools_time_info_title">时间信息</string>
-  <string name="assistant_page_local_tools_tts_desc">让AI使用设备TTS引擎为您朗读文本</string>
-  <string name="assistant_page_local_tools_tts_title">文字转语音</string>
   <string name="assistant_page_manage_memory_title">管理记忆</string>
   <string name="assistant_page_max_tokens">最大Token数</string>
   <string name="assistant_page_max_tokens_desc">最大生成Token数量。留空表示无限制。</string>
@@ -132,7 +129,6 @@
   <string name="assistant_page_tab_basic">基础设定</string>
   <string name="assistant_page_tab_extensions">扩展管理</string>
   <string name="assistant_page_tab_local_tools">本地工具</string>
-  <string name="assistant_page_tab_mcp">MCP</string>
   <string name="assistant_page_tab_memory">记忆</string>
   <string name="assistant_page_tab_prompt">提示词</string>
   <string name="assistant_page_tab_request">自定义请求</string>
@@ -289,8 +285,6 @@
   <string name="chat_page_export_share_via">分享方式</string>
   <string name="chat_page_export_success">已导出为%1$s</string>
   <string name="chat_page_history">聊天历史</string>
-  <string name="chat_page_menu_ai_translator">AI翻译</string>
-  <string name="chat_page_menu_image_generation">图像生成</string>
   <string name="chat_page_message_count">%d 条消息</string>
   <string name="chat_page_move_to_assistant">移至助手</string>
   <string name="chat_page_new_chat">新聊天</string>
@@ -655,8 +649,6 @@
   <string name="setting_display_page_amoled_dark_mode_title">AMOLED 暗色模式</string>
   <string name="setting_display_page_auto_collapse_thinking_desc">思考完成自动折叠思考内容</string>
   <string name="setting_display_page_auto_collapse_thinking_title">自动折叠思考</string>
-  <string name="setting_display_page_auto_play_tts_desc">助手消息生成完成后自动播放TTS</string>
-  <string name="setting_display_page_auto_play_tts_title">生成后自动播放TTS</string>
   <string name="setting_display_page_chat_font_family_default">默认</string>
   <string name="setting_display_page_chat_font_family_custom">自定义</string>
   <string name="setting_display_page_chat_font_family_monospace">等宽字体</string>
@@ -716,8 +708,6 @@
   <string name="setting_display_page_skip_crop_image_desc">导入图片或拍照后跳过裁剪界面</string>
   <string name="setting_display_page_skip_crop_image_title">跳过图片编辑</string>
   <string name="setting_display_page_title">显示设置</string>
-  <string name="setting_display_page_tts_only_read_quoted_desc">启用后，TTS 仅朗读引号内的内容</string>
-  <string name="setting_display_page_tts_only_read_quoted_title">TTS仅朗读引用内容</string>
   <string name="setting_display_page_use_app_icon_style_loading_indicator_desc">使用应用图标动画替代默认的圆形加载指示器</string>
   <string name="setting_display_page_use_app_icon_style_loading_indicator_title">使用APP图标风格的加载指示器</string>
   <string name="setting_display_page_volume_key_scroll_desc">使用音量键翻页，非常适合电子墨水屏</string>
@@ -745,7 +735,6 @@
   <string name="setting_mcp_page_header_value">请求头值</string>
   <string name="setting_mcp_page_header_value_placeholder">例如：Bearer token123</string>
   <string name="setting_mcp_page_import_confirm">导入</string>
-  <string name="setting_mcp_page_import_desc">粘贴 MCP 服务器 JSON 配置，支持标准 mcpServers 格式</string>
   <string name="setting_mcp_page_import_no_valid_config">未找到有效的 MCP Server 配置</string>
   <string name="setting_mcp_page_import_parse_error">JSON 解析失败：%1$s</string>
   <string name="setting_mcp_page_import_title">导入MCP服务器</string>
@@ -785,17 +774,12 @@
   <string name="setting_model_page_title">模型设置</string>
   <string name="setting_model_page_title_model">标题总结模型</string>
   <string name="setting_model_page_title_model_desc">用于总结对话标题的模型。未设置时使用快速模型</string>
-  <string name="setting_model_page_translate_model">翻译模型</string>
-  <string name="setting_model_page_translate_model_desc">用于翻译功能的模型</string>
-  <string name="setting_model_page_translate_prompt_vars">变量: 原始文本: {source_text}, 目标语言: {target_lang}</string>
   <string name="setting_page_about">关于</string>
   <string name="setting_page_about_desc">关于本APP</string>
   <string name="setting_page_assistant">助手</string>
   <string name="setting_page_assistant_desc">设置个性化助手 (智能体)</string>
   <string name="setting_page_built_in_tools">内置工具</string>
   <string name="setting_page_built_in_tools_desc">选择模型支持的内置工具, 这些工具直接由API内置，无需APP提供，当前这个功能仅支持Gemini官方API。</string>
-  <string name="setting_page_built_in_tools_image_generation">图像生成</string>
-  <string name="setting_page_built_in_tools_image_generation_desc">启用图像生成功能</string>
   <string name="setting_page_built_in_tools_search">搜索</string>
   <string name="setting_page_built_in_tools_search_desc">启用 Google 搜索集成</string>
   <string name="setting_page_built_in_tools_url_context">URL 上下文</string>
@@ -831,8 +815,6 @@
   <string name="setting_page_extensions_desc">管理提示词注入、技能等扩展</string>
   <string name="setting_page_general_settings">通用设置</string>
   <string name="setting_page_interaction_notification_settings">互动与通知</string>
-  <string name="setting_page_mcp">MCP</string>
-  <string name="setting_page_mcp_desc">配置MCP服务器</string>
   <string name="setting_page_message_display_settings">消息显示</string>
   <string name="setting_page_model_and_services">模型与服务</string>
   <string name="setting_page_no_share_app">找不到分享应用</string>
@@ -876,9 +858,6 @@
   <string name="setting_theme_page_export_success">主题 JSON 已复制到剪贴板</string>
   <string name="setting_theme_page_import_success">主题导入成功</string>
   <string name="setting_theme_page_dynamic_color_hint">动态颜色已开启，请在偏好设置 &gt; 主题中关闭以使用自定义主题。</string>
-  <string name="setting_page_tts_service">语音服务</string>
-  <string name="setting_page_tts_service_desc">配置语音合成与语音识别服务提供商</string>
-  <string name="setting_page_tts_settings">TTS设置</string>
   <string name="setting_provider_page_abilities">能力</string>
   <string name="setting_provider_page_add">添加</string>
   <string name="setting_provider_page_add_model">添加模型</string>
@@ -1082,11 +1061,6 @@
   <string name="translation_clear">清空翻译</string>
   <string name="translation_language_selection_title">选择翻译语言</string>
   <string name="translation_text">译文</string>
-  <string name="translator_page_cancel">取消</string>
-  <string name="translator_page_input_placeholder">请输入要翻译的文本...</string>
-  <string name="translator_page_result_placeholder">翻译结果将显示在这里</string>
-  <string name="translator_page_title">翻译</string>
-  <string name="translator_page_translate">翻译</string>
   <string name="tts">语音</string>
   <string name="unpin_chat">取消置顶聊天</string>
   <string name="update_card_check_failed">检查更新失败</string>
@@ -1106,7 +1080,6 @@
   <string name="skills_page_add_manually">手动添加</string>
   <string name="setting_model_page_tab_model">模型</string>
   <string name="setting_model_page_tab_prompt">提示词</string>
-  <string name="setting_model_page_prompt_translation">翻译</string>
   <string name="setting_model_page_prompt_title">标题生成</string>
   <string name="setting_model_page_prompt_suggestion">聊天回复建议</string>
   <string name="setting_model_page_prompt_ocr">OCR识别</string>
@@ -1202,8 +1175,6 @@
   <string name="tool_ui_shell_default">Shell</string>
   <string name="tool_ui_shell_timeout">timeout</string>
   <string name="tool_ui_shell_exit">exit %s</string>
-  <string name="tool_ui_speaking">朗读: %s</string>
-  <string name="tool_ui_replay">重播</string>
   <string name="tool_ui_delete_memory">删除记忆</string>
   <string name="tool_ui_file">文件</string>
   <string name="workspace_page_name_duplicate">名称已存在</string>

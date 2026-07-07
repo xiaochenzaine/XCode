@@ -14,14 +14,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
-        externalNativeBuild {
-            cmake {
-                cppFlags += ""
-            }
-        }
-        ndk {
-            abiFilters.add("arm64-v8a")
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -31,12 +23,6 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget("17"))
-        }
-    }
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "4.3.0"
         }
     }
 

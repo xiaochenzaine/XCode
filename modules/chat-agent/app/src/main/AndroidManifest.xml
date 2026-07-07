@@ -87,22 +87,6 @@
       </intent-filter>
     </activity>
     <activity
-      android:name=".ui.activity.McpOAuthCallbackActivity"
-      android:exported="true"
-      android:launchMode="singleTask"
-      android:theme="@android:style/Theme.Translucent.NoTitleBar">
-      <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-
-        <data
-          android:host="mcp-oauth-callback"
-          android:scheme="rikkahub" />
-      </intent-filter>
-    </activity>
-    <activity
       android:name="com.yalantis.ucrop.UCropActivity"
       android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
@@ -124,16 +108,6 @@
       <intent-filter>
         <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
       </intent-filter>
-    </provider>
-    <provider
-      android:name="androidx.startup.InitializationProvider"
-      android:authorities="${applicationId}.androidx-startup"
-      android:exported="false"
-      tools:node="merge">
-      <meta-data
-        android:name="androidx.work.WorkManagerInitializer"
-        android:value="androidx.startup"
-        tools:node="remove" />
     </provider>
   </application>
 

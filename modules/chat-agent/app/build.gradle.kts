@@ -183,7 +183,6 @@ dependencies {
     implementation(project(":modules:chat-agent:document"))
     implementation(project(":modules:chat-agent:highlight"))
     implementation(project(":modules:chat-agent:search"))
-    implementation(project(":modules:chat-agent:speech"))
     implementation(project(":modules:chat-agent:common"))
     implementation(project(":modules:chat-agent:material3"))
     implementation(project(":modules:chat-agent:workspace"))

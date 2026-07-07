@@ -347,10 +347,14 @@ class AggregatedRequestManager(
         return firstFuture { hover(params) }
     }
 
+    @Deprecated("")
+    @Suppress("DEPRECATION")
     override fun hover(params: TextDocumentPositionParams): CompletableFuture<Hover>? {
         return firstFuture { hover(params) }
     }
 
+    @Deprecated("")
+    @Suppress("DEPRECATION")
     override fun signatureHelp(params: TextDocumentPositionParams): CompletableFuture<SignatureHelp>? {
         return firstFuture { signatureHelp(params) }
     }
@@ -365,6 +369,7 @@ class AggregatedRequestManager(
     }
 
     @Deprecated("")
+    @Suppress("DEPRECATION")
     override fun documentHighlight(params: TextDocumentPositionParams): CompletableFuture<List<DocumentHighlight>>? {
         val futures = activeManagers.mapNotNull { it.documentHighlight(params) }
         return aggregateLists(futures)
@@ -398,6 +403,7 @@ class AggregatedRequestManager(
     }
 
     @Deprecated("")
+    @Suppress("DEPRECATION")
     override fun definition(params: TextDocumentPositionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>>? {
         val futures = activeManagers.mapNotNull { it.definition(params) }
         return aggregateDefinitions(futures)

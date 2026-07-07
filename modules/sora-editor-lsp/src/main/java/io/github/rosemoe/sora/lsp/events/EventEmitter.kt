@@ -50,7 +50,8 @@ class EventEmitter {
 
     fun <T : EventListener> getEventListener(clazz: Class<T>): T? {
         return listeners.flatMap { it.value }
-            .find { it::class.java == clazz } as? T?
+            .find { it::class.java == clazz }
+            ?.let { clazz.cast(it) }
     }
 
     fun <T : EventListener> removeListener(listenerClass: Class<T>) {
@@ -194,14 +195,17 @@ abstract class AsyncEventListener : EventListener {
 class EventContext {
     private val data = HashMap<String, Any>()
 
+    @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(key: String): T {
         return data[key] as T
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <T : Any> getOrDefault(key: String, default: T): T {
         return data.getOrDefault(key, default) as T
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <T : Any> getOrNull(key: String): T? {
         return data[key] as? T?
     }
@@ -215,6 +219,7 @@ class EventContext {
         data[value::class.java.name] = value
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <T : Any> remove(key: String): T? {
         return data.remove(key) as? T?
     }
@@ -246,7 +251,7 @@ inline fun <reified T : Any> EventContext.get(): T {
 }
 
 inline fun <reified T : EventListener> EventEmitter.getEventListener(): T? {
-    return getEventListener(T::class.java) as T?
+    return getEventListener(T::class.java)
 }
 
 object EventType
