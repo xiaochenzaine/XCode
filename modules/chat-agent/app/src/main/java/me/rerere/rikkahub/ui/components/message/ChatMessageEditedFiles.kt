@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.ui.UIMessagePart
@@ -51,7 +52,7 @@ import org.koin.compose.koinInject
 import java.io.File
 
 private const val DEFAULT_VISIBLE_COUNT = 3
-private val WORKSPACE_FILE_TOOL_NAMES = setOf("workspace_write_file", "workspace_edit_file")
+private val WORKSPACE_FILE_TOOL_NAMES = setOf("workspace_write_file", "workspace_edit_file", "apply_workspace_edits")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -63,9 +64,7 @@ internal fun EditedFilesList(
     val editedFiles = remember(parts) {
         parts.filterIsInstance<UIMessagePart.Tool>()
             .filter { it.toolName in WORKSPACE_FILE_TOOL_NAMES && it.isExecuted }
-            .mapNotNull { tool ->
-                tool.inputAsJson().jsonObject["path"]?.jsonPrimitive?.contentOrNull
-            }
+            .flatMap { tool -> tool.editedWorkspacePaths() }
             .distinct()
     }
     if (editedFiles.isEmpty()) return
@@ -237,6 +236,17 @@ internal fun EditedFilesList(
             }
         }
     }
+}
+
+
+private fun UIMessagePart.Tool.editedWorkspacePaths(): List<String> {
+    val input = inputAsJson().jsonObject
+    if (toolName == "apply_workspace_edits") {
+        return input["edits"]?.jsonArray
+            ?.mapNotNull { edit -> edit.jsonObject["path"]?.jsonPrimitive?.contentOrNull }
+            .orEmpty()
+    }
+    return listOfNotNull(input["path"]?.jsonPrimitive?.contentOrNull)
 }
 
 private fun resolveWorkspacePath(path: String): Pair<WorkspaceStorageArea, String> {

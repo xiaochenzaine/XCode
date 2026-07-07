@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.longOrNull
@@ -191,6 +193,111 @@ object ReadFileToolUI : ToolUIRenderer {
             return
         }
         FileContentPreview(path = context.arguments.getStringContent("path"), code = text)
+    }
+}
+
+
+/**
+ * IDE 工作区编辑事务: 摘要显示 diff，详情显示完整 diff。
+ */
+object ApplyWorkspaceEditsToolUI : ToolUIRenderer {
+    private const val SUMMARY_MAX_LINES = 10
+
+    override val toolName: String = "apply_workspace_edits"
+
+    override fun icon(context: ToolUIContext): ImageVector = HugeIcons.FileEdit
+
+    @Composable
+    override fun title(context: ToolUIContext): String {
+        val paths = remember(context) { editPathsOf(context) }
+        return when (paths.size) {
+            0 -> stringResource(R.string.tool_ui_edit_file_default)
+            1 -> stringResource(R.string.tool_ui_edit_file, paths.first())
+            else -> stringResource(R.string.tool_ui_edit_file, "${paths.size} files")
+        }
+    }
+
+    private fun editPathsOf(context: ToolUIContext): List<String> =
+        context.arguments.jsonObject["edits"]?.jsonArray
+            ?.mapNotNull { edit -> edit.jsonObject.getStringContent("path") }
+            .orEmpty()
+
+    private fun diffOf(context: ToolUIContext): String? {
+        if (context.tool.isExecuted) {
+            return context.tool.output.firstOrNull()?.metadataAs<DiffMetadata>()?.diff
+        }
+        return context.arguments.jsonObject["edits"]?.jsonArray
+            ?.mapNotNull { edit_element ->
+                val edit = edit_element.jsonObject
+                val path = edit.getStringContent("path") ?: return@mapNotNull null
+                when (edit.getStringContent("type")?.lowercase()) {
+                    "create" -> generateUnifiedDiff("", edit.getStringContent("text") ?: edit.getStringContent("new_text").orEmpty(), path)
+                    else -> generateUnifiedDiff(
+                        edit.getStringContent("old_text") ?: return@mapNotNull null,
+                        edit.getStringContent("new_text") ?: return@mapNotNull null,
+                        path,
+                    )
+                }
+            }
+            ?.joinToString("\n")
+            ?.ifBlank { null }
+    }
+
+    override fun hasSummary(context: ToolUIContext): Boolean = diffOf(context) != null
+
+    @Composable
+    override fun Summary(context: ToolUIContext) {
+        val diff = remember(context) { diffOf(context) } ?: return
+        val stats = remember(diff) { parseDiffStats(diff) }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "+${stats.additions}",
+                style = MaterialTheme.typography.labelSmall,
+                color = DiffAddedColor,
+            )
+            Text(
+                text = "-${stats.deletions}",
+                style = MaterialTheme.typography.labelSmall,
+                color = DiffRemovedColor,
+            )
+        }
+        DiffView(
+            diff = diff,
+            modifier = Modifier.fillMaxWidth(),
+            maxLines = SUMMARY_MAX_LINES,
+            showFileHeader = false,
+        )
+    }
+
+    @Composable
+    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+        val diff = remember(context) { diffOf(context) }
+        if (diff == null) {
+            DefaultToolPreview(context = context)
+            return
+        }
+        val stats = remember(diff) { parseDiffStats(diff) }
+        Column(
+            modifier = Modifier
+                .fillMaxHeight(0.8f)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("+${stats.additions}", color = DiffAddedColor)
+                Text("-${stats.deletions}", color = DiffRemovedColor)
+            }
+            DiffView(
+                diff = diff,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            )
+        }
     }
 }
 

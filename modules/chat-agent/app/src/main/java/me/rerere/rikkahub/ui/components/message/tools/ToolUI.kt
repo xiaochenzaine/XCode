@@ -103,6 +103,7 @@ object ToolUIRegistry {
         RecentChatsToolUI,
         ConversationSearchToolUI,
         EditFileToolUI,
+        ApplyWorkspaceEditsToolUI,
         ReadFileToolUI,
         WriteFileToolUI,
         ShellToolUI,

@@ -14,6 +14,7 @@ import com.xc.code.editor.tabs.remaining_tabs_after_close_others
 import com.xc.code.editor.settings.*
 import com.xc.code.editor.model.*
 import com.xc.code.editor.core.*
+import com.xc.code.editor.agent.*
 
 import android.net.Uri
 import android.content.Context
@@ -77,7 +78,7 @@ private data class file_tree_entry_snapshot(
 
 private const val external_auto_reload_max_bytes = 5L * 1024L * 1024L
 
-class editor_activity : FragmentActivity() {
+class editor_activity : FragmentActivity(), agent_workspace_edit_handler {
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(app_locale_manager.wrap_context(newBase))
@@ -138,6 +139,7 @@ class editor_activity : FragmentActivity() {
             }
         }
         initialize_project()
+        editor_agent_edit_controller.handler = this
         start_workspace_file_change_observer()
     }
 
@@ -148,6 +150,9 @@ class editor_activity : FragmentActivity() {
         file_tree_job?.cancel()
         workspace_file_change_job?.cancel()
         workspace_file_sync_job?.cancel()
+        if (editor_agent_edit_controller.handler === this) {
+            editor_agent_edit_controller.handler = null
+        }
         clangd_connect_job?.cancel()
         clangd_project?.dispose()
         clangd_project = null
@@ -1489,6 +1494,273 @@ class editor_activity : FragmentActivity() {
             }
             .sortedWith(compareBy<file_tree_entry_snapshot> { !it.is_directory }.thenBy { it.name.lowercase() })
         return file_tree_directory_snapshot(entries)
+    }
+
+
+    override suspend fun apply_workspace_edits(request: agent_workspace_edit_request): agent_workspace_edit_result = withContext(Dispatchers.Main.immediate) {
+        capture_active_tab_state()
+        val planned_changes = mutableListOf<planned_agent_file_change>()
+        val conflicts = mutableListOf<agent_edit_conflict>()
+
+        for (edit in request.edits) {
+            val file = workspace_edit_host_file(edit.path)
+            if (file == null) {
+                conflicts += agent_edit_conflict(
+                    path = edit.path,
+                    reason = agent_edit_conflict_reason.OutsideProject,
+                    message = "路径不在当前项目中"
+                )
+                continue
+            }
+
+            when (edit.type) {
+                agent_workspace_edit_type.Create -> plan_agent_create_file(edit, file, planned_changes, conflicts)
+                agent_workspace_edit_type.Replace -> plan_agent_replace_file(edit, file, planned_changes, conflicts)
+            }
+        }
+
+        if (conflicts.isNotEmpty()) {
+            return@withContext agent_workspace_edit_result(applied = false, conflicts = conflicts)
+        }
+        if (request.mode == agent_edit_mode.Preview) {
+            return@withContext agent_workspace_edit_result(
+                applied = false,
+                changed_files = planned_changes.map { change -> change.to_result(preview = true) }
+            )
+        }
+
+        for (change in planned_changes) {
+            val write_result = withContext(Dispatchers.IO) {
+                runCatching {
+                    change.file.parentFile?.mkdirs()
+                    change.file.writeText(change.updated)
+                }
+            }
+            if (write_result.isFailure) {
+                return@withContext agent_workspace_edit_result(
+                    applied = false,
+                    conflicts = listOf(
+                        agent_edit_conflict(
+                            path = change.rootfs_path,
+                            reason = agent_edit_conflict_reason.IoError,
+                            message = write_result.exceptionOrNull()?.message ?: "写入文件失败"
+                        )
+                    )
+                )
+            }
+            apply_agent_file_change_to_open_tab(change)
+            refresh_file_tree_for_changed_path(change.file.absolutePath)
+        }
+
+        return@withContext agent_workspace_edit_result(
+            applied = true,
+            changed_files = planned_changes.map { change -> change.to_result(preview = false) }
+        )
+    }
+
+    private data class planned_agent_file_change(
+        val rootfs_path: String,
+        val file: File,
+        val original: String,
+        val updated: String,
+        val replacements: Int,
+        val is_create: Boolean,
+    )
+
+    private fun planned_agent_file_change.to_result(preview: Boolean): agent_file_change_result = agent_file_change_result(
+        path = rootfs_path,
+        replacements = replacements,
+        size_bytes = if (preview) updated.toByteArray(StandardCharsets.UTF_8).size.toLong() else file.length(),
+        updated_at = if (preview) System.currentTimeMillis() else file.lastModified(),
+        diff = generate_agent_unified_diff(original, updated, rootfs_path, is_create)
+    )
+
+    private fun plan_agent_create_file(
+        edit: agent_text_replacement,
+        file: File,
+        planned_changes: MutableList<planned_agent_file_change>,
+        conflicts: MutableList<agent_edit_conflict>,
+    ) {
+        val text = edit.text ?: edit.new_text
+        if (file.exists()) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.FileAlreadyExists,
+                message = "文件已存在"
+            )
+            return
+        }
+        if (text.toByteArray(StandardCharsets.UTF_8).size > external_auto_reload_max_bytes) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.TooLarge,
+                message = "新文件内容超过自动编辑大小限制"
+            )
+            return
+        }
+        planned_changes += planned_agent_file_change(
+            rootfs_path = edit.path,
+            file = file,
+            original = "",
+            updated = text,
+            replacements = 1,
+            is_create = true
+        )
+    }
+
+    private suspend fun plan_agent_replace_file(
+        edit: agent_text_replacement,
+        file: File,
+        planned_changes: MutableList<planned_agent_file_change>,
+        conflicts: MutableList<agent_edit_conflict>,
+    ) {
+        val path = file.absolutePath
+        val dirty_tab = state.open_tabs.firstOrNull { tab ->
+            File(tab.file_path).absolutePath == path && tab.has_changes
+        }
+        if (dirty_tab != null) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.DirtyBuffer,
+                message = "文件在编辑器中有未保存内容: ${dirty_tab.file_name}"
+            )
+            return
+        }
+        if (edit.old_text.isEmpty()) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.OldTextEmpty,
+                message = "old_text 不能为空"
+            )
+            return
+        }
+        if (!file.exists()) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.FileMissing,
+                message = "文件不存在"
+            )
+            return
+        }
+        if (!file.isFile) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.NotAFile,
+                message = "路径不是文件"
+            )
+            return
+        }
+        if (file.length() > external_auto_reload_max_bytes) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.TooLarge,
+                message = "文件超过自动编辑大小限制"
+            )
+            return
+        }
+        val original_result = withContext(Dispatchers.IO) {
+            runCatching { file.readText() }
+        }
+        if (original_result.isFailure) {
+            conflicts += agent_edit_conflict(
+                path = edit.path,
+                reason = agent_edit_conflict_reason.IoError,
+                message = original_result.exceptionOrNull()?.message ?: "读取文件失败"
+            )
+            return
+        }
+        val original = original_result.getOrThrow()
+        val matches = count_non_overlapping_occurrences(original, edit.old_text)
+        when {
+            matches == 0 -> {
+                conflicts += agent_edit_conflict(
+                    path = edit.path,
+                    reason = agent_edit_conflict_reason.OldTextNotFound,
+                    message = "old_text 未在当前文件内容中找到"
+                )
+                return
+            }
+            matches > 1 && !edit.replace_all -> {
+                conflicts += agent_edit_conflict(
+                    path = edit.path,
+                    reason = agent_edit_conflict_reason.AmbiguousOldText,
+                    message = "old_text 匹配 $matches 处，请增加上下文或设置 replace_all=true"
+                )
+                return
+            }
+        }
+        val updated = if (edit.replace_all) {
+            original.replace(edit.old_text, edit.new_text)
+        } else {
+            original.replaceFirst(edit.old_text, edit.new_text)
+        }
+        planned_changes += planned_agent_file_change(
+            rootfs_path = edit.path,
+            file = file,
+            original = original,
+            updated = updated,
+            replacements = if (edit.replace_all) matches else 1,
+            is_create = false
+        )
+    }
+
+    private fun workspace_edit_host_file(path: String): File? {
+        val host_path = workspace_event_host_path(path) ?: return null
+        val file = File(host_path).absoluteFile
+        val root = runCatching { project_dir.canonicalFile }.getOrDefault(project_dir.absoluteFile)
+        val canonical_file = runCatching { file.canonicalFile }.getOrDefault(file)
+        return if (is_same_or_child_path(canonical_file.absolutePath, root.absolutePath)) canonical_file else null
+    }
+
+    private fun apply_agent_file_change_to_open_tab(change: planned_agent_file_change) {
+        val normalized_path = change.file.absolutePath
+        val tab = state.open_tabs.firstOrNull { open_tab -> File(open_tab.file_path).absolutePath == normalized_path } ?: return
+        val line = tab.editor?.cursor?.leftLine ?: tab.cursor_line
+        val column = tab.editor?.cursor?.leftColumn ?: tab.cursor_column
+        tab.content = change.updated
+        tab.has_changes = false
+        tab.file_deleted = false
+        tab.external_modified = false
+        tab.disk_last_modified = change.file.lastModified()
+        tab.disk_size = change.file.length()
+        tab.status_text = relative_project_path(project_dir, change.file)
+        tab.editor?.let { tab_editor ->
+            tab_lifecycle.set_content(tab_editor, change.updated)
+            val safe_line = line.coerceIn(0, tab_editor.text.lineCount.coerceAtLeast(1) - 1)
+            val safe_column = column.coerceIn(0, tab_editor.text.getColumnCount(safe_line))
+            tab_editor.setSelection(safe_line, safe_column)
+        }
+        if (tab.file_path == state.current_file_path) {
+            state.content = change.updated
+            state.has_changes = false
+            state.status_text = tab.status_text
+            update_history_state()
+            schedule_block_end_hints_update()
+        }
+    }
+
+    private fun count_non_overlapping_occurrences(content: String, needle: String): Int {
+        if (needle.isEmpty()) return 0
+        var count = 0
+        var index = content.indexOf(needle)
+        while (index >= 0) {
+            count++
+            index = content.indexOf(needle, index + needle.length)
+        }
+        return count
+    }
+
+    private fun generate_agent_unified_diff(old_text: String, new_text: String, path: String, is_create: Boolean = false): String? {
+        if (old_text == new_text) return null
+        val old_lines = if (is_create) emptyList() else old_text.lines()
+        val new_lines = new_text.lines()
+        return buildString {
+            appendLine("--- ${if (is_create) "/dev/null" else "a/$path"}")
+            appendLine("+++ b/$path")
+            appendLine("@@ -1,${old_lines.size} +1,${new_lines.size} @@")
+            old_lines.forEach { line -> appendLine("-$line") }
+            new_lines.forEach { line -> appendLine("+$line") }
+        }
     }
 
     private fun start_workspace_file_change_observer() {
