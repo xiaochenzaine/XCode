@@ -4,14 +4,21 @@ import java.io.File
 
 data class editor_loaded_file(
     val file: File,
-    val content: String
+    val content: String,
+    val last_modified: Long = file.lastModified(),
+    val size: Long = file.length()
 )
 
 fun load_project_file(project_dir: File, file_path: String): Result<editor_loaded_file> {
     return runCatching {
         val file = File(file_path)
         require(is_readable_project_file(project_dir, file)) { "文件不存在或不在项目中" }
-        editor_loaded_file(file = file.absoluteFile, content = file.readText())
+        editor_loaded_file(
+            file = file.absoluteFile,
+            content = file.readText(),
+            last_modified = file.lastModified(),
+            size = file.length()
+        )
     }
 }
 

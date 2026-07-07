@@ -80,6 +80,7 @@ fun terminal_panel(
     text_size: Int = if (compact) 22 else 28,
     key_text_size: TextUnit = if (compact) 10.sp else 14.sp,
     extra_environment: Map<String, String> = emptyMap(),
+    on_terminal_activity_idle: () -> Unit = {},
     close_last_behavior: terminal_close_last_behavior = terminal_close_last_behavior.Recreate,
     on_last_tab_closed: () -> Unit = {}
 ) {
@@ -87,6 +88,8 @@ fun terminal_panel(
     val colors = app_theme_provider.colors
     val terminal_background_color = Color(colors.terminal_background.toLong() and 0xFFFFFFFFL)
     val main_handler = remember { Handler(Looper.getMainLooper()) }
+    val coroutine_scope = rememberCoroutineScope()
+    var terminal_activity_idle_job by remember { mutableStateOf<Job?>(null) }
     var terminal_view_ready by remember { mutableStateOf(false) }
     val safe_cwd = remember(cwd) { cwd.ifBlank { java.io.File(context.filesDir, "home").absolutePath } }
     val safe_proot_work_dir = remember(proot_work_dir) { proot_work_dir.ifBlank { toolchain_guest_paths.home } }
@@ -136,6 +139,15 @@ fun terminal_panel(
         }
     }
 
+
+    fun schedule_terminal_activity_idle_notification() {
+        terminal_activity_idle_job?.cancel()
+        terminal_activity_idle_job = coroutine_scope.launch {
+            delay(800)
+            on_terminal_activity_idle()
+        }
+    }
+
     fun create_terminal_tab(select: Boolean = true) {
         val (number, title) = next_tab_title()
         val session = create_terminal_session(
@@ -146,6 +158,7 @@ fun terminal_panel(
             env = env.copyOf(),
             transcript_rows = 2000,
             on_text_changed = { changed_session ->
+                schedule_terminal_activity_idle_notification()
                 main_handler.post {
                     if (state.terminal_view?.getCurrentSession() == changed_session) {
                         state.terminal_view?.invalidate()
@@ -153,6 +166,8 @@ fun terminal_panel(
                 }
             },
             on_session_finished = { finished_session ->
+                terminal_activity_idle_job?.cancel()
+                on_terminal_activity_idle()
                 main_handler.post {
                     if (state.terminal_view?.getCurrentSession() == finished_session) {
                         state.terminal_view?.invalidate()
@@ -196,6 +211,7 @@ fun terminal_panel(
 
     DisposableEffect(Unit) {
         onDispose {
+            terminal_activity_idle_job?.cancel()
             state.terminal_view = null
             state.ctrl_active = false
             state.alt_active = false

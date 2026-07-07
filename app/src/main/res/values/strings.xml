@@ -338,6 +338,10 @@
     <string name="editor_project_config_applied">项目配置已应用</string>
     <string name="editor_project_config_save_failed">项目配置保存失败: %1$s</string>
     <string name="editor_project_missing">项目不存在</string>
+    <string name="editor_file_deleted_external">文件已在外部删除: %1$s</string>
+    <string name="editor_file_deleted_external_dirty">文件已在外部删除，当前有未保存内容: %1$s</string>
+    <string name="editor_file_changed_external_dirty">文件已在外部修改，当前有未保存内容: %1$s</string>
+    <string name="editor_file_too_large_external_reload">文件过大，已跳过自动重新加载: %1$s</string>
     <string name="editor_font_import_failed">字体导入失败: %1$s</string>
     <string name="editor_clangd_format_disabled">clangd 格式化已关闭</string>
     <string name="editor_file_too_large_format_selection">文件过大，请选择局部代码后再格式化</string>

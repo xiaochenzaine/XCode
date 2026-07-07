@@ -61,6 +61,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+
+private data class file_tree_directory_snapshot(
+    val entries: List<file_tree_entry_snapshot>
+)
+
+private data class file_tree_entry_snapshot(
+    val name: String,
+    val is_directory: Boolean,
+    val size: Long,
+    val last_modified: Long
+)
+
+private const val external_auto_reload_max_bytes = 5L * 1024L * 1024L
 
 class editor_activity : FragmentActivity() {
 
@@ -77,12 +92,15 @@ class editor_activity : FragmentActivity() {
     private var cmake_configure_job: Job? = null
     private var cmake_build_job: Job? = null
     private var file_tree_job: Job? = null
+    private var workspace_file_change_job: Job? = null
+    private var workspace_file_sync_job: Job? = null
     private var clangd_project: clangd_lsp_project? = null
     private var clangd_connect_job: Job? = null
     private val clangd_skipped_files = mutableSetOf<String>()
     private val tree_sitter_logged_errors = mutableSetOf<String>()
     private val tree_sitter_logged_fallbacks = mutableSetOf<String>()
     private val file_tree_children_cache = mutableMapOf<String, List<editor_file_node>>()
+    private val file_tree_directory_snapshots = mutableMapOf<String, file_tree_directory_snapshot>()
     private lateinit var search_controller: editor_search_controller
     private lateinit var tab_lifecycle: editor_tab_lifecycle
     private val import_editor_font_launcher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -120,6 +138,7 @@ class editor_activity : FragmentActivity() {
             }
         }
         initialize_project()
+        start_workspace_file_change_observer()
     }
 
     override fun onDestroy() {
@@ -127,6 +146,8 @@ class editor_activity : FragmentActivity() {
         cmake_configure_job?.cancel()
         cmake_build_job?.cancel()
         file_tree_job?.cancel()
+        workspace_file_change_job?.cancel()
+        workspace_file_sync_job?.cancel()
         clangd_connect_job?.cancel()
         clangd_project?.dispose()
         clangd_project = null
@@ -220,6 +241,9 @@ class editor_activity : FragmentActivity() {
                 toolchain_manager.project_environment(project_dir.absolutePath).environment
             } else {
                 emptyMap()
+            },
+            on_terminal_activity_idle = {
+                schedule_workspace_file_sync(project_dir.absolutePath)
             },
             on_toggle_toolbar = { state.toolbar_visible = !state.toolbar_visible },
             on_editor_settings_change = { settings -> update_editor_settings(settings) },
@@ -936,7 +960,9 @@ class editor_activity : FragmentActivity() {
             initial_file_path = file.absolutePath,
             initial_file_name = file.name,
             initial_status_text = relative_project_path(project_dir, file),
-            initial_content = loaded_file.content
+            initial_content = loaded_file.content,
+            initial_last_modified = loaded_file.last_modified,
+            initial_size = loaded_file.size
         )
     }
 
@@ -1010,6 +1036,12 @@ class editor_activity : FragmentActivity() {
             result.onSuccess {
                 tab.content = content
                 tab.has_changes = false
+                tab.file_deleted = false
+                tab.external_modified = false
+                File(tab.file_path).let { saved_file ->
+                    tab.disk_last_modified = saved_file.lastModified()
+                    tab.disk_size = saved_file.length()
+                }
                 tab.status_text = relative_project_path(project_dir, File(tab.file_path))
             }.onFailure { error ->
                 app_toast.show(this, getString(R.string.editor_save_failed, error.message), app_toast.LENGTH_LONG)
@@ -1048,6 +1080,12 @@ class editor_activity : FragmentActivity() {
             active_tab()?.let { tab ->
                 tab.content = content
                 tab.has_changes = false
+                tab.file_deleted = false
+                tab.external_modified = false
+                File(file_path).let { saved_file ->
+                    tab.disk_last_modified = saved_file.lastModified()
+                    tab.disk_size = saved_file.length()
+                }
                 tab.status_text = relative_project_path(project_dir, File(file_path))
             }
             state.content = content
@@ -1369,7 +1407,7 @@ class editor_activity : FragmentActivity() {
             }
             state.file_tree_loading = false
             result.onSuccess { (exists, root_children) ->
-                if (root_children != null) file_tree_children_cache[root_path] = root_children
+                if (root_children != null) cache_file_tree_directory(root_path, root_children)
                 state.project_exists = exists
                 state.file_nodes = build_lazy_visible_file_nodes(root, state.expanded_paths, file_tree_children_cache)
             }.onFailure { error ->
@@ -1419,13 +1457,309 @@ class editor_activity : FragmentActivity() {
             }
             state.file_tree_loading = false
             result.onSuccess { children ->
-                file_tree_children_cache[path] = children
+                cache_file_tree_directory(path, children)
                 state.file_nodes = build_lazy_visible_file_nodes(project_dir, state.expanded_paths, file_tree_children_cache)
             }.onFailure { error ->
                 app_toast.show(this@editor_activity, getString(R.string.editor_refresh_file_failed, error.message), app_toast.LENGTH_LONG)
                 state.expanded_paths = state.expanded_paths - path
             }
         }
+    }
+
+    private fun cache_file_tree_directory(path: String, children: List<editor_file_node>) {
+        val absolute_path = File(path).absolutePath
+        file_tree_children_cache[absolute_path] = children
+        snapshot_file_tree_directory(File(absolute_path))?.let { snapshot ->
+            file_tree_directory_snapshots[absolute_path] = snapshot
+        }
+    }
+
+    private fun snapshot_file_tree_directory(dir: File): file_tree_directory_snapshot? {
+        if (!dir.exists() || !dir.isDirectory) return null
+        val entries = dir.listFiles()
+            .orEmpty()
+            .filterNot { file -> file.name.startsWith(".") }
+            .map { file ->
+                file_tree_entry_snapshot(
+                    name = file.name,
+                    is_directory = file.isDirectory,
+                    size = if (file.isFile) file.length() else 0L,
+                    last_modified = file.lastModified()
+                )
+            }
+            .sortedWith(compareBy<file_tree_entry_snapshot> { !it.is_directory }.thenBy { it.name.lowercase() })
+        return file_tree_directory_snapshot(entries)
+    }
+
+    private fun start_workspace_file_change_observer() {
+        workspace_file_change_job?.cancel()
+        workspace_file_change_job = lifecycleScope.launch {
+            workspace_file_change_notifier.events.collect { event ->
+                handle_workspace_file_change(event)
+            }
+        }
+    }
+
+    private fun handle_workspace_file_change(event: workspace_file_change_event) {
+        when (event) {
+            is workspace_file_change_event.changed -> {
+                workspace_event_host_path(event.path)?.let { path ->
+                    reload_open_tab_from_disk(path)
+                    refresh_file_tree_for_changed_path(path)
+                }
+            }
+            is workspace_file_change_event.workspace_maybe_changed -> {
+                if (workspace_event_affects_current_project(event.path)) {
+                    schedule_workspace_file_sync(event.path)
+                }
+            }
+        }
+    }
+
+    private fun schedule_workspace_file_sync(changed_path: String? = null) {
+        workspace_file_sync_job?.cancel()
+        workspace_file_sync_job = lifecycleScope.launch {
+            delay(300)
+            sync_open_tabs_from_disk()
+            sync_visible_file_tree_from_disk(changed_path)
+        }
+    }
+
+    private fun workspace_event_host_path(path: String): String? {
+        val normalized = path.replace('\\', '/').trim().trimEnd('/')
+        if (normalized.isBlank()) return null
+        if (normalized.startsWith("/workspace/XCodeProjects")) {
+            val relative = normalized.removePrefix("/workspace/XCodeProjects").trimStart('/')
+            val projects_root = project_dir.parentFile ?: return null
+            return File(projects_root, relative).absolutePath
+        }
+        if (normalized.startsWith("/storage/emulated/0/")) {
+            return File(normalized).absolutePath
+        }
+        return null
+    }
+
+    private fun workspace_event_affects_current_project(path: String): Boolean {
+        val normalized = path.replace('\\', '/').trim().trimEnd('/')
+        if (normalized.isBlank() || normalized == "/workspace" || normalized == "/workspace/XCodeProjects") return true
+        val host_path = workspace_event_host_path(normalized) ?: return false
+        return is_same_or_child_path(host_path, project_dir.absolutePath) || is_same_or_child_path(project_dir.absolutePath, host_path)
+    }
+
+    private fun refresh_file_tree_for_changed_path(path: String) {
+        val file = File(path)
+        val parent = if (file.isDirectory) file else file.parentFile
+        parent?.absolutePath?.let { parent_path ->
+            if (parent_path == project_dir.absolutePath || parent_path in state.expanded_paths || parent_path in file_tree_children_cache) {
+                refresh_file_tree(parent_path)
+            }
+        }
+    }
+
+    private fun sync_visible_file_tree_from_disk(changed_path: String? = null) {
+        val changed_host_path = changed_path?.let { workspace_event_host_path(it) }
+        val candidate_dirs = buildSet {
+            add(project_dir.absolutePath)
+            addAll(state.expanded_paths)
+            addAll(file_tree_children_cache.keys)
+        }.filter { path ->
+            val absolute_path = File(path).absolutePath
+            is_same_or_child_path(absolute_path, project_dir.absolutePath) &&
+                (changed_host_path == null ||
+                    is_same_or_child_path(absolute_path, changed_host_path) ||
+                    is_same_or_child_path(changed_host_path, absolute_path) ||
+                    changed_host_path == project_dir.parentFile?.absolutePath)
+        }
+
+        val existing_dirs = candidate_dirs.filter { path ->
+            val dir = File(path)
+            dir.exists() && dir.isDirectory
+        }
+        val missing_dirs = candidate_dirs - existing_dirs.toSet()
+        missing_dirs.forEach { path -> remove_file_tree_cache_for_path(path) }
+        if (missing_dirs.isNotEmpty()) {
+            state.expanded_paths = state.expanded_paths
+                .filterNot { path -> missing_dirs.any { missing -> is_same_or_child_path(path, missing) } }
+                .toSet()
+        }
+
+        file_tree_job?.cancel()
+        file_tree_job = lifecycleScope.launch {
+            val changed_dirs = withContext(Dispatchers.IO) {
+                existing_dirs.filter { path ->
+                    val snapshot = snapshot_file_tree_directory(File(path))
+                    val old_snapshot = file_tree_directory_snapshots[path]
+                    when {
+                        snapshot == null -> {
+                            file_tree_directory_snapshots.remove(path)
+                            true
+                        }
+                        snapshot != old_snapshot -> {
+                            file_tree_directory_snapshots[path] = snapshot
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            }
+
+            if (changed_dirs.isNotEmpty()) {
+                val loaded = withContext(Dispatchers.IO) {
+                    changed_dirs.mapNotNull { path ->
+                        runCatching { path to load_file_tree_directory(File(path)) }.getOrNull()
+                    }
+                }
+                loaded.forEach { (path, children) ->
+                    cache_file_tree_directory(path, children)
+                }
+            }
+
+            if (changed_dirs.isNotEmpty() || missing_dirs.isNotEmpty()) {
+                state.project_exists = project_dir.exists() && project_dir.isDirectory
+                state.file_nodes = build_lazy_visible_file_nodes(project_dir, state.expanded_paths, file_tree_children_cache)
+            }
+        }
+    }
+
+    private fun sync_open_tabs_from_disk() {
+        state.open_tabs.toList().forEach { tab ->
+            val file = File(tab.file_path)
+            if (!file.exists() || !file.isFile) {
+                if (try_relink_renamed_open_tab(tab)) return@forEach
+                mark_open_tab_deleted(tab)
+                return@forEach
+            }
+            if (file.lastModified() != tab.disk_last_modified || file.length() != tab.disk_size || tab.file_deleted) {
+                reload_open_tab_from_disk(file.absolutePath)
+            }
+        }
+    }
+
+    private fun mark_open_tab_deleted(tab: editor_open_tab) {
+        if (tab.file_deleted && tab.external_modified) return
+        tab.file_deleted = true
+        tab.external_modified = true
+        tab.disk_last_modified = 0L
+        tab.disk_size = 0L
+        tab.status_text = if (tab.has_changes) {
+            getString(R.string.editor_file_deleted_external_dirty, tab.file_name)
+        } else {
+            getString(R.string.editor_file_deleted_external, tab.file_name)
+        }
+        if (tab.file_path == state.current_file_path) {
+            state.has_changes = tab.has_changes
+            state.status_text = tab.status_text
+            update_history_state()
+        }
+    }
+
+    private fun reload_open_tab_from_disk(path: String) {
+        val normalized_path = File(path).absolutePath
+        val tab = state.open_tabs.firstOrNull { open_tab -> File(open_tab.file_path).absolutePath == normalized_path } ?: return
+        val file = File(normalized_path)
+        if (!file.isFile) return
+
+        if (tab.has_changes) {
+            mark_open_tab_externally_modified(tab, file)
+            return
+        }
+
+        if (file.length() > external_auto_reload_max_bytes) {
+            tab.disk_last_modified = file.lastModified()
+            tab.disk_size = file.length()
+            tab.external_modified = true
+            tab.status_text = getString(R.string.editor_file_too_large_external_reload, tab.file_name)
+            if (tab.file_path == state.current_file_path) {
+                state.status_text = tab.status_text
+                update_history_state()
+            }
+            return
+        }
+
+        lifecycleScope.launch {
+            val loaded = withContext(Dispatchers.IO) {
+                runCatching { file.readText() }
+            }.getOrNull() ?: return@launch
+            val line = tab.editor?.cursor?.leftLine ?: tab.cursor_line
+            val column = tab.editor?.cursor?.leftColumn ?: tab.cursor_column
+            tab.content = loaded
+            tab.has_changes = false
+            tab.file_deleted = false
+            tab.external_modified = false
+            tab.disk_last_modified = file.lastModified()
+            tab.disk_size = file.length()
+            tab.status_text = relative_project_path(project_dir, file)
+            tab.editor?.let { tab_editor ->
+                tab_lifecycle.set_content(tab_editor, loaded)
+                val safe_line = line.coerceIn(0, tab_editor.text.lineCount.coerceAtLeast(1) - 1)
+                val safe_column = column.coerceIn(0, tab_editor.text.getColumnCount(safe_line))
+                tab_editor.setSelection(safe_line, safe_column)
+            }
+            if (tab.file_path == state.current_file_path) {
+                state.content = loaded
+                state.has_changes = false
+                state.status_text = tab.status_text
+                update_history_state()
+                schedule_block_end_hints_update()
+            }
+        }
+    }
+
+    private fun mark_open_tab_externally_modified(tab: editor_open_tab, file: File) {
+        tab.file_deleted = false
+        tab.external_modified = true
+        tab.disk_last_modified = file.lastModified()
+        tab.disk_size = file.length()
+        tab.status_text = getString(R.string.editor_file_changed_external_dirty, tab.file_name)
+        if (tab.file_path == state.current_file_path) {
+            state.has_changes = true
+            state.status_text = tab.status_text
+            update_history_state()
+        }
+    }
+
+    private fun try_relink_renamed_open_tab(tab: editor_open_tab): Boolean {
+        if (tab.has_changes || tab.disk_size > external_auto_reload_max_bytes) return false
+        val old_file = File(tab.file_path)
+        val parent = old_file.parentFile ?: return false
+        if (!parent.isDirectory) return false
+        val opened_paths = state.open_tabs
+            .filter { open_tab -> open_tab !== tab }
+            .map { open_tab -> File(open_tab.file_path).absolutePath }
+            .toSet()
+        val old_content_hash = hash_text(tab.content)
+        val candidates = parent.listFiles()
+            .orEmpty()
+            .asSequence()
+            .filter { file -> file.isFile && file.absolutePath !in opened_paths }
+            .filter { file -> file.length() == tab.disk_size && file.length() <= external_auto_reload_max_bytes }
+            .filter { file -> runCatching { hash_text(file.readText()) == old_content_hash }.getOrDefault(false) }
+            .take(2)
+            .toList()
+        val candidate = candidates.singleOrNull() ?: return false
+
+        val old_path = tab.file_path
+        tab.file_path = candidate.absolutePath
+        tab.file_name = candidate.name
+        tab.file_deleted = false
+        tab.external_modified = false
+        tab.disk_last_modified = candidate.lastModified()
+        tab.disk_size = candidate.length()
+        tab.status_text = relative_project_path(project_dir, candidate)
+        if (old_path == state.current_file_path) {
+            state.current_file_path = candidate.absolutePath
+            state.current_file_name = candidate.name
+            state.status_text = tab.status_text
+            state.selected_tab_index = find_tab_index(candidate.absolutePath)
+            apply_editor_language(candidate.absolutePath)
+        }
+        save_pinned_tabs()
+        return true
+    }
+
+    private fun hash_text(text: String): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(text.toByteArray(StandardCharsets.UTF_8))
+        return digest.joinToString("") { byte -> "%02x".format(byte) }
     }
 
     private fun create_project_file(parent_path: String, name: String) {
@@ -1517,16 +1851,25 @@ class editor_activity : FragmentActivity() {
 
     private fun sync_file_tree_cache_after_rename(old_path: String, new_path: String) {
         val updated_cache = file_tree_children_cache.mapKeys { (path, _) -> replace_path_prefix(path, old_path, new_path) }
+        val updated_snapshots = file_tree_directory_snapshots.mapKeys { (path, _) -> replace_path_prefix(path, old_path, new_path) }
         file_tree_children_cache.clear()
         file_tree_children_cache.putAll(updated_cache)
+        file_tree_directory_snapshots.clear()
+        file_tree_directory_snapshots.putAll(updated_snapshots)
         remove_file_tree_cache_for_path(new_path)
-        file_tree_children_cache.remove(File(new_path).parentFile?.absolutePath)
+        File(new_path).parentFile?.absolutePath?.let { parent_path ->
+            file_tree_children_cache.remove(parent_path)
+            file_tree_directory_snapshots.remove(parent_path)
+        }
     }
 
     private fun remove_file_tree_cache_for_path(path: String) {
         file_tree_children_cache.keys
             .filter { is_same_or_child_path(it, path) }
             .forEach { file_tree_children_cache.remove(it) }
+        file_tree_directory_snapshots.keys
+            .filter { is_same_or_child_path(it, path) }
+            .forEach { file_tree_directory_snapshots.remove(it) }
     }
 
     private fun sync_tabs_after_rename(old_path: String, new_path: String) {
@@ -1534,8 +1877,13 @@ class editor_activity : FragmentActivity() {
             if (is_same_or_child_path(tab.file_path, old_path)) {
                 val updated_path = replace_path_prefix(tab.file_path, old_path, new_path)
                 tab.file_path = updated_path
-                tab.file_name = File(updated_path).name
-                tab.status_text = relative_project_path(project_dir, File(updated_path))
+                val updated_file = File(updated_path)
+                tab.file_name = updated_file.name
+                tab.file_deleted = false
+                tab.external_modified = false
+                tab.disk_last_modified = updated_file.lastModified()
+                tab.disk_size = updated_file.length()
+                tab.status_text = relative_project_path(project_dir, updated_file)
             }
         }
 

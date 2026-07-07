@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import com.xc.code.editor.core.workspace_file_change_event
+import com.xc.code.editor.core.workspace_file_change_notifier
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -128,6 +130,7 @@ private fun createWriteFileTool(
         val text = params.string("text") ?: error("text is required")
         val overwrite = params["overwrite"]?.jsonPrimitive?.contentOrNull?.toBooleanStrictOrNull() ?: true
         val entry = workspaceRepository.writeTextInRootfs(workspaceId, path, text, overwrite)
+        notify_workspace_file_changed(path)
         listOf(UIMessagePart.Text(entry.toJson().toString()))
     },
 )
@@ -181,6 +184,7 @@ private fun createEditFileTool(
             error("${e.message} (path: $path)")
         }
         val entry = workspaceRepository.writeTextInRootfs(workspaceId, path, result.updated, overwrite = true)
+        notify_workspace_file_changed(path)
         val diff = generateUnifiedDiff(original, result.updated, entry.path)
         listOf(
             UIMessagePart.Text(
@@ -253,6 +257,7 @@ private fun createShellTool(
             ?.times(1_000L)
             ?: WorkspaceManager.DEFAULT_COMMAND_TIMEOUT_MS
         val result = workspaceRepository.executeCommand(workspaceId, command, cwd, timeoutMillis)
+        notify_workspace_maybe_changed(cwd)
         listOf(
             UIMessagePart.Text(
                 buildJsonObject {
@@ -266,6 +271,20 @@ private fun createShellTool(
         )
     },
 )
+
+
+private fun notify_workspace_file_changed(path: String) {
+    workspace_file_change_notifier.notify(workspace_file_change_event.changed(path))
+}
+
+private fun notify_workspace_maybe_changed(cwd: String) {
+    val path = cwd.trim().trim('/')
+    workspace_file_change_notifier.notify(
+        workspace_file_change_event.workspace_maybe_changed(
+            path = if (path.isBlank()) "/workspace" else "/workspace/$path"
+        )
+    )
+}
 
 private fun kotlinx.serialization.json.JsonObject.string(name: String): String? =
     this[name]?.jsonPrimitive?.contentOrNull

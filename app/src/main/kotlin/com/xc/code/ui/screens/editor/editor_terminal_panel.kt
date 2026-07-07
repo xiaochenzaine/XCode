@@ -19,6 +19,7 @@ internal fun editor_terminal_panel(
     state: editor_terminal_state,
     cwd: String,
     extra_environment: Map<String, String>,
+    on_terminal_activity_idle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     terminal_panel(
@@ -30,6 +31,7 @@ internal fun editor_terminal_panel(
         show_keyboard = true,
         text_size = 22,
         extra_environment = extra_environment,
+        on_terminal_activity_idle = on_terminal_activity_idle,
         close_last_behavior = terminal_close_last_behavior.Recreate,
         modifier = modifier
     )

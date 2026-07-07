@@ -338,6 +338,10 @@
     <string name="editor_project_config_applied">Project configuration applied</string>
     <string name="editor_project_config_save_failed">Failed to save project configuration: %1$s</string>
     <string name="editor_project_missing">Project not found</string>
+    <string name="editor_file_deleted_external">File was deleted externally: %1$s</string>
+    <string name="editor_file_deleted_external_dirty">File was deleted externally with unsaved changes: %1$s</string>
+    <string name="editor_file_changed_external_dirty">File was modified externally with unsaved changes: %1$s</string>
+    <string name="editor_file_too_large_external_reload">File is too large, skipped automatic reload: %1$s</string>
     <string name="editor_font_import_failed">Failed to import font: %1$s</string>
     <string name="editor_clangd_format_disabled">clangd formatting is disabled</string>
     <string name="editor_file_too_large_format_selection">File is too large. Select a range before formatting.</string>

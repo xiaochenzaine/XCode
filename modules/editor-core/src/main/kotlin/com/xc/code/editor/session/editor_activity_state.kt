@@ -41,7 +41,9 @@ class editor_open_tab(
     initial_file_path: String,
     initial_file_name: String,
     initial_status_text: String,
-    initial_content: String
+    initial_content: String,
+    initial_last_modified: Long = 0L,
+    initial_size: Long = initial_content.length.toLong()
 ) {
     var file_path by mutableStateOf(initial_file_path)
     var file_name by mutableStateOf(initial_file_name)
@@ -49,6 +51,10 @@ class editor_open_tab(
     var content by mutableStateOf(initial_content)
     var status_text by mutableStateOf(initial_status_text)
     var has_changes by mutableStateOf(false)
+    var file_deleted by mutableStateOf(false)
+    var external_modified by mutableStateOf(false)
+    var disk_last_modified by mutableStateOf(initial_last_modified)
+    var disk_size by mutableStateOf(initial_size)
     var pinned by mutableStateOf(false)
     var editor: CodeEditor? = null
     var cursor_line by mutableIntStateOf(0)

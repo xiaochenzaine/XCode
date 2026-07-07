@@ -25,5 +25,6 @@ android {
 dependencies {
     api(platform(libs.androidx.compose.bom))
     api("androidx.compose.runtime:runtime")
+    api(libs.kotlinx.coroutines.core)
     api(project(":modules:sora-editor"))
 }

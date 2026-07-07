@@ -210,6 +210,7 @@ internal fun editor_output_bottom_sheet_scaffold(
     terminal_state: editor_terminal_state,
     terminal_cwd: String,
     terminal_extra_environment: Map<String, String>,
+    on_terminal_activity_idle: () -> Unit = {},
     show_symbol_bar: Boolean = false,
     symbol_bar: @Composable () -> Unit = {},
     editor_settings: com.xc.code.editor.model.editor_settings_state? = null,
@@ -280,6 +281,7 @@ internal fun editor_output_bottom_sheet_scaffold(
                     terminal_state = terminal_state,
                     terminal_cwd = terminal_cwd,
                     terminal_extra_environment = terminal_extra_environment,
+                    on_terminal_activity_idle = on_terminal_activity_idle,
                     content_alpha = panel_content_alpha,
                     button_alpha = panel_button_alpha,
                     bottom_safe_padding = bottom_safe_padding,
@@ -337,6 +339,7 @@ private fun editor_output_dock_panel(
     terminal_state: editor_terminal_state,
     terminal_cwd: String,
     terminal_extra_environment: Map<String, String>,
+    on_terminal_activity_idle: () -> Unit = {},
     content_alpha: Float,
     button_alpha: Float,
     bottom_safe_padding: Dp,
@@ -377,6 +380,7 @@ private fun editor_output_dock_panel(
                     terminal_state = terminal_state,
                     terminal_cwd = terminal_cwd,
                     terminal_extra_environment = terminal_extra_environment,
+                    on_terminal_activity_idle = on_terminal_activity_idle,
                     editor_settings = editor_settings,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -659,6 +663,7 @@ private fun editor_output_content(
     terminal_state: editor_terminal_state,
     terminal_cwd: String,
     terminal_extra_environment: Map<String, String>,
+    on_terminal_activity_idle: () -> Unit = {},
     modifier: Modifier = Modifier,
     editor_settings: com.xc.code.editor.model.editor_settings_state? = null
 ) {
@@ -667,6 +672,7 @@ private fun editor_output_content(
             state = terminal_state,
             cwd = terminal_cwd,
             extra_environment = terminal_extra_environment,
+            on_terminal_activity_idle = on_terminal_activity_idle,
             modifier = modifier.fillMaxSize()
         )
         return

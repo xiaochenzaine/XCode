@@ -187,6 +187,7 @@ dependencies {
     implementation(project(":modules:chat-agent:common"))
     implementation(project(":modules:chat-agent:material3"))
     implementation(project(":modules:chat-agent:workspace"))
+    implementation(project(":modules:editor-core"))
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
     implementation(kotlin("reflect"))
 

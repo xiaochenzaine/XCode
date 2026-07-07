@@ -67,6 +67,7 @@ internal fun editor_screen(
     output_panel_state: editor_output_panel_state,
     terminal_cwd: String,
     terminal_extra_environment: Map<String, String>,
+    on_terminal_activity_idle: () -> Unit = {},
     on_toggle_toolbar: () -> Unit,
     on_editor_settings_change: (editor_settings_state) -> Unit,
     on_project_config_apply: (project_ide_config, () -> Unit) -> Unit,
@@ -185,6 +186,7 @@ internal fun editor_screen(
                 terminal_state = terminal_state,
                 terminal_cwd = terminal_cwd,
                 terminal_extra_environment = terminal_extra_environment,
+                on_terminal_activity_idle = on_terminal_activity_idle,
                 show_symbol_bar = show_symbol_bar,
                 editor_settings = editor_settings,
                 symbol_bar = {
