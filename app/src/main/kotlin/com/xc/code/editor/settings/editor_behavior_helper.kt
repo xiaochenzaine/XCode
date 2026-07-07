@@ -3,6 +3,7 @@ package com.xc.code.editor.settings
 import com.xc.code.editor.model.editor_settings_state
 import com.xc.code.editor.core.is_c_family_file
 import android.content.Context
+import io.github.rosemoe.sora.text.Content
 import io.github.rosemoe.sora.text.ContentLine
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.SymbolPairMatch
@@ -56,6 +57,29 @@ internal fun apply_editor_behavior_settings(
 
 private fun apply_editor_symbol_pairs(editor: CodeEditor, file_path: String?) {
     editor.props.overrideSymbolPairs.removeAllPairs()
+
+    // Tree-sitter 语言本身不提供默认符号配对，这里在编辑器层统一补齐。
+    // 底部符号栏插入左半符号时，也依赖这些规则完成括号/引号自动补全。
+    editor.props.overrideSymbolPairs.putPair('{', SymbolPairMatch.SymbolPair("{", "}"))
+    editor.props.overrideSymbolPairs.putPair('(', SymbolPairMatch.SymbolPair("(", ")"))
+    editor.props.overrideSymbolPairs.putPair('[', SymbolPairMatch.SymbolPair("[", "]"))
+    editor.props.overrideSymbolPairs.putPair(
+        '"',
+        SymbolPairMatch.SymbolPair("\"", "\"", object : SymbolPairMatch.SymbolPair.SymbolPairEx {
+            override fun shouldDoAutoSurround(content: Content): Boolean {
+                return content.cursor.isSelected
+            }
+        })
+    )
+    editor.props.overrideSymbolPairs.putPair(
+        '\'',
+        SymbolPairMatch.SymbolPair("'", "'", object : SymbolPairMatch.SymbolPair.SymbolPairEx {
+            override fun shouldDoAutoSurround(content: Content): Boolean {
+                return content.cursor.isSelected
+            }
+        })
+    )
+
     if (!is_c_family_file(file_path)) return
 
     editor.props.overrideSymbolPairs.putPair(
