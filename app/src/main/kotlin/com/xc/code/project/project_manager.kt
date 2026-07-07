@@ -1,6 +1,6 @@
 package com.xc.code.project
 
-import com.xc.code.toolchain.toolchain_runtime_provider
+import com.xc.code.runtime.app_runtime_provider
 import com.xc.code.toolchain.toolchain_manager
 
 import com.google.gson.GsonBuilder
@@ -729,7 +729,7 @@ object project_manager {
     }
 
     private fun recent_projects_file(): File {
-        return File(toolchain_runtime_provider.paths().home_dir.parentFile, "recent_projects.json")
+        return File(app_runtime_provider.paths().home_dir.parentFile, "recent_projects.json")
     }
 
     private fun load_recent_project_records(): MutableList<recent_project_record> {
@@ -769,7 +769,7 @@ object project_manager {
 
     private fun discover_project_records(): List<recent_project_record> {
         return try {
-            val root_dir = File(toolchain_runtime_provider.paths().external_storage_dir ?: File("/sdcard"), "XCodeProjects")
+            val root_dir = File(app_runtime_provider.paths().external_storage_dir ?: File("/sdcard"), "XCodeProjects")
             val projects = root_dir.listFiles()
                 ?.filter { it.isDirectory }
                 ?.sortedByDescending { it.lastModified() }

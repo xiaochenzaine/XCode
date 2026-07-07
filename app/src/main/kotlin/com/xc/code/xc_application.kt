@@ -7,7 +7,7 @@ import com.xc.code.activity.crash.crash_activity
 import com.xc.code.core.logging.logger_manager
 import com.xc.code.editor.theme.editor_theme_manager
 import com.xc.code.service.keep_alive_service
-import com.xc.code.toolchain.toolchain_runtime_provider
+import com.xc.code.runtime.app_runtime_provider
 import com.xc.code.ui.locale.app_locale_manager
 import com.xc.code.ui.theme.app_theme_type
 import com.xc.code.ui.theme.theme_manager
@@ -52,7 +52,7 @@ class xc_application : Application() {
             if (!dir.exists()) dir.mkdirs()
         }
 
-        toolchain_runtime_provider.init(
+        app_runtime_provider.init(
             context = this,
             xcode_dir = File(filesDir, "home/xcode"),
             home_dir = File(filesDir, "home"),

@@ -1,59 +1,44 @@
 package com.xc.code.toolchain.runtime
 
 class proot_command_builder(
-    private val paths: toolchain_runtime_paths
+    private val paths: toolchain_runtime_paths,
+    private val mount_provider: toolchain_mount_provider = toolchain_mount_provider(paths)
 ) {
     fun base_args(
-        working_dir: String = "/home",
+        working_dir: String = toolchain_guest_paths.home,
         include_xcode_mount: Boolean = true,
         extra_mounts: List<proot_bind_mount> = emptyList()
     ): List<String> {
-        val args = mutableListOf(
-            "--android-profile",
-            "--link2symlink",
-            "--kill-on-exit",
-            "-0",
-            "-r", paths.ubuntu_base_dir.absolutePath,
-            "-b", "/sys",
-            "-b", "/dev",
-            "-b", "/proc",
-            "-w", working_dir.ifBlank { "/home" },
-            "-b", "${paths.home_dir.absolutePath}:/home"
-        )
-
-        if (include_xcode_mount) {
-            args += "-b"
-            args += "${paths.xcode_dir.absolutePath}:/home/xcode"
+        return buildList {
+            add("--android-profile")
+            add("--link2symlink")
+            add("--kill-on-exit")
+            add("-0")
+            add("-r")
+            add(paths.ubuntu_base_dir.absolutePath)
+            add("-w")
+            add(working_dir.ifBlank { toolchain_guest_paths.home })
+            addAll(
+                mount_provider.base_mount_args(
+                    include_xcode_mount = include_xcode_mount,
+                    extra_mounts = extra_mounts
+                )
+            )
         }
-
-        paths.external_storage_dir?.let { external_storage ->
-            if (external_storage.exists()) {
-                args += "-b"
-                args += external_storage.absolutePath
-            }
-        }
-
-        extra_mounts.forEach { mount ->
-            if (mount.source.exists()) {
-                args += "-b"
-                args += mount.as_argument()
-            }
-        }
-
-        return args
     }
 
     fun command(
         shell_command: String,
-        working_dir: String = "/home",
+        working_dir: String = toolchain_guest_paths.home,
         include_xcode_mount: Boolean = true,
         extra_mounts: List<proot_bind_mount> = emptyList(),
         extra_environment: Map<String, String> = emptyMap()
     ): List<String> {
         val dollar = '$'
         val wrapper = "cd -- \"${dollar}1\" && eval \"${dollar}2\""
+        val resolved_working_dir = working_dir.ifBlank { toolchain_guest_paths.home }
         return listOf(paths.proot_file.absolutePath) +
-            base_args(working_dir, include_xcode_mount, extra_mounts) +
+            base_args(resolved_working_dir, include_xcode_mount, extra_mounts) +
             clean_shell_env_args(extra_environment = extra_environment) +
             listOf(
                 "/bin/bash",
@@ -61,13 +46,13 @@ class proot_command_builder(
                 "-c",
                 wrapper,
                 "xcode",
-                working_dir.ifBlank { "/home" },
+                resolved_working_dir,
                 shell_command
             )
     }
 
     fun interactive_args(
-        working_dir: String = "/home",
+        working_dir: String = toolchain_guest_paths.home,
         include_xcode_mount: Boolean = true,
         extra_mounts: List<proot_bind_mount> = emptyList()
     ): Array<String> {

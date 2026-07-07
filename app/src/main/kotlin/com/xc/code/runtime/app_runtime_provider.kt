@@ -1,13 +1,14 @@
-package com.xc.code.toolchain
+package com.xc.code.runtime
 
 import android.content.Context
 import android.os.Environment
+import com.xc.code.toolchain.toolchain_manager
 import com.xc.code.toolchain.runtime.proot_command_builder
 import com.xc.code.toolchain.runtime.proot_shell_runner
 import com.xc.code.toolchain.runtime.toolchain_runtime_paths
 import java.io.File
 
-object toolchain_runtime_provider {
+object app_runtime_provider {
     private lateinit var runtime_paths: toolchain_runtime_paths
 
     fun init(
@@ -29,7 +30,7 @@ object toolchain_runtime_provider {
     }
 
     fun paths(): toolchain_runtime_paths {
-        check(::runtime_paths.isInitialized) { "toolchain_runtime_provider is not initialized" }
+        check(::runtime_paths.isInitialized) { "app_runtime_provider is not initialized" }
         return runtime_paths
     }
 

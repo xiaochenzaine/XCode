@@ -53,8 +53,6 @@ android {
     }
 
     lint {
-        // AGP/Kotlin FIR lint 在 RikkaHubInitializer.kt 上偶发内部崩溃，不能让 lintVital 阻断发布构建。
-        abortOnError = false
         checkReleaseBuilds = false
     }
 

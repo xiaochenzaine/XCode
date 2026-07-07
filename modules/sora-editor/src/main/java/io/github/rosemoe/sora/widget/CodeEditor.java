@@ -5360,6 +5360,38 @@ public class CodeEditor extends View implements ContentListener, Formatter.Forma
         lastAnchorIsSelLeft = cursor.left().equals(selectionAnchor);
     }
 
+    /**
+     * 应用格式化结果。
+     * <p>
+     * 旧实现会先删除整份文档再插入格式化后的全文。大文件格式化时这会产生短暂空文档，
+     * 不仅卡顿明显，也容易让语法高亮在旧语法树和空文档之间读到越界范围。
+     * 这里先计算首尾相同区域，只替换真正变化的中间片段。
+     */
+    private void replaceFormattedContent(@NonNull CharSequence formattedContent) {
+        int oldLength = text.length();
+        int newLength = formattedContent.length();
+        int prefix = 0;
+        int minLength = Math.min(oldLength, newLength);
+        while (prefix < minLength && text.charAt(prefix) == formattedContent.charAt(prefix)) {
+            prefix++;
+        }
+        if (prefix == oldLength && prefix == newLength) {
+            return;
+        }
+
+        int suffix = 0;
+        while (suffix < oldLength - prefix
+                && suffix < newLength - prefix
+                && text.charAt(oldLength - 1 - suffix) == formattedContent.charAt(newLength - 1 - suffix)) {
+            suffix++;
+        }
+
+        CharSequence replacement = formattedContent.subSequence(prefix, newLength - suffix);
+        text.beginBatchEdit();
+        text.replace(prefix, oldLength - suffix, replacement);
+        text.endBatchEdit();
+    }
+
     @Override
     public void onFormatSucceed(@NonNull CharSequence applyContent, @Nullable TextRange
             cursorRange) {
@@ -5369,11 +5401,7 @@ public class CodeEditor extends View implements ContentListener, Formatter.Forma
             int x = getOffsetX();
             int y = getOffsetY();
             var string = (applyContent instanceof Content) ? ((Content) applyContent).toStringBuilder() : applyContent;
-            text.beginBatchEdit();
-            text.delete(0, 0, text.getLineCount() - 1,
-                    text.getColumnCount(text.getLineCount() - 1));
-            text.insert(0, 0, string);
-            text.endBatchEdit();
+            replaceFormattedContent(string);
             inputConnection.markInvalid();
             if (cursorRange == null) {
                 setSelectionAround(line, column);

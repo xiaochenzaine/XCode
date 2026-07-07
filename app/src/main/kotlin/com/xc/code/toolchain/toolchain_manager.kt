@@ -1,7 +1,8 @@
 package com.xc.code.toolchain
 
+import com.xc.code.runtime.app_runtime_provider
 import com.xc.code.project.project_manager
-import com.xc.code.core.logging.logger_manager
+import com.xc.code.toolchain.runtime.toolchain_guest_paths
 
 import java.io.File
 import java.util.Properties
@@ -24,10 +25,8 @@ data class project_toolchain_environment(
 
 object toolchain_manager {
 
-    private const val PROOT_XCODE_HOME = "/home/xcode"
-
     private val base_proot_path = listOf(
-        "/home/.local/bin",
+        "${toolchain_guest_paths.home}/.local/bin",
         "/usr/local/sbin",
         "/usr/local/bin",
         "/bin",
@@ -45,7 +44,7 @@ object toolchain_manager {
 
     fun cleanup_removed_toolchain_environment() {
         listOf(".bashrc", ".profile").forEach { file_name ->
-            val file = File(toolchain_runtime_provider.paths().home_dir, file_name)
+            val file = File(app_runtime_provider.paths().home_dir, file_name)
             if (!file.exists()) return@forEach
 
             val current_content = file.readText()
@@ -84,7 +83,7 @@ object toolchain_manager {
     }
 
     private fun installed_cmake_dirs(): List<File> {
-        val cmake_root = File(toolchain_runtime_provider.paths().xcode_dir, "cmake")
+        val cmake_root = File(app_runtime_provider.paths().xcode_dir, "cmake")
         return cmake_root.listFiles()
             ?.filter { candidate -> File(candidate, "bin/cmake").isFile && File(candidate, "bin/ninja").isFile }
             ?.sortedWith { left, right -> compare_versions(right.name, left.name) }
@@ -94,11 +93,11 @@ object toolchain_manager {
     private fun installed_cmake_bin_paths(requested_version: String = ""): List<String> {
         val cmakes = installed_cmake_dirs()
         val selected = if (requested_version.isBlank()) cmakes.firstOrNull() else select_cmake(cmakes, requested_version)
-        return selected?.let { listOf(to_proot_xcode_path(File(it, "bin"))) }.orEmpty()
+        return selected?.let { listOf(to_guest_tool_path(File(it, "bin"))) }.orEmpty()
     }
 
     fun installed_ndks(): List<ndk_toolchain_info> {
-        val ndk_root = File(toolchain_runtime_provider.paths().xcode_dir, "ndk")
+        val ndk_root = File(app_runtime_provider.paths().xcode_dir, "ndk")
         return ndk_root.listFiles()
             ?.filter { it.isDirectory }
             ?.mapNotNull { candidate -> create_ndk_info(candidate) }
@@ -138,11 +137,11 @@ object toolchain_manager {
             missing += "CMake $requested_cmake 未安装或结构无效"
         }
         val path_entries = mutableListOf<String>()
-        cmake?.let { path_entries += to_proot_xcode_path(File(it, "bin")) }
+        cmake?.let { path_entries += to_guest_tool_path(File(it, "bin")) }
         ndk?.let { path_entries += it.llvm_bin_proot_dir }
 
         val environment = linkedMapOf(
-            "XCODE_HOME" to PROOT_XCODE_HOME,
+            "XCODE_HOME" to toolchain_guest_paths.tool_home,
             "PATH" to proot_path(path_entries)
         )
 
@@ -161,11 +160,6 @@ object toolchain_manager {
         return installed_cmake_bin_paths().isNotEmpty()
     }
 
-    private fun shell_quote(value: String): String {
-        if (value.isEmpty()) return "''"
-        return "'" + value.replace("'", "'\\''") + "'"
-    }
-
     private fun create_ndk_info(candidate: File): ndk_toolchain_info? {
         val ndk_dir = find_ndk_dir(candidate) ?: return null
         val llvm_bin = find_ndk_llvm_bin(ndk_dir) ?: return null
@@ -175,15 +169,15 @@ object toolchain_manager {
         val aliases = build_version_aliases(version, candidate.name, ndk_dir.name)
         val cmake_toolchain = File(ndk_dir, "build/cmake/android.toolchain.cmake")
             .takeIf { it.isFile }
-            ?.let { to_proot_xcode_path(it) }
+            ?.let { to_guest_tool_path(it) }
 
         return ndk_toolchain_info(
             version = version,
             aliases = aliases,
             host_dir = ndk_dir,
-            proot_dir = to_proot_xcode_path(ndk_dir),
+            proot_dir = to_guest_tool_path(ndk_dir),
             llvm_bin_host_dir = llvm_bin,
-            llvm_bin_proot_dir = to_proot_xcode_path(llvm_bin),
+            llvm_bin_proot_dir = to_guest_tool_path(llvm_bin),
             cmake_toolchain_file = cmake_toolchain
         )
     }
@@ -276,11 +270,11 @@ object toolchain_manager {
             .removePrefix("cmake_")
     }
 
-    private fun to_proot_xcode_path(file: File): String {
-        val base_path = toolchain_runtime_provider.paths().xcode_dir.absolutePath.trimEnd('/')
+    private fun to_guest_tool_path(file: File): String {
+        val base_path = app_runtime_provider.paths().xcode_dir.absolutePath.trimEnd('/')
         val target_path = file.absolutePath.trimEnd('/')
         val relative_path = target_path.removePrefix(base_path).trimStart('/')
-        return if (relative_path.isBlank()) PROOT_XCODE_HOME else "$PROOT_XCODE_HOME/$relative_path"
+        return if (relative_path.isBlank()) toolchain_guest_paths.tool_home else "${toolchain_guest_paths.tool_home}/$relative_path"
     }
 
     private fun compare_versions(left: String, right: String): Int {

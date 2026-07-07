@@ -130,10 +130,12 @@ class LineSpansGenerator(
                         }
                         var style = 0L
                         if (capture.index in languageSpec.localsReferenceIndices) {
+                            val referenceText = content.safeSubstring(startByte / 2, endByte / 2)
+                                ?: return@forEach
                             val def = scopedVariables.findDefinition(
                                 startByte / 2,
                                 endByte / 2,
-                                content.substring(startByte / 2, endByte / 2)
+                                referenceText
                             )
                             if (def != null && def.matchedHighlightPattern != -1) {
                                 style = theme.resolveStyleForPattern(def.matchedHighlightPattern)
@@ -165,6 +167,14 @@ class LineSpansGenerator(
             list.add(emptySpan(0))
         }
         return list
+    }
+
+    private fun Content.safeSubstring(start: Int, end: Int): String? {
+        val length = length
+        if (length <= 0 || start < 0 || end < start || start >= length) return null
+        val safeEnd = end.coerceAtMost(length)
+        if (safeEnd <= start) return null
+        return substring(start, safeEnd)
     }
 
     private fun createSpans(

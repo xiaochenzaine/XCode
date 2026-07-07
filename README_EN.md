@@ -8,10 +8,11 @@ XCode is an Android C/C++ IDE focused on local development on mobile devices. It
 
 - C/C++ project creation with executable, static library, and shared library templates
 - CMake and Ninja project configure/build workflow
-- PRoot-based Linux toolchain runtime integration
+- PRoot-based Linux toolchain runtime integration with separated low-level runtime, app command execution, and toolchain installation management
 - clangd language server support for completion, signature help, symbol highlight, diagnostics, hover, and formatting
-- Tree-sitter based syntax highlighting with semantic highlighting overlay support
+- Tree-sitter based syntax highlighting with semantic highlighting overlay support; stale ranges are skipped during formatting/highlighting updates to avoid old-tree out-of-bounds reads
 - Sora-based code editor with tabs, file tree, search, editor settings, and shortcut symbol bar
+- Formatting results are applied with differential replacement to reduce full-document delete/insert jank on large files
 - Unified capsule-style editor top bar, sidebar toolbar, file search box, and output panel
 - Output panel for configure/build/toolchain logs with a custom build status animation
 - Integrated terminal with the same Linux toolchain environment used by XCode

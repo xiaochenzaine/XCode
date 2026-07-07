@@ -57,8 +57,9 @@ import com.termux.view.TerminalView
 import com.termux.view.TerminalViewClient
 import com.xc.code.toolchain.toolchain_manager
 import com.xc.code.R
-import com.xc.code.toolchain.toolchain_runtime_provider
+import com.xc.code.runtime.app_runtime_provider
 import com.xc.code.toolchain.runtime.proot_environment
+import com.xc.code.toolchain.runtime.toolchain_guest_paths
 import com.xc.code.ui.theme.app_colors
 import com.xc.code.ui.theme.app_theme_provider
 import kotlinx.coroutines.Job
@@ -88,8 +89,8 @@ fun terminal_panel(
     val main_handler = remember { Handler(Looper.getMainLooper()) }
     var terminal_view_ready by remember { mutableStateOf(false) }
     val safe_cwd = remember(cwd) { cwd.ifBlank { java.io.File(context.filesDir, "home").absolutePath } }
-    val safe_proot_work_dir = remember(proot_work_dir) { proot_work_dir.ifBlank { "/home" } }
-    val shell_path = remember { toolchain_runtime_provider.paths().proot_file.absolutePath }
+    val safe_proot_work_dir = remember(proot_work_dir) { proot_work_dir.ifBlank { toolchain_guest_paths.home } }
+    val shell_path = remember { app_runtime_provider.paths().proot_file.absolutePath }
     val args = remember(safe_proot_work_dir) { terminal_args(safe_proot_work_dir) }
     val env = remember(extra_environment) { terminal_env(extra_environment) }
 
@@ -297,14 +298,14 @@ enum class terminal_close_last_behavior {
 }
 
 private fun terminal_args(cwd: String): Array<String> {
-    return toolchain_runtime_provider.command_builder().interactive_args(cwd)
+    return app_runtime_provider.command_builder().interactive_args(cwd)
 }
 
 private fun terminal_env(extra_environment: Map<String, String> = emptyMap()): Array<String> {
     return proot_environment(
         path = toolchain_manager.proot_path(),
         extra = extra_environment
-    ).as_array(toolchain_runtime_provider.paths())
+    ).as_array(app_runtime_provider.paths())
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

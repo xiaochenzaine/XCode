@@ -3,9 +3,10 @@ package com.xc.code.ui.screens.editor
 import com.xc.code.editor.model.editor_file_node
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -79,7 +80,7 @@ private data class file_tree_content_match(
     val preview: String
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun file_tree_panel(
     nodes: List<editor_file_node>,
@@ -593,6 +594,7 @@ private fun file_tree_tool_button(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun file_tree_row(
     node: editor_file_node,
@@ -632,22 +634,33 @@ private fun file_tree_row(
     val row_click_modifier = if (editing) {
         Modifier
     } else {
-        Modifier.pointerInput(node.path, node.depth) {
-            detectTapGestures(
-                onTap = { on_click() },
-                onLongPress = { position ->
-                    if (node.depth > 0) {
-                        menu_anchor_offset = with(density) {
-                            DpOffset(
-                                x = position.x.toDp(),
-                                y = position.y.toDp()
-                            )
+        Modifier
+            .pointerInput(node.path, node.depth) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val down = event.changes.firstOrNull { it.changedToDownIgnoreConsumed() }
+                        if (down != null) {
+                            menu_anchor_offset = with(density) {
+                                DpOffset(
+                                    x = down.position.x.toDp(),
+                                    y = down.position.y.toDp()
+                                )
+                            }
                         }
+                    }
+                }
+            }
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = on_click,
+                onLongClick = {
+                    if (node.depth > 0) {
                         menu_expanded = true
                     }
                 }
             )
-        }
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {

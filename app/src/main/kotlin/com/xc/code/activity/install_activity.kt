@@ -14,7 +14,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
-import com.xc.code.toolchain.proot_manager
+import com.xc.code.toolchain.toolchain_command_runner
 import com.xc.code.toolchain.runtime.format_rootfs_size
 import com.xc.code.toolchain.runtime.format_rootfs_speed
 import com.xc.code.toolchain.runtime.rootfs_install_event
@@ -147,7 +147,7 @@ class install_activity : ComponentActivity() {
 
                 suspend fun run_required_command(status: String, command: String): Boolean {
                     add_log(status)
-                    val success = proot_manager.execute_command(command, ::add_proot_log)
+                    val success = toolchain_command_runner.execute_command(command, ::add_proot_log)
                     if (!success) add_log(getString(R.string.install_status_failed, status.removeSuffix("...")))
                     return success
                 }

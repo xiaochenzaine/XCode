@@ -52,17 +52,25 @@ fun getCaptureContent(
     captureName: String,
     text: CharSequence
 ) = match.captures.filter { tsQuery.getCaptureNameForId(it.index) == captureName }
-    .map {
+    .mapNotNull {
         val start = it.node.startByte / 2
         val end = it.node.endByte / 2
-        when (text) {
-            is UTF16String -> {
-                text.subseqChars(start, end).use {
-                    it.toString()
-                }
-            }
-
-            is Content -> text.substring(start, end)
-            else -> text.substring(start, end)
-        }
+        safeSubstring(text, start, end)
     }
+
+private fun safeSubstring(text: CharSequence, start: Int, end: Int): String? {
+    val length = text.length
+    if (length <= 0 || start < 0 || end < start || start >= length) return null
+    val safeEnd = end.coerceAtMost(length)
+    if (safeEnd <= start) return null
+    return when (text) {
+        is UTF16String -> {
+            text.subseqChars(start, safeEnd).use {
+                it.toString()
+            }
+        }
+
+        is Content -> text.substring(start, safeEnd)
+        else -> text.substring(start, safeEnd)
+    }
+}

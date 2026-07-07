@@ -29,9 +29,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.lifecycleScope
 import com.xc.code.core.logging.logger_manager
-import com.xc.code.toolchain.proot_manager
+import com.xc.code.toolchain.toolchain_command_runner
 import com.xc.code.toolchain.toolchain_manager
-import com.xc.code.toolchain.toolchain_runtime_provider
+import com.xc.code.runtime.app_runtime_provider
+import com.xc.code.toolchain.runtime.toolchain_guest_paths
 import com.xc.code.project.detected_project
 import com.xc.code.project.project_detector
 import com.xc.code.project.project_ide_config
@@ -214,7 +215,7 @@ class editor_activity : FragmentActivity() {
             editor_settings = state.editor_settings,
             output_panel_state = output_panel_state,
             terminal_cwd = project_dir.takeIf { it.isDirectory }?.absolutePath
-                ?: toolchain_runtime_provider.paths().home_dir.absolutePath,
+                ?: app_runtime_provider.paths().home_dir.absolutePath,
             terminal_extra_environment = if (project_dir.isDirectory) {
                 toolchain_manager.project_environment(project_dir.absolutePath).environment
             } else {
@@ -607,7 +608,7 @@ class editor_activity : FragmentActivity() {
                     existing_generator = null,
                     android_config = android_config
                 )
-                    val configure_success = proot_manager.execute_command_with_environment(
+                    val configure_success = toolchain_command_runner.execute_command_with_environment(
                         command = configure_command,
                         working_dir = project_dir.absolutePath,
                         extra_environment = project_environment.environment,
@@ -618,7 +619,7 @@ class editor_activity : FragmentActivity() {
                     } else {
                         val parallel_arg = android_config.parallel_jobs.takeIf { it > 0 }?.let { " $it" }.orEmpty()
                         val build_command = "cmake --build ${shell_quote(build_dir)} --clean-first --parallel$parallel_arg"
-                        proot_manager.execute_command_with_environment(
+                        toolchain_command_runner.execute_command_with_environment(
                             command = build_command,
                             working_dir = project_dir.absolutePath,
                             extra_environment = project_environment.environment,
@@ -705,7 +706,7 @@ class editor_activity : FragmentActivity() {
                 android_config = android_config
             )
             val success = try {
-                proot_manager.execute_command_with_environment(
+                toolchain_command_runner.execute_command_with_environment(
                     command = command,
                     working_dir = project_dir.absolutePath,
                     extra_environment = project_environment.environment,
@@ -1231,7 +1232,7 @@ class editor_activity : FragmentActivity() {
             language_factory = { path -> create_configured_language(path) },
             config_factory = {
                 clangd_lsp_config(
-                    runtime_paths = toolchain_runtime_provider.paths(),
+                    runtime_paths = app_runtime_provider.paths(),
                     project_dir = project_dir,
                     build_dir = build_dir,
                     path = project_environment.environment["PATH"] ?: toolchain_manager.proot_path(),
@@ -1269,12 +1270,12 @@ class editor_activity : FragmentActivity() {
         if (line.matches(Regex("^[I]\\[[^]]+].*"))) return null
         val trimmed = line.trimStart()
         if (trimmed.startsWith(configured_ndk_clang_prefix())) return null
-        if (trimmed.startsWith("/home/xcode/ndk/") && " -- " in trimmed) return null
+        if (trimmed.startsWith("${toolchain_guest_paths.tool_home}/ndk/") && " -- " in trimmed) return null
         return line.replace(Regex("^[A-Z]\\[[^]]+]\\s*"), "")
     }
 
     private fun configured_ndk_clang_prefix(): String {
-        val ndk = toolchain_manager.project_environment(project_dir.absolutePath).ndk ?: return "/home/xcode/ndk/"
+        val ndk = toolchain_manager.project_environment(project_dir.absolutePath).ndk ?: return "${toolchain_guest_paths.tool_home}/ndk/"
         return ndk.llvm_bin_proot_dir.trimEnd('/') + "/clang"
     }
 
